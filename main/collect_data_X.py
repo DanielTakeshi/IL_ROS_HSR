@@ -14,7 +14,7 @@ from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Joy
 
 from il_ros_hsr.core.sensors import  RGBD, Gripper_Torque, Joint_Positions
-from il_ros_hsr.core.joystick import  JoyStick
+from il_ros_hsr.core.joystick_X import  JoyStick_X
 
 import matplotlib.pyplot as plt
 
@@ -44,13 +44,13 @@ class Collect_Demos():
 
 		self.com = COM()
 
-		self.com.go_to_initial_state(self.whole_body,self.gripper)
+		#self.com.go_to_initial_state(self.whole_body,self.gripper)
 
 		#self.whole_body.move_to_joint_positions({'head_tilt_joint':-0.3})
 
 		self.cam = RGBD()
 
-		self.joystick = JoyStick()
+		self.joystick = JoyStick_X(self.com)
 		self.torque = Gripper_Torque()
 		self.joints = Joint_Positions()
 
@@ -63,31 +63,41 @@ class Collect_Demos():
 		img_rgb = self.cam.read_color_data()
 		img_depth = self.cam.read_depth_data()
 
-		cur_action = self.joystick.get_current_control()
+		cur_action,time_pub = self.joystick.apply_control()
 
 		state = self.com.format_data(img_rgb,img_depth)
 
 		
 
-		cv2.imshow('debug',state[0])
-
-		cv2.waitKey(30) 
+		#cv2.imwrite('frame_'+str(self.count)+'.png',state[0])
 		#Save all data
 		data = {}
 		data['action'] = cur_action
 		data['color_img'] = state[0]
 		data['depth_img'] = state[1]
-		data['noisey_twist'] = self.joystick.get_current_twist()
+		data['noisey_twist'] = cur_action
 		data['gripper_torque'] = self.torque.read_data()
 		data['joint_positions'] = self.joints.read_data()
+		data['action_time'] = time_pub
+		data['image_time'] = self.cam.color_time_stamped
 
-		if(LA.norm(cur_action) > 1e-4):
-			self.trajectory.append(data)
+		print "ACTION AT COUNT ",self.count
+		print cur_action
+		self.count += 1
+		self.trajectory.append(data)
+		# if(LA.norm(cur_action) > 1e-3):
+		# 	print "GOT ACCEPTED"
+		# 	self.trajectory.append(data)
 		
 
 
 	def run(self):
+
+		
+		cur_action = self.joystick.apply_control()
 		cur_recording = self.joystick.get_record_actions()
+			
+		
 
 		if(cur_recording[0] < -0.1):
 			print "BEGIN DATA COLLECTION"
@@ -95,12 +105,14 @@ class Collect_Demos():
 		count = 0
 		
 		if(self.start_recording):
+			self.count = 0
 			self.trajectory = []
 			while not self.stop_recording:
 			#while count < 20:
 
-				if(count % 6 == 0):
+				if(self.cam.is_updated):
 					self.proess_state()
+					self.cam.is_updated = False
 
 
 				cur_recording = self.joystick.get_record_actions()
@@ -126,6 +138,6 @@ class Collect_Demos():
 
 if __name__=='__main__':
 	cd = Collect_Demos()
-	time.sleep(10)
+	time.sleep(5)
 	while True: 
 		cd.run()

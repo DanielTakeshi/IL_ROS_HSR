@@ -61,7 +61,7 @@ def im2tensor(im,channels=1):
 
 class IMData():
     
-    def __init__(self, train_data, test_data,channels=3,state_space = None):
+    def __init__(self, train_data, test_data,channels=3,state_space = None,precompute = False):
 
 
         self.train_tups = train_data
@@ -75,6 +75,22 @@ class IMData():
         random.shuffle(self.train_tups)
         random.shuffle(self.test_tups)
 
+        self.precompute = precompute
+
+        if(precompute):
+            self.pre_compute_features()
+
+    def pre_compute_features(self):
+
+        for traj in self.train_tups:
+            for data in traj:
+                data['feature'] = self.state_space(data)
+
+        for traj in self.test_tups:
+            for data in traj:
+                data['feature'] = self.state_space(data)
+
+
     def next_train_batch(self, n):
         """
         Read into memory on request
@@ -87,10 +103,16 @@ class IMData():
         batch_tups = self.train_tups[self.i:n+self.i]
         batch = []
         for traj in batch_tups:
+            random.shuffle(traj)
             for data in traj:
                 
+
                 action = data['action']
-                state = self.state_space(data)
+
+                if(self.precompute):
+                    state = data['feature']
+                else:
+                    state = self.state_space(data)
 
                 if(len(batch) < 100):
                     batch.append((state,action))
@@ -107,9 +129,14 @@ class IMData():
         """
         batch = []
         for traj in self.test_tups[:3]:
+            random.shuffle(traj)
             for data in traj:
                 action = data['action']
-                state  = self.state_space(data)
+                
+                if(self.precompute):
+                    state = data['feature']
+                else:
+                    state = self.state_space(data)
 
                 if(len(batch) < 100):
                     batch.append((state,action))

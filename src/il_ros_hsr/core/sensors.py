@@ -32,6 +32,8 @@ class RGBD(object):
         self._input_depth_image = None
         self._info = None
 
+        self.is_updated = False
+
         # Subscribe color image data from HSR
        
 
@@ -52,6 +54,9 @@ class RGBD(object):
         try:
             
             self._input_color_image = self._bridge.imgmsg_to_cv2(data, "bgr8")
+            self.color_time_stamped = data.header.stamp
+            self.is_updated = True
+
         except CvBridgeError as cv_bridge_exception:
             rospy.logerr(cv_bridge_exception)
 

@@ -59,6 +59,14 @@ if __name__ == '__main__':
 
 
     plt.show()
+
+    for stat in stats:
+        plt.plot(stat['test_loss'],label=stat['type'])
+
+    plt.legend(bbox_to_anchor=(1.05,1),loc=2,borderaxespad=0.)
+
+
+    plt.show()
     IPython.embed()
 
 

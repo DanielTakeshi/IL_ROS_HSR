@@ -5,9 +5,10 @@ import IPython
 import rospy
 from il_ros_hsr.core.common import Common
 import cv2
+import tensorflow as tf
 
-from geometry_msgs.msg import Twist
-
+from il_ros_hsr.p_pi.safe_corl.vgg.vgg16 import vgg16
+from scipy.misc import imread, imresize
 
 ###############CHANGGE FOR DIFFERENT PRIMITIVES#########################
 from il_ros_hsr.p_pi.safe_corl.options import Corl_Options as Options 
@@ -21,72 +22,18 @@ def overrides(super_class):
         return method
     return overrider
 
-class Safe_COM(Common):
+class Features():
 
-    @overrides(Common)
+    def __init__(self):
+        self.hog = cv2.HOGDescriptor()
+        imgs = tf.placeholder(tf.float32, [None, 224, 224, 3])
+        self.sess = tf.Session()
+        self.vgg = vgg16(imgs, 'src/il_ros_hsr/p_pi/safe_corl/vgg/vgg16_weights.npz', self.sess)
 
-    def __init__(self,load_net = False):
-
-        self.Options = Options()
-        if(load_net):
-            self.var_path=self.Options.policies_dir+'ycb_05-22-2017_17h49m03s.ckpt'
-
-            self.net = Net(self.Options,channels=1)
-            self.sess = self.net.load(var_path=self.var_path)
-
-        self.depth_thresh = 1000
         
+
+
  
-    @overrides(Common)
-    def go_to_initial_state(self,whole_body,gripper):
-        whole_body.move_to_neutral()
-
-        whole_body.move_to_joint_positions({'arm_roll_joint':0.0})
-        whole_body.move_to_joint_positions({'wrist_flex_joint':0.0})
-        whole_body.move_to_joint_positions({'head_tilt_joint':-0.4})
-        whole_body.move_to_joint_positions({'arm_flex_joint':-1.5708})
-        whole_body.move_to_joint_positions({'arm_lift_joint':0.23})
-        gripper.grasp(-0.1)
-
-
-    def format_data(self,color_img,depth_img):
-
-        c_img = color_img[self.Options.OFFSET_X:self.Options.OFFSET_X+self.Options.WIDTH,self.Options.OFFSET_Y:self.Options.OFFSET_Y+self.Options.HEIGHT,:]
-        d_img = depth_img[self.Options.OFFSET_X:self.Options.OFFSET_X+self.Options.WIDTH,self.Options.OFFSET_Y:self.Options.OFFSET_Y+self.Options.HEIGHT]
-
-
-        return [c_img, d_img]
-
-
-    def format_twist(self,pos):
-
-        twist = Twist()
-        gain = -0.2
-        if(np.abs(pos[1]) < 1e-3):
-            pos[1] = 0.0
-
-        twist.linear.x = gain*pos[1] #+ self.noise*normal()
-        twist.linear.y = gain*pos[0] #+ self.noise*normal()
-        twist.angular.z = gain*pos[2] #+ self.noise*normal(
-
-        return twist
-
-    def eval_policy(self,state,cropped = False):
-        
-        if(not cropped):
-            state = state[self.Options.OFFSET_X:self.Options.OFFSET_X+self.Options.WIDTH,self.Options.OFFSET_Y:self.Options.OFFSET_Y+self.Options.HEIGHT]
-
-        outval = self.net.output(self.sess, self.process_depth(state),channels=1)
-        
-        #print "PREDICTED POSE ", pos[2]
-
-        return outval
-
-    def clean_up(self):
-        self.sess.close()
-        self.net.clean_up()
-
-
     def im2tensor(self,im,channels=3):
         
         shape = np.shape(im)
@@ -108,7 +55,7 @@ class Safe_COM(Common):
     def process_depth(self,d_img):
         
         d_img.flags.writeable = True
-        d_img[np.where(d_img > 500)] = 0 
+        d_img[np.where(d_img > 1000)] = 0 
         
 
         ext_d_img = np.zeros([d_img.shape[0],d_img.shape[1],1])
@@ -121,8 +68,7 @@ class Safe_COM(Common):
     def depth_state(self,state):
         d_img = state['depth_img']
 
-
-        d_img[np.where(d_img > self.depth_thresh)] = 0 
+        d_img[np.where(d_img > 1000)] = 0 
         
 
         ext_d_img = np.zeros([d_img.shape[0],d_img.shape[1],1])
@@ -130,20 +76,20 @@ class Safe_COM(Common):
         ext_d_img[:,:,0] = d_img
 
 
-        return ext_d_img/float(self.depth_thresh)
+        return ext_d_img/1000.0
 
     def depth_state_cv(self,state):
         d_img = np.copy(state['depth_img'])
 
-        d_img[np.where(d_img > self.depth_thresh)] = 0 
+        d_img[np.where(d_img > 1000)] = 0 
         
 
         ext_d_img = np.zeros([d_img.shape[0],d_img.shape[1],1])
 
         ext_d_img[:,:,0] = d_img
 
-        
-        return ext_d_img*(255.0/float(self.depth_thresh))
+
+        return ext_d_img*(255.0/1000.0)
 
     def binary_cropped_state(self,state):
 
@@ -151,7 +97,7 @@ class Safe_COM(Common):
         c_img = state['color_img']
      
 
-        c_img[np.where(d_img > self.depth_thresh)] = 0
+        c_img[np.where(d_img > 1000)] = 0
 
         return self.im2tensor_binary(c_img)*255.0 
 
@@ -200,5 +146,19 @@ class Safe_COM(Common):
         return data
 
 
+    def hog_color(self,state):
+
+        c_img = state['color_img']
+        hog_ext = self.hog.compute(c_img)
+        return hog_ext[:,0]
 
 
+
+    def vgg_extract(self,state):
+
+        c_img = state['color_img']
+        c_img = imresize(c_img, (224, 224))
+
+        vgg_feat = self.sess.run(self.vgg.pool5_flat,feed_dict={self.vgg.imgs: [c_img]})[0]
+
+        return vgg_feat

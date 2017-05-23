@@ -114,8 +114,8 @@ class TensorNet():
                         #print "TRAIN: X ERR "+ str(x_loss)+" Y ERR "+str(y_loss)
                         print "[ Iteration " + str(i) + " ] Training loss: " + str(batch_loss)
                         self.train_loss.append(batch_loss)
-                        # if(math.isnan(batch_loss)):
-                        #     raise Exception('Loss Exploded')
+                        if(math.isnan(batch_loss)):
+                            break
                     if i % test_print == 0:
                         test_batch = data.next_test_batch()
                         test_ims, test_labels = test_batch
@@ -173,7 +173,7 @@ class TensorNet():
             accepts batch of 3d images, converts to tensor
             and returns four element list of controls
         """
-        im = inputdata.im2tensor(im,channels)
+        # im = inputdata.im2tensor(im,channels)
         shape = np.shape(im)
         im = np.reshape(im, (-1, shape[0], shape[1], shape[2]))
         with sess.as_default():

@@ -36,6 +36,7 @@ from skvideo.io import vwrite
 #######NETWORK FILES TO BE CHANGED#####################
 #specific: imports options from specific options file
 from il_ros_hsr.p_pi.safe_corl.options import Corl_Options as options 
+from il_ros_hsr.p_pi.safe_corl.com import Safe_COM as COM
 
 #specific: fetches specific net file
 #from deep_lfd.tensor.nets.net_grasp import Net_Grasp as Net 
@@ -81,29 +82,48 @@ if __name__ == '__main__':
 
     train_data = []
     test_data = []
+    com = COM()
 
     for filename in f:
+       
         rollout_data = pickle.load(open(Options.rollouts_dir+filename+'/rollout.p','r'))
 
         state = rollout_data[0]
         
         img = state['color_img']
 
+        com.depth_state(state)
+
         height,width,layers = img.shape
-        cv2.imshow('debug',img)
-        cv2.waitKey(30)
+      
         a = cv2.cv.CV_FOURCC('M','J','P','G')
         
         #video = vwrite(Options.movies_dir+filename+'.mp4',(width,height))
         
-        videos = []
+        videos_depth = []
+        videos_color = []
+        videos_binary = []
+        print "BEGINING ROLLOUT"
+        count = 0
         for state in rollout_data:
 
             img = state['color_img']
             img = img[:, :, (2, 1, 0)]
-            videos.append(img)
+            print 'COUNT ',count
+            print state['action']
+            print state['image_time'] - state['action_time']
+            cv2.imwrite('frame_'+str(count)+'.png',img)
 
-        vwrite(Options.movies_dir+filename+'.mp4',videos)
+
+            #cv2.waitKey(50)
             
+            videos_color.append(img)
+            videos_depth.append(com.depth_state_cv(state))
+            videos_binary.append(com.binary_cropped_state(state))
+            count += 1
+    
+        vwrite(Options.movies_dir+filename+'_color.mp4',videos_color)
+        vwrite(Options.movies_dir+filename+'_depth.mp4',videos_depth)
+        vwrite(Options.movies_dir+filename+'_binary.mp4',videos_binary)
        
     

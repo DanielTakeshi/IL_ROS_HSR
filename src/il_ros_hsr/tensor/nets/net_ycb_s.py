@@ -18,7 +18,7 @@ from il_ros_hsr.tensor.tensornet import TensorNet
 import time
 import datetime
 
-class Net_YCB(TensorNet):
+class Net_YCB_S(TensorNet):
 
     def __init__(self, options,channels=3):
         self.dir = "./net6/"
@@ -27,7 +27,7 @@ class Net_YCB(TensorNet):
         self.Options = options
         self.sess = tf.Session()
         
-        self.x = tf.placeholder('float', shape=[None,205,250,self.channels])
+        self.x = tf.placeholder('float', shape=[None,103,125,self.channels])
         self.y_ = tf.placeholder("float", shape=[None, 3])
 
 

@@ -11,7 +11,7 @@ import tty, termios
 import numpy as np
 import IPython
 import cPickle as pickle
-
+import numpy.linalg as LA
 
 def list2str(deltas):
     label = " "
@@ -165,6 +165,36 @@ class Common:
             
         return 'rollout' + str(i)
 
+
+    def fix_buffer(self,data):
+        frame_offset = 5
+
+        num_state = len(data)
+        cleaned_state = []
+        for i in range(num_state-frame_offset):
+
+            state_f = data[i+frame_offset]
+            state_p = data[i]
+
+            state_p['color_img'] = state_f['color_img']
+            state_p['depth_img'] = state_f['depth_img']
+
+            cur_action = state_p['action']
+
+
+            if(LA.norm(cur_action) > 1e-3):
+                print "GOT ACCEPTED"
+                cleaned_state.append(state_p)
+
+        return cleaned_state
+
+
+
+
+
+
+
+
     #Common
     def save_recording(self,recording,rollouts=False):
         """  
@@ -181,7 +211,7 @@ class Common:
             If True will save to a rollout directory instead of Supervisor (Default False)
         """
       
-       
+        recording = self.fix_buffer(recording)
         name = self.next_rollout()
         path = self.Options.rollouts_dir + name + '/'
        

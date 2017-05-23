@@ -19,8 +19,7 @@ class JoyStick():
 
         self.noise = 0.2
 
-        self.pubTwist = rospy.Publisher('/hsrb/command_velocity',
-                          Twist, queue_size=2)
+        self.xbob = XboxController()
 
         self.controller = rospy.Subscriber("/hsrb/joy",Joy , self.c_callback)
 
@@ -36,8 +35,8 @@ class JoyStick():
 
 
         if(LA.norm(joyData.axes[0:3]) > 1e-4 ):
-            twist.linear.x = joyData.axes[1] + self.noise*normal()
-            twist.linear.y = joyData.axes[0] + self.noise*normal()
+            twist.linear.x = joyData.axes[1] #+ self.noise*normal()
+            twist.linear.y = joyData.axes[0] #+ self.noise*normal()
             twist.angular.z = joyData.axes[2] + self.noise*normal()
        
 

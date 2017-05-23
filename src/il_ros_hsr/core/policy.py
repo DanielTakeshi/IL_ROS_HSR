@@ -60,6 +60,8 @@ class  Policy():
 
         self.cam = RGBD()
 
+        self.trajectory = []
+
 
     def rollout(self):
         '''
@@ -69,19 +71,13 @@ class  Policy():
 
         '''
         
-        c_img = self.cam.read_color_data()
-
+        c_img = self.cam.read_depth_data()
+        time.sleep(0.6)
         pos = self.com.eval_policy(c_img)
-        print "POSE ",pos
-        pos = pos*80
-        twist = Twist()
+        print pos
+        twist = self.com.format_twist(pos)
 
-        twist.linear.x = pos[1]
-        twist.linear.y = pos[2]
-        twist.angular.z = pos[0]
-         
         self.pubTwist.publish(twist)
-
 
 
 if __name__ == "__main__":

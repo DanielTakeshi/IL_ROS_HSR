@@ -44,7 +44,7 @@ class Collect_Demos():
 
 		self.com = COM()
 
-		#self.com.go_to_initial_state(self.whole_body,self.gripper)
+		self.com.go_to_initial_state(self.whole_body,self.gripper)
 
 		#self.whole_body.move_to_joint_positions({'head_tilt_joint':-0.3})
 

@@ -1,4 +1,4 @@
-''''
+ ''''
     Used to train a nerual network that maps an image to robot pose (x,y,z)
     Supports the Option of Synthetically Growing the data for Rotation and Translation 
 
@@ -44,6 +44,7 @@ from il_ros_hsr.tensor.nets.net_ycb import Net_YCB as Net
 from il_ros_hsr.tensor.nets.net_ycb_t import Net_YCB_T as Net_T 
 from il_ros_hsr.tensor.nets.net_ycb_s import Net_YCB_S as Net_S 
 from il_ros_hsr.tensor.nets.net_ycb_vgg import Net_YCB_VGG as Net_VGG
+from il_ros_hsr.tensor.nets.net_ycb_vgg_l import Net_YCB_VGG_L as Net_VGG_L
 ########################################################
 
 ITERATIONS = 2500
@@ -112,30 +113,45 @@ if __name__ == '__main__':
     features = Features()
 
 
-    # ###########VGG COLOR#####################################
-    # data = inputdata.IMData(train_data, test_data,state_space = features.vgg_extract,precompute= True) 
-    # net = Net_VGG(Options)
-    # save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
+    ###############NO SYNTHETIC###############################
 
-    # stat = {}
-    # stat['type'] = 'vgg_color'
-    # stat['path'] = save_path
-    # stat['test_loss'] = test_loss
-    # stat['train_loss'] = train_loss
-    # state_stats.append(stat)
+
+    # ###########VGG COLOR#####################################
+    data = inputdata.IMData(train_data, test_data,state_space = features.vgg_extract,precompute= True) 
+    net = Net_VGG(Options)
+    save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
+
+    stat = {}
+    stat['type'] = 'vgg_color'
+    stat['path'] = save_path
+    stat['test_loss'] = test_loss
+    stat['train_loss'] = train_loss
+    state_stats.append(stat)
+
+    # ###########VGG COLOR LINAER #####################################
+    data = inputdata.IMData(train_data, test_data,state_space = features.vgg_extract,precompute= True) 
+    net = Net_VGG_L(Options)
+    save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
+
+    stat = {}
+    stat['type'] = 'vgg_color_l'
+    stat['path'] = save_path
+    stat['test_loss'] = test_loss
+    stat['train_loss'] = train_loss
+    state_stats.append(stat)
 
 
     # ###########PURE COLOR####################
-    # data = inputdata.IMData(train_data, test_data,state_space = com.color_state) 
-    # net = Net(Options)
-    # save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
+    data = inputdata.IMData(train_data, test_data,state_space = com.color_state) 
+    net = Net(Options)
+    save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
 
-    # stat = {}
-    # stat['type'] = 'color'
-    # stat['path'] = save_path
-    # stat['test_loss'] = test_loss
-    # stat['train_loss'] = train_loss
-    # state_stats.append(stat)
+    stat = {}
+    stat['type'] = 'color'
+    stat['path'] = save_path
+    stat['test_loss'] = test_loss
+    stat['train_loss'] = train_loss
+    state_stats.append(stat)
 
 
     # ########BINARY MASK#####################
@@ -152,16 +168,16 @@ if __name__ == '__main__':
 
 
     # #########GRAY MASK#####################
-    # data = inputdata.IMData(train_data, test_data,state_space = com.gray_state) 
-    # net = Net(Options,channels=1)
-    # save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
+    data = inputdata.IMData(train_data, test_data,state_space = com.gray_state) 
+    net = Net(Options,channels=1)
+    save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
 
-    # stat = {}
-    # stat['type'] = 'gray'
-    # stat['path'] = save_path
-    # stat['test_loss'] = test_loss
-    # stat['train_loss'] = train_loss
-    # state_stats.append(stat)
+    stat = {}
+    stat['type'] = 'gray'
+    stat['path'] = save_path
+    stat['test_loss'] = test_loss
+    stat['train_loss'] = train_loss
+    state_stats.append(stat)
 
 
     ########DEPTH IMAGE#####################
@@ -176,19 +192,73 @@ if __name__ == '__main__':
     stat['train_loss'] = train_loss
     state_stats.append(stat)
 
+    ###############SYNTHETIC###############################
+
+    ITERATIONS = 40000
+
+     # ###########VGG COLOR#####################################
+    data = inputdata.IMData(train_data, test_data,synth = True,state_space = features.vgg_extract,precompute= True) 
+    net = Net_VGG(Options)
+    save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
+
+    stat = {}
+    stat['type'] = 'vgg_color_synth'
+    stat['path'] = save_path
+    stat['test_loss'] = test_loss
+    stat['train_loss'] = train_loss
+    state_stats.append(stat)
+
+    # ###########VGG COLOR LINAER #####################################
+    data = inputdata.IMData(train_data, test_data,synth = True,state_space = features.vgg_extract,precompute= True) 
+    net = Net_VGG_L(Options)
+    save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
+
+    stat = {}
+    stat['type'] = 'vgg_color_l_synth'
+    stat['path'] = save_path
+    stat['test_loss'] = test_loss
+    stat['train_loss'] = train_loss
+    state_stats.append(stat)
 
 
-    # ########JOINT TORQUE########################
-    # data = inputdata.IMData(train_data, test_data,state_space = com.joint_force_state) 
-    # net = Net_T(Options)
-    # save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
+    # ###########PURE COLOR####################
+    data = inputdata.IMData(train_data, test_data,synth = True,state_space = com.color_state) 
+    net = Net(Options)
+    save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
 
-    # stat = {}
-    # stat['type'] = 'joint'
-    # stat['path'] = save_path
-    # stat['test_loss'] = test_loss
-    # stat['train_loss'] = train_loss
-    # state_stats.append(stat)
+    stat = {}
+    stat['type'] = 'color_synth'
+    stat['path'] = save_path
+    stat['test_loss'] = test_loss
+    stat['train_loss'] = train_loss
+    state_stats.append(stat)
+
+
+    # ########BINARY MASK#####################
+    data = inputdata.IMData(train_data, test_data,synth = True,state_space = com.color_binary_state) 
+    net = Net(Options)
+    save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
+
+    stat = {}
+    stat['type'] = 'binary_synth'
+    stat['path'] = save_path
+    stat['test_loss'] = test_loss
+    stat['train_loss'] = train_loss
+    state_stats.append(stat)
+
+
+    # #########GRAY MASK#####################
+    data = inputdata.IMData(train_data, test_data,synth = True,state_space = com.gray_state) 
+    net = Net(Options,channels=1)
+    save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
+
+    stat = {}
+    stat['type'] = 'gray_synth'
+    stat['path'] = save_path
+    stat['test_loss'] = test_loss
+    stat['train_loss'] = train_loss
+    state_stats.append(stat)
+
 
 
     pickle.dump(state_stats,open(Options.stats_dir+'state_trials_data.p','wb'))

@@ -12,6 +12,7 @@ from geometry_msgs.msg import Twist
 ###############CHANGGE FOR DIFFERENT PRIMITIVES#########################
 from il_ros_hsr.p_pi.safe_corl.options import Corl_Options as Options 
 from il_ros_hsr.tensor.nets.net_ycb import Net_YCB as Net
+from il_ros_hsr.tensor.nets.net_ycb_vgg import Net_YCB_VGG as Net_VGG
 #########################################################################
 
 #Common decorator that checks for override, else throws AssertionError
@@ -25,13 +26,13 @@ class Safe_COM(Common):
 
     @overrides(Common)
 
-    def __init__(self,load_net = False):
+    def __init__(self,load_net = False,features = None):
 
         self.Options = Options()
         if(load_net):
             self.var_path=self.Options.policies_dir+'ycb_05-22-2017_17h49m03s.ckpt'
 
-            self.net = Net(self.Options,channels=1)
+            self.net = Net_VGG(self.Options,channels=1)
             self.sess = self.net.load(var_path=self.var_path)
 
         self.depth_thresh = 1000
@@ -71,12 +72,13 @@ class Safe_COM(Common):
 
         return twist
 
-    def eval_policy(self,state,cropped = False):
+    def eval_policy(self,state,features,cropped = False):
         
         if(not cropped):
-            state = state[self.Options.OFFSET_X:self.Options.OFFSET_X+self.Options.WIDTH,self.Options.OFFSET_Y:self.Options.OFFSET_Y+self.Options.HEIGHT]
+            state = statte[self.Options.OFFSET_X:self.Options.OFFSET_X+self.Options.WIDTH,self.Options.OFFSET_Y:self.Options.OFFSET_Y+self.Options.HEIGHT,:]
 
-        outval = self.net.output(self.sess, self.process_depth(state),channels=1)
+
+        outval = self.net.output(self.sess,features(state),channels=1)
         
         #print "PREDICTED POSE ", pos[2]
 

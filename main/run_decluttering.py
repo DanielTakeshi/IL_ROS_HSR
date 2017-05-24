@@ -26,6 +26,7 @@ import rospy
 from il_ros_hsr.p_pi.safe_corl.com import Safe_COM as COM
 from il_ros_hsr.p_pi.safe_corl.bottle_detector import Bottle_Detect
 from il_ros_hsr.core.policy import Policy
+from il_ros_hsr.p_pi.safe_corl.features import Features
 import os
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
 os.environ["CUDA_VISIBLE_DEVICES"]="0"
@@ -34,12 +35,16 @@ os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 class FindObject():
 
-	def __init__(self):
+	def __init__(self,features):
 		
 		self.com = COM(load_net = True)
 		self.robot = hsrb_interface.Robot()
 
 		self.noise = 0.1
+		self.features = features
+
+	
+
 
 		
 
@@ -52,10 +57,13 @@ class FindObject():
 
 		
 
-		self.policy = Policy(self.com)
+		self.policy = Policy(self.com,self.features)
 
 	def run(self):
-		self.policy.rollout()
+
+		if(self.cam.is_updated):
+			self.policy.rollout()
+			self.cam.is_updated = False
 		
 
 	def check_initial_state(self):
@@ -91,15 +99,23 @@ class FindObject():
 		print "BOTTLE FOUND ",success
 
 
+	def execute_grasp(self):
+
+		return None
+
+
 
 
 
 if __name__=='__main__':
-	fo = FindObject()
+	features = Features()
+	fo = FindObject(features.vgg_features)
+
 	time.sleep(5)
 	count = 0
 	T = 40
 	fo.check_initial_state()
+
 	
 
 	while count < T: 
@@ -107,6 +123,10 @@ if __name__=='__main__':
 		count += 1
 		print "CURRENT COUNT ",count
 
-	fo.check_success()
+	success = fo.check_success()
+
+	if success:
+		fo.execute_grasp()
+
 
 	

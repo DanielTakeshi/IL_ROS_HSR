@@ -35,7 +35,7 @@ from il_ros_hsr.p_pi.safe_corl.com import Safe_COM as COM
 
 class  Policy():
 
-    def __init__(self,com):
+    def __init__(self,com,features):
         '''
         Initialization class for a Policy
 
@@ -54,13 +54,14 @@ class  Policy():
 
 
         self.pubTwist = rospy.Publisher('/hsrb/command_velocity',
-                          Twist, queue_size=2)
+                          Twist, queue_size=1)
 
         self.com = com
 
         self.cam = RGBD()
 
         self.trajectory = []
+        self.features = features()
 
 
     def rollout(self):
@@ -71,9 +72,9 @@ class  Policy():
 
         '''
         
-        c_img = self.cam.read_depth_data()
-        time.sleep(0.6)
-        pos = self.com.eval_policy(c_img)
+        c_img = self.cam.read_color_data()
+        
+        pos = self.com.eval_policy(c_img,self.features)
         print pos
         twist = self.com.format_twist(pos)
 

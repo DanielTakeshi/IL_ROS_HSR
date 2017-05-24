@@ -153,7 +153,12 @@ class Features():
         hog_ext = self.hog.compute(c_img)
         return hog_ext[:,0]
 
+    def vgg_features(self,state):
+        
+        c_img = imresize(c_img, (224, 224))
+        vgg_feat = self.sess.run(self.vgg.pool5_flat,feed_dict={self.vgg.imgs: [c_img]})[0]
 
+        return vgg_feat
 
     def vgg_extract(self,state):
 

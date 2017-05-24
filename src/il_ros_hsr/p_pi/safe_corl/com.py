@@ -89,21 +89,17 @@ class Safe_COM(Common):
 
     def im2tensor(self,im,channels=3):
         
-        shape = np.shape(im)
-        h, w = shape[0], shape[1]
-        zeros = np.zeros((h, w, channels))
+        
         for i in range(channels):
-            zeros[:,:,i] = im[:,:,i]/255.0
-        return zeros
+            im[:,:,i] = im[:,:,i]/255.0
+        return im
 
     def im2tensor_binary(self,im,channels=3):
-       
-        shape = np.shape(im)
-        h, w = shape[0], shape[1]
-        zeros = np.zeros((h, w, channels))
+        
+        cutoff = 140
         for i in range(channels):
-            zeros[:,:,i] = np.round(im[:,:,i]/255.0)
-        return zeros
+            im[:,:,i] = np.round(im[:,:,i]/(cutoff * 2.0)) 
+        return im
 
     def process_depth(self,d_img):
         
@@ -117,6 +113,14 @@ class Safe_COM(Common):
 
 
         return ext_d_img/1000.0
+
+    def state_bins(im, bits=2):
+        im = cv2.cvtColor(im, cv2.COLOR_RGB2GRAY)
+        im = im/255.0
+        im = np.ceil(im * 2**bits)/2**bits
+        im = im * 255
+
+        return im.astype(np.uint8)
 
     def depth_state(self,state):
         d_img = state['depth_img']
@@ -158,7 +162,7 @@ class Safe_COM(Common):
 
     def color_state(self,state):
 
-        return self.im2tensor(state['color_img'])
+        return state['color_img']/255.0
 
     def color_state_sm(self,state):
 
@@ -172,6 +176,7 @@ class Safe_COM(Common):
 
     def gray_state(self,state):
         img = state['color_img']
+        
         gray_img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
         ext_gray = np.zeros([gray_img.shape[0],gray_img.shape[1],1])
         ext_gray[:,:,0] = gray_img

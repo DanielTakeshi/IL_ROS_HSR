@@ -59,6 +59,7 @@ class TensorNet():
 
 
     def clean_up(self):
+        self.sess.close()
         tf.reset_default_graph()
         return 
 

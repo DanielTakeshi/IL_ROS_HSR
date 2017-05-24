@@ -12,8 +12,9 @@ import IPython
 import tensorflow as tf
 import cv2
 import IPython
+import copy
 import sys
-
+from il_ros_hsr.p_pi.safe_corl.lighting import get_lighting
 
 def process_out(n):
     '''
@@ -61,11 +62,16 @@ def im2tensor(im,channels=1):
 
 class IMData():
     
-    def __init__(self, train_data, test_data,channels=3,state_space = None,precompute = False):
+    def __init__(self, train_data, test_data,channels=3,state_space = None,synth = False,precompute = False):
 
 
         self.train_tups = train_data
         self.test_tups = test_data
+
+        if(synth):
+            self.synth_traj()
+
+
 
         self.i = 0
         self.channels = channels
@@ -80,6 +86,20 @@ class IMData():
         if(precompute):
             self.pre_compute_features()
 
+    def synth_traj(self):
+        aug_train = []
+        for traj in self.train_tups:
+            aug_traj = []
+            for state in traj:
+                aug_states = self.synth_color(state)
+                for aug_s in aug_states:
+                    aug_traj.append(aug_s)
+
+            aug_train.append(aug_traj)
+
+        self.train_tups = aug_train
+
+
     def pre_compute_features(self):
 
         for traj in self.train_tups:
@@ -90,6 +110,21 @@ class IMData():
             for data in traj:
                 data['feature'] = self.state_space(data)
 
+    def synth_color(self,data):
+
+        img = data['color_img']
+
+        img_aug = get_lighting(img)
+        states_aug = [data]
+
+        for img in img_aug:
+            data_a = copy.deepcopy(data)
+         
+            data_a['color_img'] = img
+
+            states_aug.append(data_a)
+
+        return states_aug
 
     def next_train_batch(self, n):
         """

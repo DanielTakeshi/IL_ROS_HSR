@@ -114,8 +114,8 @@ if __name__ == '__main__':
             print state['image_time'] - state['action_time']
             cv2.imwrite('frame_'+str(count)+'.png',img)
 
-
-            #cv2.waitKey(50)
+            # cv2.imshow('debug',state['color_img'])
+            # cv2.waitKey(100)
             
             videos_color.append(img)
             videos_depth.append(com.depth_state_cv(state))

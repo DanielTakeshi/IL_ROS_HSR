@@ -18,7 +18,7 @@ from il_ros_hsr.tensor.tensornet import TensorNet
 import time
 import datetime
 
-class Net_YCB_VGG(TensorNet):
+class Net_YCB_VGG_L(TensorNet):
 
     def __init__(self, options,channels=3):
         self.dir = "./net6/"
@@ -32,20 +32,11 @@ class Net_YCB_VGG(TensorNet):
         self.x = tf.placeholder('float', shape=[None,state_dim])
         self.y_ = tf.placeholder("float", shape=[None, 3])
 
-        #fc1_num_nodes = 60
-        fc1_num_nodes = 25
-        
-        self.w_fc1 = self.weight_variable([state_dim, fc1_num_nodes])
-        # self.w_fc1 = self.weight_variable([1000, fc1_num_nodes])
-        self.b_fc1 = self.bias_variable([fc1_num_nodes])
 
-     
-        self.h_fc1 = tf.nn.relu(tf.matmul(self.x, self.w_fc1) + self.b_fc1)
-
-        self.w_fc2 = self.weight_variable([fc1_num_nodes, 3])
+        self.w_fc2 = self.weight_variable([state_dim, 3])
         self.b_fc2 = self.bias_variable([3])
 
-        self.y_out = tf.tanh(tf.matmul(self.h_fc1, self.w_fc2) + self.b_fc2)
+        self.y_out = tf.tanh(tf.matmul(self.x, self.w_fc2) + self.b_fc2)
 
         self.loss = tf.reduce_mean(.5*tf.square(self.y_out - self.y_))
  

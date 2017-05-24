@@ -31,7 +31,8 @@ class Features():
         self.vgg = vgg16(imgs, 'src/il_ros_hsr/p_pi/safe_corl/vgg/vgg16_weights.npz', self.sess)
 
         
-
+    def clean_up_vgg(self):
+        self.sess.close()
 
  
     def im2tensor(self,im,channels=3):

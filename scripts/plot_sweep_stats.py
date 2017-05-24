@@ -50,7 +50,7 @@ if __name__ == '__main__':
 
 
 
-    stats = pickle.load(open(Options.stats_dir+'state_trials_data.p','r'))
+    stats = pickle.load(open(Options.stats_dir+'state_trials_data_60_clutter.p','r'))
 
     for stat in stats:
         plt.plot(stat['train_loss'],label=stat['type'])

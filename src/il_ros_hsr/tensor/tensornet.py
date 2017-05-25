@@ -80,7 +80,7 @@ class TensorNet():
         return sess
 
 
-    def optimize(self, iterations, data, unbiased=False, path=None, batch_size=100, test_print=20, save=True):
+    def optimize(self, iterations, data, unbiased=False, path=None, batch_size=100, test_print=100, save=True):
         """
             optimize net for [iterations]. path is either absolute or 
             relative to current working directory. data is InputData object (see class for details)
@@ -175,8 +175,11 @@ class TensorNet():
             and returns four element list of controls
         """
         # im = inputdata.im2tensor(im,channels)
-        shape = np.shape(im)
-        im = np.reshape(im, (-1, shape[0], shape[1], shape[2]))
+      
+        shape = im.shape
+    
+
+        im = np.reshape(im, (-1, shape[0]))
         with sess.as_default():
             return sess.run(self.y_out, feed_dict={self.x:im}) [0]
 

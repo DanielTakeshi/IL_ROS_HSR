@@ -37,12 +37,12 @@ class FindObject():
 
 	def __init__(self,features):
 		
-		self.com = COM(load_net = True)
+		self.com = COM(load_net = False)
 		self.robot = hsrb_interface.Robot()
 
 		self.noise = 0.1
 		self.features = features
-
+		self.count = 0
 	
 
 
@@ -51,6 +51,7 @@ class FindObject():
 		self.omni_base = self.robot.get('omni_base')
 		self.whole_body = self.robot.get('whole_body')
 		self.gripper = self.robot.get('gripper')
+
 		#self.com.go_to_initial_state(self.whole_body,self.gripper)
 
 		self.joystick = JoyStick_X(self.com)
@@ -61,9 +62,15 @@ class FindObject():
 
 	def run(self):
 
-		if(self.cam.is_updated):
+		if(self.policy.cam.is_updated):
+			self.com.load_net()
 			self.policy.rollout()
-			self.cam.is_updated = False
+			self.com.clean_up()
+
+			
+
+			self.policy.cam.is_updated = False
+			self.count += 1
 		
 
 	def check_initial_state(self):
@@ -84,6 +91,8 @@ class FindObject():
 				go = True
 
 
+	def go_to_initial_state(self):
+		self.com.go_to_initial_state(self.whole_body,self.gripper)
 
 
 	def check_success(self):
@@ -94,39 +103,85 @@ class FindObject():
 
 		img_rgb = self.policy.cam.read_color_data()
 
-		success = self.b_d.detect_bottle(img_rgb)
+		success = self.b_d.detect_bottle(img_rgb)\
+
+		self.b_d.clean_up()
 
 		print "BOTTLE FOUND ",success
+
+		return success
 
 
 	def execute_grasp(self):
 
-		return None
+		self.gripper.grasp(0.01)
+		self.whole_body.end_effector_frame = 'hand_palm_link'
+		nothing = True
+		while nothing: 
+			try:
+				self.whole_body.move_end_effector_pose(geometry.pose(y=0.15,z=-0.11, ek=-1.57),'ar_marker/9')
+				nothing = False
+			except:
+				rospy.logerr('mustard bottle found')
+
+		try:
+			self.gripper.grasp(-0.5)
+		except:
+			rospy.logerr('grasp error')
+
+		self.whole_body.move_end_effector_pose(geometry.pose(z=-0.9),'hand_palm_link')
+
+		self.gripper.grasp(0.01)
+		self.gripper.grasp(-0.01)
 
 
 
 
 
 if __name__=='__main__':
+	
+	
+	
+
 	features = Features()
 	fo = FindObject(features.vgg_features)
+	
 
+	
 	time.sleep(5)
 	count = 0
-	T = 40
-	fo.check_initial_state()
+	T = 20
+	grasp_on = True
+	
 
 	
 
-	while count < T: 
-		fo.run()
-		count += 1
-		print "CURRENT COUNT ",count
+	while True:
+		success = False
+		e_stop = False
+		fo.count = 0
+		fo.check_initial_state()
 
-	success = fo.check_success()
+		
 
-	if success:
-		fo.execute_grasp()
+		while fo.count < T and not success and not e_stop: 
+			fo.run()
+			success = fo.check_success()
+
+			
+			cur_recording = fo.joystick.get_record_actions_passive()
+			if(cur_recording[0] < -0.1):
+				print "E-STOPPED"
+				e_stop = True
+
+			
+			print "CURRENT COUNT ",count
+			if success and grasp_on:
+				fo.execute_grasp()
+				fo.go_to_initial_state()
+
+
+	
 
 
 	

@@ -61,7 +61,7 @@ class  Policy():
         self.cam = RGBD()
 
         self.trajectory = []
-        self.features = features()
+        self.features = features
 
 
     def rollout(self):

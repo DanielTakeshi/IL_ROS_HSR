@@ -155,7 +155,7 @@ class Features():
 
     def vgg_features(self,state):
         
-        c_img = imresize(c_img, (224, 224))
+        c_img = imresize(state, (224, 224))
         vgg_feat = self.sess.run(self.vgg.pool5_flat,feed_dict={self.vgg.imgs: [c_img]})[0]
 
         return vgg_feat

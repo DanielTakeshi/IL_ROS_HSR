@@ -98,14 +98,7 @@ def get_lighting(img_src):
     for i, LUT in enumerate(LUTs):
         trans_img.append( cv2.LUT(img_src, LUT))
 
-    # 平滑化
-    trans_img.append(cv2.blur(img_src, average_square))
-
-    # ヒストグラム均一化
-    trans_img.append(equalizeHistRGB(img_src))
-    # ノイズ付加
-    #trans_img.append(addGaussianNoise(img_src))
-    trans_img.append(addSaltPepperNoise(img_src))
+   
 
     return trans_img
 

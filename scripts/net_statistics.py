@@ -32,7 +32,7 @@ import cv2
 from skvideo.io import vwrite
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
 os.environ["CUDA_VISIBLE_DEVICES"]="0"
-
+from il_ros_hsr.p_pi.safe_corl.features import Features
 
 #######NETWORK FILES TO BE CHANGED#####################
 #specific: imports options from specific options file
@@ -46,7 +46,8 @@ from il_ros_hsr.p_pi.safe_corl.com import Safe_COM as COM
 
 
 Options = options()
-com = COM()
+com = COM(load_net = True)
+features = Features()
 
 
 def caculate_error(data):
@@ -55,10 +56,10 @@ def caculate_error(data):
     count = 0
     for state in data:
 
-        img = state['depth_img']
+        img = state['color_img']
         action = state['action']
 
-        action_ = com.eval_policy(img, cropped= True)
+        action_ = com.eval_policy(img,features.vgg_features, cropped= True)
 
         dif = np.abs(action-action_)
         errors[count,:] = dif
@@ -84,7 +85,7 @@ def calculate_traj_error(data):
 
 if __name__ == '__main__':
 
-    train_labels,test_labels = pickle.load(open(Options.stats_dir+'/test_train.p','r'))
+    train_labels,test_labels = pickle.load(open(Options.stats_dir+'/test_train_vgg_c_sqrt.p','r'))
     traj_errors = []
     for filename in train_labels:
         rollout_data =  pickle.load(open(Options.rollouts_dir+filename+'/rollout.p','r'))

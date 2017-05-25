@@ -54,6 +54,8 @@ if __name__ == '__main__':
 
     for stat in stats:
         plt.plot(stat['train_loss'],label=stat['type'])
+        print stat['type']
+        print stat['path']
 
     plt.legend(bbox_to_anchor=(1.05,1),loc=2,borderaxespad=0.)
 

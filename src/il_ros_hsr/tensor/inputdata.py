@@ -163,7 +163,7 @@ class IMData():
         :return: tuple with images in [0], labels in [1]
         """
         batch = []
-        for traj in self.test_tups[:3]:
+        for traj in self.test_tups:
             random.shuffle(traj)
             for data in traj:
                 action = data['action']
@@ -173,9 +173,9 @@ class IMData():
                 else:
                     state = self.state_space(data)
 
-                if(len(batch) < 100):
-                    batch.append((state,action))
+                
+                batch.append((state,action))
 
-        random.shuffle(self.test_tups)
+        
         batch = zip(*batch)
         return list(batch[0]), list(batch[1])

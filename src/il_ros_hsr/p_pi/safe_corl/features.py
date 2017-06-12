@@ -2,16 +2,18 @@ import sys, os, time, cv2, argparse
 import tty, termios
 import numpy as np
 import IPython
-import rospy
+# import rospy
 from il_ros_hsr.core.common import Common
 import cv2
 import tensorflow as tf
 
 from il_ros_hsr.p_pi.safe_corl.vgg.vgg16 import vgg16
+from il_ros_hsr.p_pi.safe_corl.vgg.vgg_kinematics import vggKin
+
 from scipy.misc import imread, imresize
 
 ###############CHANGGE FOR DIFFERENT PRIMITIVES#########################
-from il_ros_hsr.p_pi.safe_corl.options import Corl_Options as Options 
+from il_ros_hsr.p_pi.safe_corl.options import Corl_Options as Options
 from il_ros_hsr.tensor.nets.net_ycb import Net_YCB as Net
 #########################################################################
 
@@ -27,16 +29,18 @@ class Features():
     def __init__(self):
         self.hog = cv2.HOGDescriptor()
         imgs = tf.placeholder(tf.float32, [None, 224, 224, 3])
-        self.sess = tf.Session()
-        self.vgg = vgg16(imgs, 'src/il_ros_hsr/p_pi/safe_corl/vgg/vgg16_weights.npz', self.sess)
+        self.sess16 = tf.Session()
+        self.sessKin = tf.Session()
+        self.vgg = vgg16(imgs, 'src/il_ros_hsr/p_pi/safe_corl/vgg/vgg16_weights.npz', self.sess16)
+        self.vgg_kin = vggKin(imgs, 'src/il_ros_hsr/p_pi/safe_corl/vgg/weights.p', self.sessKin)
 
-        
     def clean_up_vgg(self):
-        self.sess.close()
+        self.sess16.close()
+        self.sessKin.close()
 
- 
+
     def im2tensor(self,im,channels=3):
-        
+
         shape = np.shape(im)
         h, w = shape[0], shape[1]
         zeros = np.zeros((h, w, channels))
@@ -45,7 +49,7 @@ class Features():
         return zeros
 
     def im2tensor_binary(self,im,channels=3):
-       
+
         shape = np.shape(im)
         h, w = shape[0], shape[1]
         zeros = np.zeros((h, w, channels))
@@ -54,10 +58,10 @@ class Features():
         return zeros
 
     def process_depth(self,d_img):
-        
+
         d_img.flags.writeable = True
-        d_img[np.where(d_img > 1000)] = 0 
-        
+        d_img[np.where(d_img > 1000)] = 0
+
 
         ext_d_img = np.zeros([d_img.shape[0],d_img.shape[1],1])
 
@@ -69,8 +73,8 @@ class Features():
     def depth_state(self,state):
         d_img = state['depth_img']
 
-        d_img[np.where(d_img > 1000)] = 0 
-        
+        d_img[np.where(d_img > 1000)] = 0
+
 
         ext_d_img = np.zeros([d_img.shape[0],d_img.shape[1],1])
 
@@ -82,8 +86,8 @@ class Features():
     def depth_state_cv(self,state):
         d_img = np.copy(state['depth_img'])
 
-        d_img[np.where(d_img > 1000)] = 0 
-        
+        d_img[np.where(d_img > 1000)] = 0
+
 
         ext_d_img = np.zeros([d_img.shape[0],d_img.shape[1],1])
 
@@ -96,11 +100,11 @@ class Features():
 
         d_img = state['depth_img']
         c_img = state['color_img']
-     
+
 
         c_img[np.where(d_img > 1000)] = 0
 
-        return self.im2tensor_binary(c_img)*255.0 
+        return self.im2tensor_binary(c_img)*255.0
 
 
     def color_state(self,state):
@@ -126,7 +130,7 @@ class Features():
 
 
     def joint_force_state(self,state):
-        
+
         joints = state['joint_positions']
         j_pose = joints.position
         num_joints = len(j_pose)
@@ -154,9 +158,9 @@ class Features():
         return hog_ext[:,0]
 
     def vgg_features(self,state):
-        
+
         c_img = imresize(state, (224, 224))
-        vgg_feat = self.sess.run(self.vgg.pool5_flat,feed_dict={self.vgg.imgs: [c_img]})[0]
+        vgg_feat = self.sess16.run(self.vgg.pool5_flat,feed_dict={self.vgg.imgs: [c_img]})[0]
 
         return vgg_feat
 
@@ -165,6 +169,14 @@ class Features():
         c_img = state['color_img']
         c_img = imresize(c_img, (224, 224))
 
-        vgg_feat = self.sess.run(self.vgg.pool5_flat,feed_dict={self.vgg.imgs: [c_img]})[0]
+        vgg_feat = self.sess16.run(self.vgg.pool5_flat,feed_dict={self.vgg.imgs: [c_img]})[0]
+
+        return vgg_feat
+
+    def vgg_kinematic_extract(self, state):
+        c_img = state['color_img']
+        c_img = imresize(c_img, (224, 224))
+
+        vgg_feat = self.sessKin.run(self.vgg_kin.conv4_4_flat,feed_dict={self.vgg.imgs: [c_img]})[0]
 
         return vgg_feat

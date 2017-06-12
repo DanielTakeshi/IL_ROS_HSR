@@ -17,7 +17,7 @@ import re
 import cv2
 
 
-class vgg16:
+class vggKin:
     def __init__(self, imgs, weights=None, sess=None):
         self.imgs = imgs
         self.convlayers()
@@ -226,7 +226,7 @@ class vgg16:
     def load_weights(self, weight_file, sess):
         #to freeze, consider setting trainable=false on definition
 
-        weights = pickle.load( open("weights.p", "rb") )
+        weights = pickle.load( open(weight_file, "rb") )
         def get_key_info(key):
             number = int(re.findall("\.(.*?)\.", key)[0])
             if key[-1] == "t":
@@ -255,7 +255,8 @@ if __name__ == '__main__':
     img1 = imread('testimg.jpg', mode='RGB')
     img1 = imresize(img1, (224, 224))
 
-    prob = sess.run(vgg.conv4_4, feed_dict={vgg.imgs: [img1]})[0]
+    prob = sess.run(vgg.conv4_4_flat, feed_dict={vgg.imgs: [img1]})[0]
     # IPython.embed()
-    for i, img in enumerate(prob):
-        cv2.imwrite("test" + str(i) + ".jpg", img)
+    #use with non-flat version:
+    # for i, img in enumerate(prob):
+    #     cv2.imwrite("test" + str(i) + ".jpg", img)

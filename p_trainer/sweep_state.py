@@ -1,8 +1,8 @@
 ''''
     Used to train a nerual network that maps an image to robot pose (x,y,z)
-    Supports the Option of Synthetically Growing the data for Rotation and Translation 
+    Supports the Option of Synthetically Growing the data for Rotation and Translation
 
-    Author: Michael Laskey 
+    Author: Michael Laskey
 
 
     FlagsO
@@ -16,7 +16,7 @@
     --net_name (-n) : string
         The name of the network if their exists multiple nets for the task (not required)
 
-    --demonstrator (-d) : string 
+    --demonstrator (-d) : string
         The name of the person who trained the network (not required)
 
 '''
@@ -26,7 +26,7 @@ import sys, os
 
 import IPython
 from il_ros_hsr.tensor import inputdata
-from compile_sup import Compile_Sup 
+from compile_sup import Compile_Sup
 import numpy as np, argparse
 import cPickle as pickle
 from numpy.random import random
@@ -35,14 +35,14 @@ os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 #######NETWORK FILES TO BE CHANGED#####################
 #specific: imports options from specific options file
-from il_ros_hsr.p_pi.safe_corl.options import Corl_Options as options 
+from il_ros_hsr.p_pi.safe_corl.options import Corl_Options as options
 from il_ros_hsr.p_pi.safe_corl.com import Safe_COM as COM
 from il_ros_hsr.p_pi.safe_corl.features import Features
 
 #specific: fetches specific net file
-from il_ros_hsr.tensor.nets.net_ycb import Net_YCB as Net 
-from il_ros_hsr.tensor.nets.net_ycb_t import Net_YCB_T as Net_T 
-from il_ros_hsr.tensor.nets.net_ycb_s import Net_YCB_S as Net_S 
+from il_ros_hsr.tensor.nets.net_ycb import Net_YCB as Net
+from il_ros_hsr.tensor.nets.net_ycb_t import Net_YCB_T as Net_T
+from il_ros_hsr.tensor.nets.net_ycb_s import Net_YCB_S as Net_S
 from il_ros_hsr.tensor.nets.net_ycb_vgg import Net_YCB_VGG as Net_VGG
 from il_ros_hsr.tensor.nets.net_ycb_vgg_l import Net_YCB_VGG_L as Net_VGG_L
 ########################################################
@@ -80,7 +80,7 @@ if __name__ == '__main__':
 
 
 
-   
+
     f = []
     for (dirpath, dirnames, filenames) in os.walk(Options.rollouts_dir): #specific: sup_dir from specific options
         print dirpath
@@ -99,10 +99,10 @@ if __name__ == '__main__':
         if(random() > 0.2):
             train_data.append(rollout_data)
             train_labels.append(filename)
-        else: 
+        else:
             test_data.append(rollout_data)
             test_labels.append(filename)
-        
+
 
     #############DEBUG##########################
     # train_data.append(pickle.load(open(Options.rollouts_dir+f[0]+'/rollout.p','r')))
@@ -118,7 +118,7 @@ if __name__ == '__main__':
 
 
     # # # ###########VGG COLOR#####################################
-    data = inputdata.IMData(train_data, test_data,state_space = features.vgg_extract,precompute= True) 
+    data = inputdata.IMData(train_data, test_data,state_space = features.vgg_extract,precompute= True)
     net = Net_VGG(Options)
     save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
 
@@ -137,7 +137,7 @@ if __name__ == '__main__':
 
 
     # # ###########VGG COLOR LINAER #####################################
-    #data = inputdata.IMData(train_data, test_data,state_space = features.vgg_extract,precompute= True) 
+    #data = inputdata.IMData(train_data, test_data,state_space = features.vgg_extract,precompute= True)
     net = Net_VGG_L(Options)
     save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
 
@@ -154,7 +154,7 @@ if __name__ == '__main__':
     pickle.dump(state_stats,open(Options.stats_dir+'state_trials_data_60_clutter.p','wb'))
 
     # # ###########PURE COLOR####################
-    data = inputdata.IMData(train_data, test_data,precompute= True,state_space = com.color_state) 
+    data = inputdata.IMData(train_data, test_data,precompute= True,state_space = com.color_state)
     net = Net(Options)
     save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
 
@@ -172,7 +172,7 @@ if __name__ == '__main__':
 
 
     # # ########BINARY MASK#####################
-    data = inputdata.IMData(train_data, test_data,precompute= True,state_space = com.color_binary_state) 
+    data = inputdata.IMData(train_data, test_data,precompute= True,state_space = com.color_binary_state)
     net = Net(Options)
     save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
 
@@ -189,7 +189,7 @@ if __name__ == '__main__':
     pickle.dump(state_stats,open(Options.stats_dir+'state_trials_data_60_clutter.p','wb'))
 
     # # #########GRAY MASK#####################
-    data = inputdata.IMData(train_data, test_data,precompute= True,state_space = com.gray_state) 
+    data = inputdata.IMData(train_data, test_data,precompute= True,state_space = com.gray_state)
     net = Net(Options,channels=1)
     save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
 
@@ -206,7 +206,7 @@ if __name__ == '__main__':
     pickle.dump(state_stats,open(Options.stats_dir+'state_trials_data_60_clutter.p','wb'))
 
     # ########DEPTH IMAGE#####################
-    # data = inputdata.IMData(train_data, test_data,precompute= True,state_space = com.depth_state) 
+    # data = inputdata.IMData(train_data, test_data,precompute= True,state_space = com.depth_state)
     # net = Net(Options, channels=1)
     # save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
 
@@ -227,7 +227,7 @@ if __name__ == '__main__':
     # ITERATIONS = 2200
 
     #  # ###########VGG COLOR#####################################
-    # data = inputdata.IMData(train_data, test_data,synth = True,state_space = features.vgg_extract,precompute= True) 
+    # data = inputdata.IMData(train_data, test_data,synth = True,state_space = features.vgg_extract,precompute= True)
     # net = Net_VGG(Options)
     # save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
 
@@ -243,9 +243,9 @@ if __name__ == '__main__':
     # net.clean_up()
     # pickle.dump(state_stats,open(Options.stats_dir+'state_trials_data_60_clutter.p','wb'))
 
-    
+
     # # ###########VGG COLOR LINAER #####################################
-    # #data = inputdata.IMData(train_data, test_data,synth = True,state_space = features.vgg_extract,precompute= True) 
+    # #data = inputdata.IMData(train_data, test_data,synth = True,state_space = features.vgg_extract,precompute= True)
     # net = Net_VGG_L(Options)
     # save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
 
@@ -257,13 +257,13 @@ if __name__ == '__main__':
     # stat['train_loss'] = train_loss
     # state_stats.append(stat)
 
-   
+
     # net.clean_up()
     # del data
     # pickle.dump(state_stats,open(Options.stats_dir+'state_trials_data_60_clutter.p','wb'))
 
     # # ###########PURE COLOR####################
-    # data = inputdata.IMData(train_data, test_data,synth = True,state_space = com.color_state,precompute= True) 
+    # data = inputdata.IMData(train_data, test_data,synth = True,state_space = com.color_state,precompute= True)
     # net = Net(Options)
     # save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
 
@@ -280,8 +280,8 @@ if __name__ == '__main__':
     # pickle.dump(state_stats,open(Options.stats_dir+'state_trials_data_60_clutter_synth.p','wb'))
 
     # # # ########BINARY MASK#####################
-    # data = inputdata.IMData(train_data, test_data,synth = True,state_space = com.color_binary_state,precompute= True) 
-   
+    # data = inputdata.IMData(train_data, test_data,synth = True,state_space = com.color_binary_state,precompute= True)
+
     # net = Net(Options)
     # save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
     # stat = {}
@@ -298,7 +298,7 @@ if __name__ == '__main__':
 
     # # #########GRAY MASK#####################
     # data = inputdata.IMData(train_data, test_data,synth = True,state_space = com.gray_state,precompute= True)
-   
+
     # net = Net(Options,channels=1)
     # save_path, train_loss,test_loss = net.optimize(ITERATIONS,data,com.gray_state, batch_size=BATCH_SIZE)
 

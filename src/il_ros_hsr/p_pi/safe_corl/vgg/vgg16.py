@@ -14,7 +14,7 @@ os.environ["CUDA_VISIBLE_DEVICES"]="0"
 import tensorflow as tf
 import numpy as np
 from scipy.misc import imread, imresize
-from imagenet_classes import class_names
+# from imagenet_classes import class_names
 import IPython
 
 
@@ -253,7 +253,7 @@ class vgg16:
         weights = np.load(weight_file)
         keys = sorted(weights.keys())
         for i, k in enumerate(keys):
-            print i, k, np.shape(weights[k])
+            # print i, k, np.shape(weights[k])
             sess.run(self.parameters[i].assign(weights[k]))
 
 if __name__ == '__main__':

@@ -8,6 +8,7 @@ src/il_ros_hsr/core/__init__.py
 src/il_ros_hsr/core/common.py
 src/il_ros_hsr/core/joystick.py
 src/il_ros_hsr/core/options.py
+src/il_ros_hsr/core/policy.py
 src/il_ros_hsr/core/sensors.py
 src/il_ros_hsr/p_pi/__init__.py
 src/il_ros_hsr/tensor/__init__.py

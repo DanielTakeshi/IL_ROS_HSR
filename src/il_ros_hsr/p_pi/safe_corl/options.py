@@ -3,11 +3,11 @@ import os
 
 import cv2
 import time
-import rospy
-import hsrb_interface
+#import rospy
+#import hsrb_interface
 from il_ros_hsr.core.options import Options
 
-from il_ros_hsr.core.sensors import RGBD
+#from il_ros_hsr.core.sensors import RGBD
 
 class Corl_Options(Options):
     # OFFSET_X = 102
@@ -44,8 +44,8 @@ class Corl_Options(Options):
     root_dir = "/media/autolab/1tb/"
 
     def __init__(self):
-        
-     
+
+
         self.setup(self.root_dir, self.setup_dir)
 
 
@@ -62,7 +62,7 @@ if __name__ == '__main__':
     c_o = Corl_Options()
     count = 0
 
-    while True: 
+    while True:
         rgb_img = cam.read_color_data()
         count += 1
 
@@ -72,4 +72,4 @@ if __name__ == '__main__':
 
             cv2.imshow('debug',img_cropped)
 
-            cv2.waitKey(30) 
+            cv2.waitKey(30)

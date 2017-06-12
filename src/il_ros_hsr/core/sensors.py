@@ -35,7 +35,7 @@ class RGBD(object):
         self.is_updated = False
 
         # Subscribe color image data from HSR
-       
+
 
         self._sub_color_image = rospy.Subscriber(
             topic_name_c, Image, self._color_image_cb)
@@ -52,7 +52,7 @@ class RGBD(object):
 
     def _color_image_cb(self, data):
         try:
-            
+
             self._input_color_image = self._bridge.imgmsg_to_cv2(data, "bgr8")
             self.color_time_stamped = data.header.stamp
             self.is_updated = True
@@ -88,7 +88,7 @@ class Joint_Positions(object):
         topic_name = '/hsrb/joint_states'
         self._bridge = CvBridge()
         self._input_image = None
-     
+
         # Subscribe color image data from HSR
         self._input_state = rospy.Subscriber(
             topic_name, JointState, self._state_cb)
@@ -111,7 +111,7 @@ class Gripper_Torque(object):
         topic_name = '/hsrb/wrist_wrench/compensated'
         self._bridge = CvBridge()
         self._input_image = None
-     
+
         # Subscribe color image data from HSR
         self._input_torque = rospy.Subscriber(
             topic_name, WrenchStamped, self._wrench_cb)
@@ -212,7 +212,7 @@ class Laser_Scan(object):
 
     def __init__(self):
         topic_name = '/hsrb/base_scan'
-        
+
         # Subscribe color image data from HSR
         self._laser_scan = rospy.Subscriber(
             topic_name, LaserScan, self._wrench_cb)
@@ -270,7 +270,7 @@ class Head_Right_RGB(object):
 if __name__=='__main__':
 
     # Prepare the listener
-    eye = EyeHand()    
+    eye = EyeHand()
     torque = Torque()
     try:
         tfBuffer = tf2_ros.Buffer()
@@ -295,7 +295,7 @@ if __name__=='__main__':
     #     sys.exit()
 
     # Recognize the mug and pick
-    # while True: 
+    # while True:
     #     print torque._input_torque
 
     try:

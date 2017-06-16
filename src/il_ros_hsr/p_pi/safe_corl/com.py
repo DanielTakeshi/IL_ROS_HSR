@@ -2,15 +2,15 @@ import sys, os, time, cv2, argparse
 import tty, termios
 import numpy as np
 import IPython
-import rospy
+# import rospy
 from il_ros_hsr.core.common import Common
 import cv2
 
-from geometry_msgs.msg import Twist
+# from geometry_msgs.msg import Twist
 
 
 ###############CHANGGE FOR DIFFERENT PRIMITIVES#########################
-from il_ros_hsr.p_pi.safe_corl.options import Corl_Options as Options 
+from il_ros_hsr.p_pi.safe_corl.options import Corl_Options as Options
 from il_ros_hsr.tensor.nets.net_ycb import Net_YCB as Net
 from il_ros_hsr.tensor.nets.net_ycb_vgg import Net_YCB_VGG as Net_VGG
 #########################################################################
@@ -31,14 +31,14 @@ class Safe_COM(Common):
         self.Options = Options()
         self.var_path=self.Options.policies_dir+'ycb_05-24-2017_17h34m20s.ckpt'
         if(load_net):
-            
+
 
             self.net = Net_VGG(self.Options,channels=1)
             self.sess = self.net.load(var_path=self.var_path)
 
         self.depth_thresh = 1000
-        
- 
+
+
     @overrides(Common)
     def go_to_initial_state(self,whole_body,gripper):
         whole_body.move_to_neutral()
@@ -74,13 +74,13 @@ class Safe_COM(Common):
         return twist
 
     def eval_policy(self,state,features,cropped = False):
-        
+
         if(not cropped):
             state = state[self.Options.OFFSET_X:self.Options.OFFSET_X+self.Options.WIDTH,self.Options.OFFSET_Y:self.Options.OFFSET_Y+self.Options.HEIGHT,:]
-       
-        
+
+
         outval = self.net.output(self.sess,features(state),channels=1)
-        
+
         #print "PREDICTED POSE ", pos[2]
 
         return outval
@@ -95,24 +95,24 @@ class Safe_COM(Common):
 
 
     def im2tensor(self,im,channels=3):
-        
-        
+
+
         for i in range(channels):
             im[:,:,i] = im[:,:,i]/255.0
         return im
 
     def im2tensor_binary(self,im,channels=3):
-        
+
         cutoff = 140
         for i in range(channels):
-            im[:,:,i] = np.round(im[:,:,i]/(cutoff * 2.0)) 
+            im[:,:,i] = np.round(im[:,:,i]/(cutoff * 2.0))
         return im
 
     def process_depth(self,d_img):
-        
+
         d_img.flags.writeable = True
-        d_img[np.where(d_img > 500)] = 0 
-        
+        d_img[np.where(d_img > 500)] = 0
+
 
         ext_d_img = np.zeros([d_img.shape[0],d_img.shape[1],1])
 
@@ -133,8 +133,8 @@ class Safe_COM(Common):
         d_img = state['depth_img']
 
 
-        d_img[np.where(d_img > self.depth_thresh)] = 0 
-        
+        d_img[np.where(d_img > self.depth_thresh)] = 0
+
 
         ext_d_img = np.zeros([d_img.shape[0],d_img.shape[1],1])
 
@@ -146,25 +146,25 @@ class Safe_COM(Common):
     def depth_state_cv(self,state):
         d_img = np.copy(state['depth_img'])
 
-        d_img[np.where(d_img > self.depth_thresh)] = 0 
-        
+        d_img[np.where(d_img > self.depth_thresh)] = 0
+
 
         ext_d_img = np.zeros([d_img.shape[0],d_img.shape[1],1])
 
         ext_d_img[:,:,0] = d_img
 
-        
+
         return ext_d_img*(255.0/float(self.depth_thresh))
 
     def binary_cropped_state(self,state):
 
         d_img = state['depth_img']
         c_img = state['color_img']
-     
+
 
         c_img[np.where(d_img > self.depth_thresh)] = 0
 
-        return self.im2tensor_binary(c_img)*255.0 
+        return self.im2tensor_binary(c_img)*255.0
 
 
     def color_state(self,state):
@@ -183,7 +183,7 @@ class Safe_COM(Common):
 
     def gray_state(self,state):
         img = state['color_img']
-        
+
         gray_img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
         ext_gray = np.zeros([gray_img.shape[0],gray_img.shape[1],1])
         ext_gray[:,:,0] = gray_img
@@ -191,7 +191,7 @@ class Safe_COM(Common):
 
 
     def joint_force_state(self,state):
-        
+
         joints = state['joint_positions']
         j_pose = joints.position
         num_joints = len(j_pose)
@@ -210,7 +210,3 @@ class Safe_COM(Common):
         #IPython.embed()
 
         return data
-
-
-
-

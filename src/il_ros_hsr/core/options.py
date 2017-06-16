@@ -1,5 +1,5 @@
 """
-Options Class for Neural Network Go to State Policies 
+Options Class for Neural Network Go to State Policies
 Specifies Parameters for Learning and File Structure
 
 Author: Michael Laskey
@@ -18,16 +18,16 @@ class Options():
 
     def setup(self,root_dir,setup_dir,folder = None):
         """
-        Sets the file path to store the image data and labels 
+        Sets the file path to store the image data and labels
 
         Parameters
         ----------
         root_dir: string
-            Specifies the root directory to save everything in 
+            Specifies the root directory to save everything in
 
         setup_dir: string
-            Specifies the specific neural network that data is being collected for  
-        
+            Specifies the specific neural network that data is being collected for
+
         folder: string
             Specifies in a higher folder should be made to save multiple network files
             (Defualt=None and corresponds to one net per primitive)
@@ -37,7 +37,7 @@ class Options():
         if(not folder == None):
             root_dir = root_dir+folder+'/'
 
-        
+
         self.data_dir = root_dir + 'data/'
         self.datasets_dir = self.data_dir + 'datasets/'
         self.frames_dir = self.data_dir + 'record_frames/'
@@ -45,7 +45,7 @@ class Options():
         self.hdf_dir = root_dir + 'Net/hdf/'
         self.tf_dir = root_dir + 'Net/tensor/'
         self.images_dir = self.data_dir + 'images/'
-    
+
 
         self.setup_dir = self.data_dir + setup_dir
 

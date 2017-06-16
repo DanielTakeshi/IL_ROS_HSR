@@ -24,7 +24,7 @@ def process_out(n):
     ----------
     n : numpy array
 
-    Returns 
+    Returns
     -------
     out: int
     '''
@@ -41,7 +41,7 @@ def im2tensor(im,channels=1):
 
     Prameters
     ---------
-    im : numpy array 
+    im : numpy array
         matrix with shape of image
 
     channels : int
@@ -61,7 +61,7 @@ def im2tensor(im,channels=1):
 
 
 class IMData():
-    
+
     def __init__(self, train_data, test_data,channels=3,state_space = None,synth = False,precompute = False):
 
 
@@ -119,7 +119,7 @@ class IMData():
 
         for img in img_aug:
             data_a = copy.deepcopy(data)
-         
+
             data_a['color_img'] = img
 
             states_aug.append(data_a)
@@ -140,7 +140,7 @@ class IMData():
         for traj in batch_tups:
             random.shuffle(traj)
             for data in traj:
-                
+
 
                 action = data['action']
 
@@ -164,18 +164,21 @@ class IMData():
         """
         batch = []
         for traj in self.test_tups:
+            # print("TESTING")
+            # print(len(traj))
+            # print(traj)
             random.shuffle(traj)
             for data in traj:
                 action = data['action']
-                
+
                 if(self.precompute):
                     state = data['feature']
                 else:
                     state = self.state_space(data)
 
-                
+
                 batch.append((state,action))
 
-        
+
         batch = zip(*batch)
         return list(batch[0]), list(batch[1])

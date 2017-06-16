@@ -18,7 +18,7 @@ from il_ros_hsr.tensor.tensornet import TensorNet
 import time
 import datetime
 
-class Net_YCB(TensorNet):
+class Net_YCB_Kinematic(TensorNet):
 
     def __init__(self, options,channels=3):
         self.dir = "./net6/"
@@ -27,30 +27,20 @@ class Net_YCB(TensorNet):
         self.Options = options
         self.sess = tf.Session()
 
-        self.x = tf.placeholder('float', shape=[None,205,250,self.channels])
+        state_dim = 100352
+
+        self.x = tf.placeholder('float', shape=[None,state_dim])
         self.y_ = tf.placeholder("float", shape=[None, 3])
 
+        #fc1_num_nodes = 60
+        fc1_num_nodes = 25
 
-        self.w_conv1 = self.weight_variable([7, 7, self.channels, 3])
-        self.b_conv1 = self.bias_variable([3])
-
-        self.h_conv1 = tf.nn.relu(self.conv2d(self.x, self.w_conv1) + self.b_conv1)
-
-        self.h_conv1 = self.max_pool(self.h_conv1,3)
-
-        conv_num_nodes = self.reduce_shape(self.h_conv1.get_shape())
-        fc1_num_nodes = 60
-
-
-
-        print "BEFORE POOLING ",conv_num_nodes
-
-        self.w_fc1 = self.weight_variable([conv_num_nodes, fc1_num_nodes])
+        self.w_fc1 = self.weight_variable([state_dim, fc1_num_nodes])
         # self.w_fc1 = self.weight_variable([1000, fc1_num_nodes])
         self.b_fc1 = self.bias_variable([fc1_num_nodes])
 
-        self.h_conv_flat = tf.reshape(self.h_conv1, [-1, conv_num_nodes])
-        self.h_fc1 = tf.nn.relu(tf.matmul(self.h_conv_flat, self.w_fc1) + self.b_fc1)
+
+        self.h_fc1 = tf.nn.relu(tf.matmul(self.x, self.w_fc1) + self.b_fc1)
 
         self.w_fc2 = self.weight_variable([fc1_num_nodes, 3])
         self.b_fc2 = self.bias_variable([3])
@@ -60,5 +50,5 @@ class Net_YCB(TensorNet):
         self.loss = tf.reduce_mean(.5*tf.square(self.y_out - self.y_))
 
 
-        self.train_step = tf.train.MomentumOptimizer(.003, .9)
+        self.train_step = tf.train.MomentumOptimizer(.003, .7)
         self.train = self.train_step.minimize(self.loss)

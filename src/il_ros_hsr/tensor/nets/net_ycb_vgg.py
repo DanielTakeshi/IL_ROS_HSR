@@ -26,7 +26,7 @@ class Net_YCB_VGG(TensorNet):
         self.channels = channels
         self.Options = options
         self.sess = tf.Session()
-        
+
         state_dim = 25088
 
         self.x = tf.placeholder('float', shape=[None,state_dim])
@@ -34,12 +34,12 @@ class Net_YCB_VGG(TensorNet):
 
         #fc1_num_nodes = 60
         fc1_num_nodes = 25
-        
+
         self.w_fc1 = self.weight_variable([state_dim, fc1_num_nodes])
         # self.w_fc1 = self.weight_variable([1000, fc1_num_nodes])
         self.b_fc1 = self.bias_variable([fc1_num_nodes])
 
-     
+
         self.h_fc1 = tf.nn.relu(tf.matmul(self.x, self.w_fc1) + self.b_fc1)
 
         self.w_fc2 = self.weight_variable([fc1_num_nodes, 3])
@@ -48,8 +48,7 @@ class Net_YCB_VGG(TensorNet):
         self.y_out = tf.tanh(tf.matmul(self.h_fc1, self.w_fc2) + self.b_fc2)
 
         self.loss = tf.reduce_mean(.5*tf.square(self.y_out - self.y_))
- 
+
 
         self.train_step = tf.train.MomentumOptimizer(.003, .7)
         self.train = self.train_step.minimize(self.loss)
-

@@ -24,12 +24,13 @@ from tf import TransformListener
 import rospy
 
 from il_ros_hsr.p_pi.safe_corl.com import Safe_COM as COM
+from il_ros_hsr.p_pi.safe_corl.bottle_detector import Bottle_Detect
 
 
 
 class Collect_Demos():
 
-	def __init__(self):
+	def __init__(self,user_name = None,inject_noise = False,noise_scale = 1.0):
 		self.robot = hsrb_interface.Robot()
 
 		self.noise = 0.1
@@ -38,11 +39,15 @@ class Collect_Demos():
 		self.whole_body = self.robot.get('whole_body')
 		self.gripper = self.robot.get('gripper')
 		self.tl = TransformListener()  
+		self.b_d = Bottle_Detect()
 
 		self.start_recording = False
 		self.stop_recording = False
 
 		self.com = COM()
+
+		if(not user_name == None):
+			self.com.Options.setup(self.com.Options.root_dir,user_name)
 
 		self.com.go_to_initial_state(self.whole_body,self.gripper)
 
@@ -50,7 +55,7 @@ class Collect_Demos():
 
 		self.cam = RGBD()
 
-		self.joystick = JoyStick_X(self.com)
+		self.joystick = JoyStick_X(self.com,inject_noise = inject_noise,noise_scale = noise_scale)
 		self.torque = Gripper_Torque()
 		self.joints = Joint_Positions()
 
@@ -63,7 +68,7 @@ class Collect_Demos():
 		img_rgb = self.cam.read_color_data()
 		img_depth = self.cam.read_depth_data()
 
-		cur_action,time_pub = self.joystick.apply_control()
+		cur_action,noise_action,time_pub = self.joystick.apply_control()
 
 		state = self.com.format_data(img_rgb,img_depth)
 
@@ -75,11 +80,13 @@ class Collect_Demos():
 		data['action'] = cur_action
 		data['color_img'] = state[0]
 		data['depth_img'] = state[1]
-		data['noisey_twist'] = cur_action
-		data['gripper_torque'] = self.torque.read_data()
-		data['joint_positions'] = self.joints.read_data()
-		data['action_time'] = time_pub
-		data['image_time'] = self.cam.color_time_stamped
+		data['noise_action'] = noise_action
+
+		pose = self.whole_body.get_end_effector_pose().pos
+		pose = np.array([pose.x,pose.y,pose.z])
+		data['robot_pose'] = pose
+		# data['action_time'] = time_pub
+		# data['image_time'] = self.cam.color_time_stamped
 
 		print "ACTION AT COUNT ",self.count
 		print cur_action
@@ -88,15 +95,26 @@ class Collect_Demos():
 		# if(LA.norm(cur_action) > 1e-3):
 		# 	print "GOT ACCEPTED"
 		# 	self.trajectory.append(data)
+
+
+	def check_success(self):
+
+		img_rgb = self.cam.read_color_data()
+
+		success = self.b_d.detect_bottle(img_rgb)
+
+		print "BOTTLE FOUND ",success
+
+		return success
 		
 
 
 	def run(self):
 
 		
-		cur_action = self.joystick.apply_control()
-		cur_recording = self.joystick.get_record_actions()
-			
+		self.joystick.apply_control()
+		cur_recording = self.joystick.get_record_actions_passive()
+		
 		
 
 		if(cur_recording[0] < -0.1):
@@ -122,6 +140,7 @@ class Collect_Demos():
 
 				count += 1
 
+			self.check_success()
 			q = input('SAVE DATA: y or n: ')
 
 			if(q == 'y'):
@@ -137,7 +156,12 @@ class Collect_Demos():
 
 
 if __name__=='__main__':
-	cd = Collect_Demos()
+	user_name = 'corl_matt_n1/'
+	noise_scale = 3.0
+	inject_noise = True
+
+	cd = Collect_Demos(user_name,inject_noise=inject_noise,noise_scale = noise_scale)
+
 	time.sleep(5)
 	while True: 
 		cd.run()

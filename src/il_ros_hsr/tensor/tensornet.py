@@ -129,6 +129,9 @@ class TensorNet():
                         print "[ Iteration " + str(i) + " ] Test loss: " + str(test_loss)
                         self.test_loss.append(test_loss)
 
+                        if(test_loss < 0.06):
+                            break
+
                     self.train.run(feed_dict=feed_dict)
                 
 
@@ -178,8 +181,11 @@ class TensorNet():
       
         shape = im.shape
     
+        if(len(shape) == 1):
+            im = np.reshape(im, (-1, shape[0]))
+        else:
+            im = np.reshape(im, (-1, shape[0],shape[1],shape[2]))
 
-        im = np.reshape(im, (-1, shape[0]))
         with sess.as_default():
             return sess.run(self.y_out, feed_dict={self.x:im}) [0]
 

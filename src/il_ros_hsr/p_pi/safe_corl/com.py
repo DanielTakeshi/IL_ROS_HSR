@@ -29,12 +29,8 @@ class Safe_COM(Common):
     def __init__(self,load_net = False,features = None):
 
         self.Options = Options()
-        self.var_path=self.Options.policies_dir+'ycb_05-24-2017_17h34m20s.ckpt'
-        if(load_net):
-            
-
-            self.net = Net_VGG(self.Options,channels=1)
-            self.sess = self.net.load(var_path=self.var_path)
+        self.var_path='ycb_06-15-2017_21h14m54s.ckpt'
+        
 
         self.depth_thresh = 1000
         
@@ -64,7 +60,7 @@ class Safe_COM(Common):
 
         twist = Twist()
         gain = -0.2
-        if(np.abs(pos[1]) < 1e-3):
+        if(np.abs(pos[1]) < 2e-3):
             pos[1] = 0.0
 
         twist.linear.x = gain*pos[1] #+ self.noise*normal()
@@ -78,7 +74,7 @@ class Safe_COM(Common):
         if(not cropped):
             state = state[self.Options.OFFSET_X:self.Options.OFFSET_X+self.Options.WIDTH,self.Options.OFFSET_Y:self.Options.OFFSET_Y+self.Options.HEIGHT,:]
        
-        
+
         outval = self.net.output(self.sess,features(state),channels=1)
         
         #print "PREDICTED POSE ", pos[2]
@@ -86,8 +82,8 @@ class Safe_COM(Common):
         return outval
 
     def load_net(self):
-        self.net = Net_VGG(self.Options,channels=1)
-        self.sess = self.net.load(var_path=self.var_path)
+        self.net = Net_VGG(self.Options,channels=3)
+        self.sess = self.net.load(var_path=self.Options.policies_dir+self.var_path)
 
     def clean_up(self):
         self.sess.close()
@@ -95,8 +91,6 @@ class Safe_COM(Common):
 
 
     def im2tensor(self,im,channels=3):
-        
-        
         for i in range(channels):
             im[:,:,i] = im[:,:,i]/255.0
         return im
@@ -143,6 +137,21 @@ class Safe_COM(Common):
 
         return ext_d_img/float(self.depth_thresh)
 
+
+
+
+    def rgbd(self,state):
+
+        color_img = self.color_state(state)
+        depth_img = self.depth_state(state)
+
+        rgbd_im = np.zeros([color_img.shape[0],color_img.shape[1],4])
+
+        rgbd_im[:,:,0:3] = color_img
+        rgbd_im[:,:,3] = depth_img[:,:,0]
+
+        return rgbd_im
+
     def depth_state_cv(self,state):
         d_img = np.copy(state['depth_img'])
 
@@ -162,7 +171,6 @@ class Safe_COM(Common):
         c_img = state['color_img']
      
 
-        c_img[np.where(d_img > self.depth_thresh)] = 0
 
         return self.im2tensor_binary(c_img)*255.0 
 
@@ -181,6 +189,11 @@ class Safe_COM(Common):
 
         return self.im2tensor_binary(state['color_img'])
 
+    def binary_image(self,img):
+
+        return self.im2tensor_binary(img)
+
+
     def gray_state(self,state):
         img = state['color_img']
         
@@ -189,6 +202,13 @@ class Safe_COM(Common):
         ext_gray[:,:,0] = gray_img
         return ext_gray/255.0
 
+    def gray_state_cv(self,state):
+        img = state['color_img']
+        
+        gray_img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+        ext_gray = np.zeros([gray_img.shape[0],gray_img.shape[1],1])
+        ext_gray[:,:,0] = gray_img
+        return ext_gray
 
     def joint_force_state(self,state):
         

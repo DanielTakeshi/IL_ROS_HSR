@@ -113,7 +113,7 @@ class FindObject():
 		state = self.com.format_data(img_rgb,None)
 
 		state['found_object'] = img_detect
-		state['object_poses']
+		state['object_poses'] = 
 	def execute_grasp(self):
 
 		self.gripper.grasp(0.01)

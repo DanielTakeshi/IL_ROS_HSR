@@ -48,43 +48,28 @@ Options = options()
 
 if __name__ == '__main__':
 
+    people = ['chris_n0','chris_n1','chris_n2','anne_n0','anne_n1','anne_n2','carolyn_n0','carolyn_n1','carolyn_n2','matt_n0','matt_n1']
 
 
-    stats = pickle.load(open(Options.stats_dir+'state_trials_data_60_clutter.p','r'))
-    # stats_depth = pickle.load(open(Options.stats_dir+'state_trials_data_60_clutter_depth.p','r'))
-    stats_synth = pickle.load(open(Options.stats_dir+'state_trials_data_60_clutter_synth.p','r'))
+    for trial in people: 
+        user_name = 'corl_'+trial+'/'
+        Options.setup(Options.root_dir,user_name)
 
-    for stat in stats:
-        if(not stat['type'] == 'vgg_color_l' ):
-            plt.plot(stat['train_loss'],label=stat['type'])
-            print stat['type']
+      
             
-            print stat['path']
 
-    for stat in stats_synth:
-        if(not stat['type'] == 'vgg_color_l_synth' ):
-            plt.plot(stat['train_loss'],label=stat['type'])
-            print stat['type']
-            print stat['path']
-
-    
-
-    plt.legend(bbox_to_anchor=(1.05,1),loc=2,borderaxespad=0.)
+        stats = pickle.load(open(Options.stats_dir+'trials_final_iteration.p','r'))
 
 
-    plt.show()
+        for stat in stats:
+            if(not stat['type'] == 'vgg_color_l' ):
+                plt.plot(stat['test_loss'],label=trial)
+                
 
-    for stat in stats:
-        if(not stat['type'] == 'vgg_color_l' ):
-            plt.plot(stat['test_loss'],label=stat['type'])
-            print stat['type']
-            print stat['path']
 
-    for stat in stats_synth:
-        if(not stat['type'] == 'vgg_color_l_synth' ):
-            plt.plot(stat['test_loss'],label=stat['type'])
-            print stat['type']
-            print stat['path']
+        print trial 
+        print min(stat['test_loss'])
+
 
 
     plt.legend(bbox_to_anchor=(1.05,1),loc=2,borderaxespad=0.)

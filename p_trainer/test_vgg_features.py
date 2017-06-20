@@ -92,3 +92,9 @@ if __name__ == '__main__':
     net.clean_up()
 
     pickle.dump(state_stats,open(Options.stats_dir+'vgg_kinematic.p','wb'))
+
+    
+
+    
+
+    

@@ -41,7 +41,7 @@ class VGG_Options(Options):
 
     setup_dir = "corl_chris_n0/"
 
-    root_dir = "/Users/chrispowers/Documents/research/IL_ROS_HSR/"
+    root_dir = "/home/chrisp/IL_ROS_HSR/"
 
     def __init__(self):
 

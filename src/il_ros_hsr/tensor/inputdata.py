@@ -1,3 +1,4 @@
+
 '''
 Class to handle test and training data for the neural network
 
@@ -68,6 +69,7 @@ class IMData():
         self.train_tups = train_data
         self.test_tups = test_data
 
+        
         if(synth):
             self.synth_traj()
 
@@ -149,9 +151,9 @@ class IMData():
                 else:
                     state = self.state_space(data)
 
-                if(len(batch) < 100):
+                if(len(batch) < n):
                     batch.append((state,action))
-
+        
         batch = zip(*batch)
         self.i = self.i + n
         return list(batch[0]), list(batch[1])

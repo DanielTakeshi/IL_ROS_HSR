@@ -1,3 +1,4 @@
-rollouts/
 src/il_ros_hsr/p_pi/safe_corl/vgg/vgg16_weights.npz
-src/il_ros_hsr/p_pi/safe_corl/vgg/weights.p
+pytorch_kinematic/model/pose_model.pth
+pytorch_kinematic/weights*.p
+data/corl_chris_n0/

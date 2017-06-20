@@ -142,10 +142,9 @@ class pose_model(nn.Module):
 model = pose_model(models)
 model.load_state_dict(torch.load(weight_name))
 
-
-import tensorflow as tf
-import numpy as np
+import numpy
 import pickle
+
 #model.model0 is re_trained VGG
 weights0 = dict()
 #first layer of each branch, before re-concatenation
@@ -153,20 +152,21 @@ weights1_1 = dict()
 weights1_2 = dict()
 
 for key in model.state_dict().keys():
+    print(key)
     model_key = key.replace("model", "")
     is0 = model_key[0] == "0"
     is1_1 = model_key[0:3] == "1_1"
     is1_2 = model_key[0:3] == "1_2"
     if is0 or is1_1 or is1_2:
         weight = model.state_dict()[key]
-        format_weights = np.array(weight.tolist())
+        format_weights = numpy.array(weight.tolist())
         if is0:
             weights0[key] = format_weights
         elif is1_1:
             weights1_1[key] = format_weights
         elif is1_2:
             weights1_2[key] = format_weights
-
+            
 pickle.dump( weights0, open( "weights0.p", "wb" ) )
 pickle.dump( weights1_1, open( "weights1_1.p", "wb" ) )
 pickle.dump( weights1_2, open( "weights1_2.p", "wb" ) )

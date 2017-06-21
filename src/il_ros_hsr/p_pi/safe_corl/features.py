@@ -30,13 +30,20 @@ class Features():
         self.hog = cv2.HOGDescriptor()
         imgs = tf.placeholder(tf.float32, [None, 224, 224, 3])
         self.sess16 = tf.Session()
-        self.sessKin = tf.Session()
+        self.sessKin0 = tf.Session()
+        self.sessKin1_1 = tf.Session()
+        self.sessKin1_2 = tf.Session()
         self.vgg = vgg16(imgs, 'src/il_ros_hsr/p_pi/safe_corl/vgg/vgg16_weights.npz', self.sess16)
-        self.vgg_kin = vggKin(imgs, 'src/il_ros_hsr/p_pi/safe_corl/vgg/weights.p', self.sessKin)
+        self.vgg_kin0 = vggKin(imgs, 'pytorch_kinematics/weights0.p', self.sessKin0)
+        self.vgg_kin1_1 = vggKin(imgs, 'pytorch_kinematics/weights0.p', self.sessKin1_1, True, 'pytorch_kinematics/weights1_1.p')
+        self.vgg_kin1_2 = vggKin(imgs, 'pytorch_kinematics/weights0.p', self.sessKin1_2, True, 'pytorch_kinematics/weights1_2.p')
+
 
     def clean_up_vgg(self):
         self.sess16.close()
-        self.sessKin.close()
+        self.sessKin0.close()
+        self.sessKin1_1.close()
+        self.sessKin1_2.close()
 
 
     def im2tensor(self,im,channels=3):
@@ -173,10 +180,29 @@ class Features():
 
         return vgg_feat
 
-    def vgg_kinematic_extract(self, state):
+    #refined vgg
+    def vgg_kinematic_pre_extract(self, state):
         c_img = state['color_img']
         c_img = imresize(c_img, (224, 224))
 
-        vgg_feat = self.sessKin.run(self.vgg_kin.conv4_4_flat,feed_dict={self.vgg.imgs: [c_img]})[0]
+        vgg_feat = self.sessKin0.run(self.vgg_kin0.fc_in_flat,feed_dict={self.vgg.imgs: [c_img]})[0]
+
+        return vgg_feat
+
+    #refined vgg + first part of branch 1
+    def vgg_kinematic1_extract(self, state):
+        c_img = state['color_img']
+        c_img = imresize(c_img, (224, 224))
+
+        vgg_feat = self.sessKin1_1.run(self.vgg_kin1_1.fc_in_flat,feed_dict={self.vgg.imgs: [c_img]})[0]
+
+        return vgg_feat
+
+    #refined vgg + first part of branch 2
+    def vgg_kinematic2_extract(self, state):
+        c_img = state['color_img']
+        c_img = imresize(c_img, (224, 224))
+
+        vgg_feat = self.sessKin1_2.run(self.vgg_kin1_2.fc_in_flat,feed_dict={self.vgg.imgs: [c_img]})[0]
 
         return vgg_feat

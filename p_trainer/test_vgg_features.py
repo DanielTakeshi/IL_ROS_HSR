@@ -28,22 +28,16 @@ Options = options()
 
 if __name__ == '__main__':
     f = []
-    
+
     for (dirpath, dirnames, filenames) in os.walk(Options.rollouts_dir):
         f.extend(dirnames)
-    
+
     train_data = []
     test_data = []
-    # count = 0
 
-    # test_cutoff = 5
-    # f = [fname for fname in f if int(fname[len("rollout"):]) < test_cutoff]
-    
     train_labels = []
     test_labels = []
     for filename in f:
-        # count += 1
-        # print(count)
         rollout_data = pickle.load(open(Options.rollouts_dir+filename+'/rollout.p','r'))
 
         if(random() > 0.2):
@@ -63,27 +57,27 @@ if __name__ == '__main__':
     print("finished precomputing features")
     net = Net_VGG(Options)
     save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
-    
+
     stat = {}
     stat['type'] = 'vgg_original'
     stat['path'] = save_path
     stat['test_loss'] = test_loss
     stat['train_loss'] = train_loss
     state_stats.append(stat)
-    
+
     net.clean_up()
-    
+
     pickle.dump(state_stats,open(Options.stats_dir+'vgg_original.p','wb'))
 
-    ##################################### VGG KINEMATIC #####################################
-    print("starting vgg kinematic")
-    data = inputdata.IMData(train_data, test_data,state_space = features.vgg_kinematic_extract,precompute= True)
+    ##################################### VGG KINEMATIC 0 #####################################
+    print("starting vgg kinematic 0")
+    data = inputdata.IMData(train_data, test_data,state_space = features.vgg_kinematic_pre_extract,precompute= True)
     print("finished precomputing features")
     net = Net_Kinematic(Options)
     save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
 
     stat = {}
-    stat['type'] = 'vgg_original'
+    stat['type'] = 'vgg_kinematic0'
     stat['path'] = save_path
     stat['test_loss'] = test_loss
     stat['train_loss'] = train_loss
@@ -91,10 +85,40 @@ if __name__ == '__main__':
 
     net.clean_up()
 
-    pickle.dump(state_stats,open(Options.stats_dir+'vgg_kinematic.p','wb'))
+    pickle.dump(state_stats,open(Options.stats_dir+'vgg_kinematic0.p','wb'))
 
-    
+    ##################################### VGG KINEMATIC 1_1 #####################################
+    print("starting vgg kinematic 1")
+    data = inputdata.IMData(train_data, test_data,state_space = features.vgg_kinematic1_extract,precompute= True)
+    print("finished precomputing features")
+    net = Net_Kinematic(Options)
+    save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
 
-    
+    stat = {}
+    stat['type'] = 'vgg_kinematic1'
+    stat['path'] = save_path
+    stat['test_loss'] = test_loss
+    stat['train_loss'] = train_loss
+    state_stats.append(stat)
 
-    
+    net.clean_up()
+
+    pickle.dump(state_stats,open(Options.stats_dir+'vgg_kinematic1.p','wb'))
+
+    ##################################### VGG KINEMATIC 1_2 #####################################
+    print("starting vgg kinematic 2")
+    data = inputdata.IMData(train_data, test_data,state_space = features.vgg_kinematic2_extract,precompute= True)
+    print("finished precomputing features")
+    net = Net_Kinematic(Options)
+    save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
+
+    stat = {}
+    stat['type'] = 'vgg_kinematic2'
+    stat['path'] = save_path
+    stat['test_loss'] = test_loss
+    stat['train_loss'] = train_loss
+    state_stats.append(stat)
+
+    net.clean_up()
+
+    pickle.dump(state_stats,open(Options.stats_dir+'vgg_kinematic2.p','wb'))

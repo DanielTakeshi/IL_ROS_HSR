@@ -168,7 +168,7 @@ for key in model.state_dict().keys():
             weights1_1[key] = format_weights
         elif is1_2:
             weights1_2[key] = format_weights
-            
+
 pickle.dump( weights0, open( "weights0.p", "wb" ) )
 pickle.dump( weights1_1, open( "weights1_1.p", "wb" ) )
 pickle.dump( weights1_2, open( "weights1_2.p", "wb" ) )

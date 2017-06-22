@@ -206,3 +206,13 @@ class Features():
         vgg_feat = self.sessKin1_2.run(self.vgg_kin1_2.fc_in_flat,feed_dict={self.vgg.imgs: [c_img]})[0]
 
         return vgg_feat
+
+    #features concatenated according to kinematics paper
+    def vgg_kinematic_concat_extract(self, state):
+        pre_features = self.vgg_kinematic_pre_extract(state)
+        branch1_output = self.vgg_kinematic1_extract(state)
+        branch2_output = self.vgg_kinematic2_extract(state)
+
+        vgg_feat = np.append(pre_features, np.append(branch1_output, branch2_output))
+
+        return vgg_feat

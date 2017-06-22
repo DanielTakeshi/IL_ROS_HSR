@@ -50,9 +50,9 @@ if __name__ == '__main__':
     state_stats = []
     com = COM()
     features = Features()
-    which_to_run = [True, True, True, True]
+    which_to_run = [False, False, False, False, True]
     ind_of_run = 0
-    
+
     ##################################### VGG ORIGINAL #####################################
     if which_to_run[ind_of_run]:
         print("starting vgg original")
@@ -123,6 +123,26 @@ if __name__ == '__main__':
 
         stat = {}
         stat['type'] = 'vgg_kinematic2'
+        stat['path'] = save_path
+        stat['test_loss'] = test_loss
+        stat['train_loss'] = train_loss
+        state_stats.append(stat)
+
+        net.clean_up()
+
+        pickle.dump(state_stats,open(Options.stats_dir+'vgg_stats.p','wb'))
+
+    ind_of_run += 1
+    ##################################### VGG KINEMATIC concatenated #####################################
+    if which_to_run[ind_of_run]:
+        print("starting vgg kinematic concat")
+        data = inputdata.IMData(train_data, test_data,state_space = features.vgg_kinematic_concat_extract,precompute= True)
+        print("finished precomputing features")
+        net = Net_Kinematic(Options, 2)
+        save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
+
+        stat = {}
+        stat['type'] = 'vgg_kinematic_concat'
         stat['path'] = save_path
         stat['test_loss'] = test_loss
         stat['train_loss'] = train_loss

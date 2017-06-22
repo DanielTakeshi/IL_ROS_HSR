@@ -1,6 +1,8 @@
 #get mean in each channel
 import os
 from il_ros_hsr.p_pi.safe_corl.vgg_options import VGG_Options as options
+import numpy as np
+import cPickle as pickle
 
 Options = options()
 
@@ -16,7 +18,8 @@ for filename in f:
     rollout_data = pickle.load(open(Options.rollouts_dir+filename+'/rollout.p','r'))
 
     #compute a rolling average (don't have to save overall total)
-    for img in rollout_data:
+    for data_point in rollout_data:
+        img = data_point['color_img']
         img_mean = np.mean(img)
         means = means * 1.0 * (num_imgs)/(num_imgs + 1) + (img_mean) * 1.0/(num_imgs + 1)
         num_imgs += 1

@@ -70,7 +70,7 @@ if __name__ == '__main__':
 
         net.clean_up()
 
-        pickle.dump(state_stats,open(Options.stats_dir+'vgg_original.p','wb'))
+        pickle.dump(state_stats,open(Options.stats_dir+'vgg_stats.p','wb'))
 
     ind_of_run += 1
     ##################################### VGG KINEMATIC 0 #####################################
@@ -90,7 +90,7 @@ if __name__ == '__main__':
 
         net.clean_up()
 
-        pickle.dump(state_stats,open(Options.stats_dir+'vgg_kinematic0.p','wb'))
+        pickle.dump(state_stats,open(Options.stats_dir+'vgg_stats.p','wb'))
 
     ind_of_run += 1
     ##################################### VGG KINEMATIC 1_1 #####################################
@@ -110,7 +110,7 @@ if __name__ == '__main__':
 
         net.clean_up()
 
-        pickle.dump(state_stats,open(Options.stats_dir+'vgg_kinematic1.p','wb'))
+        pickle.dump(state_stats,open(Options.stats_dir+'vgg_stats.p','wb'))
 
     ind_of_run += 1
     ##################################### VGG KINEMATIC 1_2 #####################################
@@ -130,4 +130,4 @@ if __name__ == '__main__':
 
         net.clean_up()
 
-        pickle.dump(state_stats,open(Options.stats_dir+'vgg_kinematic2.p','wb'))
+        pickle.dump(state_stats,open(Options.stats_dir+'vgg_stats.p','wb'))

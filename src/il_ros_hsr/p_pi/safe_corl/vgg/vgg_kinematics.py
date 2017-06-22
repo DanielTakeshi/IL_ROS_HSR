@@ -82,7 +82,7 @@ class vggKin:
     def fc_layers(self):
         in_layer = self.conv4_4
         if self.secondBranch > 0:
-            in_layer = self.conv5_5
+           in_layer = self.conv5_3 #leaving out the layer that brings down the dimensions, and the too large layer
 
         # fc1
         with tf.name_scope('fc1') as scope:

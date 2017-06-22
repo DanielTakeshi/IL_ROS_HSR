@@ -29,12 +29,13 @@ import IPython
 import numpy as np, argparse
 import cPickle as pickle
 from numpy.random import random
-
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 #######NETWORK FILES TO BE CHANGED#####################
 #specific: imports options from specific options file
-from il_ros_hsr.p_pi.safe_corl.options import Corl_Options as options 
+from il_ros_hsr.p_pi.safe_corl.vgg_options import VGG_Options as options 
 from il_ros_hsr.p_pi.safe_corl.com import Safe_COM as COM
 
 
@@ -50,7 +51,7 @@ if __name__ == '__main__':
 
 
 
-    stats = pickle.load(open(Options.stats_dir+'state_trials_data_60_clutter.p','r'))
+    stats = pickle.load(open(Options.stats_dir+'vgg_stats.p','r'))
 
     for stat in stats:
         plt.plot(stat['train_loss'],label=stat['type'])
@@ -58,18 +59,18 @@ if __name__ == '__main__':
         print stat['path']
 
     plt.legend(bbox_to_anchor=(1.05,1),loc=2,borderaxespad=0.)
+    
 
-
-    plt.show()
-
+    #plt.show()
+    plt.savefig("train_loss.png")
+    
     for stat in stats:
         plt.plot(stat['test_loss'],label=stat['type'])
 
     plt.legend(bbox_to_anchor=(1.05,1),loc=2,borderaxespad=0.)
 
 
-    plt.show()
-    IPython.embed()
+    plt.savefig("test_loss.png")
 
 
    

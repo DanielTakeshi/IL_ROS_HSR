@@ -20,14 +20,19 @@ import datetime
 
 class Net_YCB_Kinematic(TensorNet):
 
-    def __init__(self, options,channels=3):
+    def __init__(self, options,branch_type=0,channels=3):
         self.dir = "./net6/"
         self.name = "ycb"
         self.channels = channels
         self.Options = options
         self.sess = tf.Session()
 
-        state_dim = 100352
+        if branch_type == 0:
+            state_dim = 100352
+        elif branch_type == 1:
+            state_dim = 29792
+        elif branch_type == 2:
+            state_dim = 29792
 
         self.x = tf.placeholder('float', shape=[None,state_dim])
         self.y_ = tf.placeholder("float", shape=[None, 3])

@@ -73,7 +73,7 @@ if __name__ == '__main__':
     print("starting vgg kinematic 0")
     data = inputdata.IMData(train_data, test_data,state_space = features.vgg_kinematic_pre_extract,precompute= True)
     print("finished precomputing features")
-    net = Net_Kinematic(Options)
+    net = Net_Kinematic(Options, 0)
     save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
 
     stat = {}
@@ -91,7 +91,7 @@ if __name__ == '__main__':
     print("starting vgg kinematic 1")
     data = inputdata.IMData(train_data, test_data,state_space = features.vgg_kinematic1_extract,precompute= True)
     print("finished precomputing features")
-    net = Net_Kinematic(Options)
+    net = Net_Kinematic(Options, 1)
     save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
 
     stat = {}
@@ -109,7 +109,7 @@ if __name__ == '__main__':
     print("starting vgg kinematic 2")
     data = inputdata.IMData(train_data, test_data,state_space = features.vgg_kinematic2_extract,precompute= True)
     print("finished precomputing features")
-    net = Net_Kinematic(Options)
+    net = Net_Kinematic(Options, 2)
     save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
 
     stat = {}

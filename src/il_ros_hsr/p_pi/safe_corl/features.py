@@ -34,9 +34,9 @@ class Features():
         self.sessKin1_1 = tf.Session()
         self.sessKin1_2 = tf.Session()
         self.vgg = vgg16(imgs, 'src/il_ros_hsr/p_pi/safe_corl/vgg/vgg16_weights.npz', self.sess16)
-        self.vgg_kin0 = vggKin(imgs, 'pytorch_kinematics/weights0.p', self.sessKin0)
-        self.vgg_kin1_1 = vggKin(imgs, 'pytorch_kinematics/weights0.p', self.sessKin1_1, True, 'pytorch_kinematics/weights1_1.p')
-        self.vgg_kin1_2 = vggKin(imgs, 'pytorch_kinematics/weights0.p', self.sessKin1_2, True, 'pytorch_kinematics/weights1_2.p')
+        self.vgg_kin0 = vggKin(imgs, 'pytorch_kinematic/weights0.p', self.sessKin0)
+        self.vgg_kin1_1 = vggKin(imgs, 'pytorch_kinematic/weights0.p', self.sessKin1_1, 1, 'pytorch_kinematic/weights1_1.p')
+        self.vgg_kin1_2 = vggKin(imgs, 'pytorch_kinematic/weights0.p', self.sessKin1_2, 2, 'pytorch_kinematic/weights1_2.p')
 
 
     def clean_up_vgg(self):

@@ -145,8 +145,10 @@ model.load_state_dict(torch.load(weight_name))
 import numpy
 import pickle
 
-print(model.model0)
+#print(model.model0)
 print(model.model1_1)
+print(model.model1_2)
+
 #model.model0 is re_trained VGG
 weights0 = dict()
 #first layer of each branch, before re-concatenation

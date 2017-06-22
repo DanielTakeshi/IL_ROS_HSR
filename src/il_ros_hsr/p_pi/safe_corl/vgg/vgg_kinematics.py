@@ -31,10 +31,10 @@ class vggKin:
                 self.load_weights(weights, sess)
 
 
-    def make_conv_layer(self, input, name, dim1, dim2):
-        with tf.name_scop(name) as scope:
-            kernel = tf.Variable(tf.truncated_normal([3, 3, dim1, dim2], dtype=tf.float32, stddev=1e-1), name='weights')
-            conv = tf.nn.conv2d(images, kernel, [1, 1, 1, 1], padding='SAME')
+    def make_conv_layer(self, input_layer, name, dim1, dim2, stride=3):
+        with tf.name_scope(name) as scope:
+            kernel = tf.Variable(tf.truncated_normal([stride, stride, dim1, dim2], dtype=tf.float32, stddev=1e-1), name='weights')
+            conv = tf.nn.conv2d(input_layer, kernel, [1, 1, 1, 1], padding='SAME')
             biases = tf.Variable(tf.constant(0.0, shape=[dim2], dtype=tf.float32), trainable=True, name='biases')
             out = tf.nn.bias_add(conv, biases)
             output = tf.nn.relu(out, name=scope)
@@ -73,8 +73,11 @@ class vggKin:
             self.conv5_1 = self.make_conv_layer(self.conv4_4, "conv5_1", 128, 128)
             self.conv5_2 = self.make_conv_layer(self.conv5_1, "conv5_2", 128, 128)
             self.conv5_3 = self.make_conv_layer(self.conv5_2, "conv5_3", 128, 128)
-            self.conv5_4 = self.make_conv_layer(self.conv5_3, "conv5_4", 128, 512)
-            self.conv5_5 self.make_conv_layer(self.conv5_4, "conv5_5", 512, 38)
+            self.conv5_4 = self.make_conv_layer(self.conv5_3, "conv5_4", 128, 512, 1)
+            lastDim = 38
+            if self.secondBranch == 2:
+                lastDim = 19
+            self.conv5_5 = self.make_conv_layer(self.conv5_4, "conv5_5", 512, lastDim, 1)
 
     def fc_layers(self):
         in_layer = self.conv4_4

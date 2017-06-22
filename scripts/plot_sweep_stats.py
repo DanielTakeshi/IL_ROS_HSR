@@ -52,25 +52,24 @@ if __name__ == '__main__':
 
 
     stats = pickle.load(open(Options.stats_dir+'vgg_stats.p','r'))
-
+    fig = plt.figure(1)
+    ax = fig.add_subplot(111)
     for stat in stats:
-        plt.plot(stat['train_loss'],label=stat['type'])
+        ax.plot(stat['test_loss'],label=stat['type'])
         print stat['type']
         print stat['path']
 
-    plt.legend(bbox_to_anchor=(1.05,1),loc=2,borderaxespad=0.)
+    lgd = ax.legend(bbox_to_anchor=(1.05,1),loc=2,borderaxespad=0.)
     
-    plt.tight_layout()
     #plt.show()
-    plt.savefig("train_loss.png")
-    
-    for stat in stats:
-        plt.plot(stat['test_loss'],label=stat['type'])
+    fig.savefig("test_loss.png", bbox_extra_artists = (lgd,), bbox_inches='tight')
 
-    plt.legend(bbox_to_anchor=(1.05,1),loc=2,borderaxespad=0.)
+    #for stat in stats:
+        #plt.plot(stat['test_loss'],label=stat['type'])
 
-    plt.tight_layout()
-    plt.savefig("test_loss.png")
+    #plt.legend(bbox_to_anchor=(1.05,1),loc=2,borderaxespad=0.)
+
+    #plt.savefig("test_loss.png")
 
 
    

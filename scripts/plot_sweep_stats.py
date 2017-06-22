@@ -60,7 +60,7 @@ if __name__ == '__main__':
 
     plt.legend(bbox_to_anchor=(1.05,1),loc=2,borderaxespad=0.)
     
-
+    plt.tight_layout()
     #plt.show()
     plt.savefig("train_loss.png")
     
@@ -69,7 +69,7 @@ if __name__ == '__main__':
 
     plt.legend(bbox_to_anchor=(1.05,1),loc=2,borderaxespad=0.)
 
-
+    plt.tight_layout()
     plt.savefig("test_loss.png")
 
 

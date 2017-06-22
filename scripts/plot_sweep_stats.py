@@ -64,12 +64,14 @@ if __name__ == '__main__':
     #plt.show()
     fig.savefig("test_loss.png", bbox_extra_artists = (lgd,), bbox_inches='tight')
 
-    #for stat in stats:
-        #plt.plot(stat['test_loss'],label=stat['type'])
+    fig = plt.figure(2)
+    ax = fig.add_subplot(222)
+    for stat in stats:
+        ax.plot(stat['train_loss'],label=stat['type'])
 
-    #plt.legend(bbox_to_anchor=(1.05,1),loc=2,borderaxespad=0.)
+    lgd = ax.legend(bbox_to_anchor=(1.05,1),loc=2,borderaxespad=0.)
 
-    #plt.savefig("test_loss.png")
+    fig.savefig("train_loss.png", bbox_extra_artitsts = (lgd,), bbox_inches='tight')
 
 
    

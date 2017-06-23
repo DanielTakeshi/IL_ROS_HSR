@@ -50,7 +50,7 @@ if __name__ == '__main__':
     state_stats = []
     com = COM()
     features = Features()
-    which_to_run = [False, False, False, False, True]
+    which_to_run = [True, True, True, True, True]
     ind_of_run = 0
 
     ##################################### VGG ORIGINAL #####################################

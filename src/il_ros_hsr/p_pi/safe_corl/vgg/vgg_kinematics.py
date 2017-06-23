@@ -47,8 +47,7 @@ class vggKin:
 
         # zero-mean input
         with tf.name_scope('preprocess') as scope:
-            #mean = tf.constant([123.68, 116.779, 103.939], dtype=tf.float32, shape=[1, 1, 1, 3], name='img_mean')
-            mean = tf.constant([113.45, 113.45, 113.45])
+            mean = tf.constant([123.68, 116.779, 103.939], dtype=tf.float32, shape=[1, 1, 1, 3], name='img_mean')
             images = self.imgs-mean
 
         self.conv1_1 = self.make_conv_layer(images, "conv1_1", 3, 64)

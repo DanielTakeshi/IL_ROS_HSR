@@ -138,7 +138,7 @@ if __name__ == '__main__':
         print("starting vgg kinematic concat")
         data = inputdata.IMData(train_data, test_data,state_space = features.vgg_kinematic_concat_extract,precompute= True)
         print("finished precomputing features")
-        net = Net_Kinematic(Options, 2)
+        net = Net_Kinematic(Options, 3)
         save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
 
         stat = {}

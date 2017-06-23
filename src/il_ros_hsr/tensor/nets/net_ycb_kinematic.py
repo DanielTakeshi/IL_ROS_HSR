@@ -35,6 +35,8 @@ class Net_YCB_Kinematic(TensorNet):
         elif branch_type == 2:
             #state_dim = 14896
             state_dim = 100352
+        elif branch_type == 3:
+            state_dim = 2 * 100352
         self.x = tf.placeholder('float', shape=[None,state_dim])
         self.y_ = tf.placeholder("float", shape=[None, 3])
 

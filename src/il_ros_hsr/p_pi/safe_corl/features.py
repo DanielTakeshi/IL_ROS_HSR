@@ -209,10 +209,9 @@ class Features():
 
     #features concatenated according to kinematics paper
     def vgg_kinematic_concat_extract(self, state):
-        pre_features = self.vgg_kinematic_pre_extract(state)
         branch1_output = self.vgg_kinematic1_extract(state)
         branch2_output = self.vgg_kinematic2_extract(state)
 
-        vgg_feat = np.append(pre_features, np.append(branch1_output, branch2_output))
+        vgg_feat = np.append(branch1_output, branch2_output)
 
         return vgg_feat

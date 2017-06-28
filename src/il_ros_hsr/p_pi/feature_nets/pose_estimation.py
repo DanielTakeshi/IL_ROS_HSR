@@ -1,7 +1,6 @@
 """
-tensorflow version of layers 0, 1_1, and 1_2 from
-https://github.com/tensorboy/pytorch_Realtime_Multi-Person_Pose_Estimation
-based on VGG19 implementation from http://www.cs.toronto.edu/~frossard/post/vgg16/
+tensorflow version of https://github.com/tensorboy/pytorch_Realtime_Multi-Person_Pose_Estimation
+structure based on VGG16 implementation from http://www.cs.toronto.edu/~frossard/post/vgg16/
 """
 
 import os
@@ -10,14 +9,13 @@ os.environ["CUDA_VISIBLE_DEVICES"]="0"
 import tensorflow as tf
 import numpy as np
 from scipy.misc import imread, imresize
-# from imagenet_classes import class_names
 import IPython
 import pickle
 import re
 import cv2
 
 
-class vggKin:
+class PoseEstimation:
     def __init__(self, imgs, weights=None, sess=None, secondBranch=False, weights2=None):
         self.secondBranch = secondBranch
         self.imgs = imgs

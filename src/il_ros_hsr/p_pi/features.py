@@ -30,13 +30,13 @@ class Features():
         self.hog = cv2.HOGDescriptor()
         imgs = tf.placeholder(tf.float32, [None, 224, 224, 3])
         self.sess16 = tf.Session()
-        self.sessKin0 = tf.Session()
-        self.sessKin1_1 = tf.Session()
-        self.sessKin1_2 = tf.Session()
+        # self.sessKin0 = tf.Session()
+        # self.sessKin1_1 = tf.Session()
+        # self.sessKin1_2 = tf.Session()
         self.vgg = vgg16(imgs, 'src/il_ros_hsr/p_pi/safe_corl/vgg/vgg16_weights.npz', self.sess16)
-        self.vgg_kin0 = vggKin(imgs, 'pytorch_kinematic/weights0.p', self.sessKin0)
-        self.vgg_kin1_1 = vggKin(imgs, 'pytorch_kinematic/weights0.p', self.sessKin1_1, 1, 'pytorch_kinematic/weights1_1.p')
-        self.vgg_kin1_2 = vggKin(imgs, 'pytorch_kinematic/weights0.p', self.sessKin1_2, 2, 'pytorch_kinematic/weights1_2.p')
+        # self.vgg_kin0 = vggKin(imgs, 'pytorch_kinematic/weights0.p', self.sessKin0)
+        # self.vgg_kin1_1 = vggKin(imgs, 'pytorch_kinematic/weights0.p', self.sessKin1_1, 1, 'pytorch_kinematic/weights1_1.p')
+        # self.vgg_kin1_2 = vggKin(imgs, 'pytorch_kinematic/weights0.p', self.sessKin1_2, 2, 'pytorch_kinematic/weights1_2.p')
 
 
     def clean_up_vgg(self):
@@ -163,13 +163,6 @@ class Features():
         c_img = state['color_img']
         hog_ext = self.hog.compute(c_img)
         return hog_ext[:,0]
-
-    def vgg_features(self,state):
-
-        c_img = imresize(state, (224, 224))
-        vgg_feat = self.sess16.run(self.vgg.pool5_flat,feed_dict={self.vgg.imgs: [c_img]})[0]
-
-        return vgg_feat
 
     def vgg_extract(self,state):
 

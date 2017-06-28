@@ -24,10 +24,11 @@ from il_ros_hsr.tensor.nets.net_pose_estimation import PoseEstimationNet as Net_
 if __name__ == '__main__':
     ITERATIONS = 2000
     BATCH_SIZE = 200
+    options = Options()
 
     f = []
 
-    for (dirpath, dirnames, filenames) in os.walk(Options.rollouts_dir):
+    for (dirpath, dirnames, filenames) in os.walk(options.rollouts_dir):
         f.extend(dirnames)
 
     train_data = []
@@ -48,7 +49,6 @@ if __name__ == '__main__':
     state_stats = []
     com = COM()
     features = Features()
-    options = Options()
 
     feature_spaces = []
     feature_spaces.append({"feature": features.vgg_extract, "run": True, "name": "vgg", "net": Net_VGG})
@@ -75,5 +75,3 @@ if __name__ == '__main__':
             net.clean_up()
 
             pickle.dump(state_stats,open(Options.stats_dir+'feature_stats.p','wb'))
-
-    

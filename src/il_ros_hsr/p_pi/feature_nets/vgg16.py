@@ -40,7 +40,7 @@ class vgg16(FeatureNet):
         series_dimensions.append([(256, 512), (512, 512), (512, 512)])
         series_dimensions.append([(512, 512), (512, 512), (512, 512)])
 
-        self.pool5 = self.conv_branch(images, 5, series_dimensions)
+        self.pool5 = self.conv_block(images, series_dimensions)
 
     def construct_fc_layers(self):
         shape = int(np.prod(self.pool5.get_shape()[1:]))

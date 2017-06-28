@@ -6,12 +6,12 @@ import pickle
 import cv2
 
 class FeatureNet():
-    def __init__(self, imgs):
+    def __init__(self):
         self.parameters = []
         #img_mean from vgg- left unchanged
         self.img_mean = [123.68, 116.779, 103.939]
 
-        self.construct_conv_layers(imgs)
+        self.construct_conv_layers()
         self.construct_fc_layers()
 
     """ zero-mean input """

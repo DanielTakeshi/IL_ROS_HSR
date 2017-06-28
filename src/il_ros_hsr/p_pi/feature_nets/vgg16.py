@@ -23,15 +23,16 @@ import IPython
 
 class vgg16(FeatureNet):
     def __init__(self, imgs, weights=None, sess=None):
-        super(PoseEstimation, self).__init__(imgs)
+        self.imgs = imgs
+        super(PoseEstimation, self).__init__()
 
         self.probs = tf.nn.softmax(self.fc3)
 
         if weights_path is not None and sess is not None:
             self.load_weights(weights_path, sess)
 
-    def construct_conv_layers(self, imgs):
-        images = self.preprocess(imgs)
+    def construct_conv_layers(self):
+        images = self.preprocess(self.imgs)
         series_dimensions = []
         series_dimensions.append([(3, 64), (64, 64)])
         series_dimensions.append([(64, 128), (128, 128)])

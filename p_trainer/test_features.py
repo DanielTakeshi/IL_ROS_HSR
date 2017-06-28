@@ -37,7 +37,7 @@ if __name__ == '__main__':
     train_labels = []
     test_labels = []
     for filename in f:
-        rollout_data = pickle.load(open(Options.rollouts_dir+filename+'/rollout.p','r'))
+        rollout_data = pickle.load(open(options.rollouts_dir+filename+'/rollout.p','r'))
 
         if(random() > 0.2):
             train_data.append(rollout_data)
@@ -74,4 +74,4 @@ if __name__ == '__main__':
 
             net.clean_up()
 
-            pickle.dump(state_stats,open(Options.stats_dir+'feature_stats.p','wb'))
+            pickle.dump(state_stats,open(options.stats_dir+'feature_stats.p','wb'))

@@ -143,11 +143,14 @@ model = pose_model(models)
 model.load_state_dict(torch.load(weight_name))
 
 import numpy
-import pickle
 
-# print(model.model0)
-# print(model.model1_1)
-# print(model.model1_2)
+with open("model_struct.txt", "a") as out_file:
+    for k in sorted(models.keys()):
+        title = k.__str__()
+        struct = models[k].__str__()
+        out_file.write("%s\n" % title)
+        out_file.write("%s\n" % struct)
+    
 
 #model.model0 is re_trained VGG
 #model.modelx_y is layer x of branch y
@@ -158,4 +161,4 @@ for key in model.state_dict().keys():
     format_weight = numpy.array(weight.tolist())
     weights[key] = format_weight
 
-pickle.dump( weights, open( "weights.p", "wb" ) )
+numpy.savez( "weights", weights )

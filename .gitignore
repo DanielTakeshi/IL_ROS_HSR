@@ -3,3 +3,4 @@ data/
 pytorch_kinematic/model/pose_model.pth
 pytorch_kinematic/weights*.p
 env/
+*.pyc

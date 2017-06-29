@@ -51,10 +51,11 @@ if __name__ == '__main__':
     features = Features()
 
     feature_spaces = []
-    feature_spaces.append({"feature": features.vgg_extract, "run": True, "name": "vgg", "net": Net_VGG})
-    feature_spaces.append({"feature": features.pose_0_extract, "run": True, "name": "pose0", "net": Net_Pose_Estimation})
-    feature_spaces.append({"feature": features.pose_1_1_extract, "run": True, "name": "pose1_1", "net": Net_Pose_Estimation})
-    feature_spaces.append({"feature": features.pose_1_2_extract, "run": True, "name": "pose1_2", "net": Net_Pose_Estimation})
+    feature_spaces.append({"feature": features.vgg_extract, "run": False, "name": "vgg", "net": Net_VGG})
+    feature_spaces.append({"feature": features.pose_0_extract, "run": False, "name": "pose0", "net": Net_Pose_Estimation})
+    feature_spaces.append({"feature": features.pose_1_1_extract, "run": False, "name": "pose1_1", "net": Net_Pose_Estimation})
+    feature_spaces.append({"feature": features.pose_1_2_extract, "run": False, "name": "pose1_2", "net": Net_Pose_Estimation})
+    feature_spaces.append({"feature": features.pose_6_1_extract, "run": True, "name": "pose6_1", "net": Net_Pose_Estimation})
 
     for feature_space in feature_spaces:
         if feature_space["run"]:

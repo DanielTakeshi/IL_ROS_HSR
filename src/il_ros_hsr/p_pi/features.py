@@ -193,3 +193,12 @@ class Features():
         vgg_feat = self.sessPose.run(self.pose.blocks_flat["1_2_half"],feed_dict={self.vgg.imgs: [c_img]})[0]
 
         return vgg_feat
+
+    #testing if the final output of branch 1 can be extracted
+    def pose_6_1_extract(self, state):
+        c_img = state['color_img']
+        c_img = imresize(c_img, (224, 224))
+
+        vgg_feat = self.sessPose.run(self.pose.blocks_flat["6_1"],feed_dict={self.vgg.imgs: [c_img]})[0]
+
+        return vgg_feat

@@ -122,17 +122,17 @@ class PoseEstimation(FeatureNet):
 
         def get_key_info(key):
             k = key.replace("model", "")
-            if k == 0:
+            if k[0] == '0':
                 block_num1 = block_num2 = -1
             else:
-                block_num1 = k[0]
-                block_num2 = k[2]
+                block_num1 = int(k[0])
+                block_num2 = int(k[2])
             layer_num = int(re.findall("\.(.*?)\.", key)[0])
             type_num = 0 if key[-1] == "t" else 1
             return (block_num1, block_num2, layer_num, type_num)
 
         keys = sorted(weights.keys(), key = get_key_info)
-
+        print(keys)
         #check this part for correctness
         for i, k in enumerate(keys):
             print(k)

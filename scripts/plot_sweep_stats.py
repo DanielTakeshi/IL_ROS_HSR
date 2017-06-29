@@ -51,7 +51,7 @@ if __name__ == '__main__':
 
 
 
-    stats = pickle.load(open(Options.stats_dir+'vgg_stats.p','r'))
+    stats = pickle.load(open(Options.stats_dir+'feature_stats.p','r'))
     fig = plt.figure(1)
     ax = fig.add_subplot(111)
     for stat in stats:
@@ -71,7 +71,7 @@ if __name__ == '__main__':
 
     lgd = ax.legend(bbox_to_anchor=(1.05,1),loc=2,borderaxespad=0.)
 
-    fig.savefig("train_loss.png", bbox_extra_artitsts = (lgd,), bbox_inches='tight')
+    fig.savefig("train_loss.png", bbox_extra_artists = (lgd,), bbox_inches='tight')
 
 
    

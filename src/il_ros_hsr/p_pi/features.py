@@ -7,8 +7,8 @@ from il_ros_hsr.core.common import Common
 import cv2
 import tensorflow as tf
 
-from il_ros_hsr.p_pi.safe_corl.vgg.vgg16 import vgg16
-from il_ros_hsr.p_pi.safe_corl.vgg.vgg_kinematics import vggKin
+from il_ros_hsr.p_pi.feature_nets.vgg16 import vgg16
+from il_ros_hsr.p_pi.feature_nets.pose_estimation import PoseEstimation
 
 from scipy.misc import imread, imresize
 
@@ -30,21 +30,15 @@ class Features():
         self.hog = cv2.HOGDescriptor()
         imgs = tf.placeholder(tf.float32, [None, 224, 224, 3])
         self.sess16 = tf.Session()
-        # self.sessKin0 = tf.Session()
-        # self.sessKin1_1 = tf.Session()
-        # self.sessKin1_2 = tf.Session()
+        self.sessPose = tf.Session()
+
         self.vgg = vgg16(imgs, 'src/il_ros_hsr/p_pi/safe_corl/vgg/vgg16_weights.npz', self.sess16)
-        # self.vgg_kin0 = vggKin(imgs, 'pytorch_kinematic/weights0.p', self.sessKin0)
-        # self.vgg_kin1_1 = vggKin(imgs, 'pytorch_kinematic/weights0.p', self.sessKin1_1, 1, 'pytorch_kinematic/weights1_1.p')
-        # self.vgg_kin1_2 = vggKin(imgs, 'pytorch_kinematic/weights0.p', self.sessKin1_2, 2, 'pytorch_kinematic/weights1_2.p')
+        self.pose = PoseEstimation(imgs, 'pytorch_kinematic/pose_weights.npz', self.sessPose)
 
 
-    def clean_up_vgg(self):
+    def clean_up_nets(self):
         self.sess16.close()
-        self.sessKin0.close()
-        self.sessKin1_1.close()
-        self.sessKin1_2.close()
-
+        self.sessPose.close()
 
     def im2tensor(self,im,channels=3):
 
@@ -173,38 +167,29 @@ class Features():
 
         return vgg_feat
 
-    #refined vgg
-    def vgg_kinematic_pre_extract(self, state):
+    #vgg section of pose
+    def pose_0_extract(self, state):
         c_img = state['color_img']
         c_img = imresize(c_img, (224, 224))
 
-        vgg_feat = self.sessKin0.run(self.vgg_kin0.fc_in_flat,feed_dict={self.vgg.imgs: [c_img]})[0]
+        vgg_feat = self.sessPose.run(self.pose.block_outs["0"],feed_dict={self.vgg.imgs: [c_img]})[0]
 
         return vgg_feat
 
-    #refined vgg + first part of branch 1
-    def vgg_kinematic1_extract(self, state):
+    #halfway through 1st layer of 1st branch
+    def pose_1_1_extract(self, state):
         c_img = state['color_img']
         c_img = imresize(c_img, (224, 224))
 
-        vgg_feat = self.sessKin1_1.run(self.vgg_kin1_1.fc_in_flat,feed_dict={self.vgg.imgs: [c_img]})[0]
+        vgg_feat = self.sessPose.run(self.pose.block_outs["1_1_half"],feed_dict={self.vgg.imgs: [c_img]})[0]
 
         return vgg_feat
 
-    #refined vgg + first part of branch 2
-    def vgg_kinematic2_extract(self, state):
+    #halfway through 1st layer of 2nd branch
+    def pose_1_2_extract(self, state):
         c_img = state['color_img']
         c_img = imresize(c_img, (224, 224))
 
-        vgg_feat = self.sessKin1_2.run(self.vgg_kin1_2.fc_in_flat,feed_dict={self.vgg.imgs: [c_img]})[0]
-
-        return vgg_feat
-
-    #features concatenated according to kinematics paper
-    def vgg_kinematic_concat_extract(self, state):
-        branch1_output = self.vgg_kinematic1_extract(state)
-        branch2_output = self.vgg_kinematic2_extract(state)
-
-        vgg_feat = np.append(branch1_output, branch2_output)
+        vgg_feat = self.sessPose.run(self.pose.block_outs["1_2_half"],feed_dict={self.vgg.imgs: [c_img]})[0]
 
         return vgg_feat

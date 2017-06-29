@@ -48,18 +48,18 @@ class PoseEstimation(FeatureNet):
         # BLOCK 1_1
         conv_set_num += 1
         conv_dimensions = [(128, 128), (128, 128), (128, 128)]
-        block1_1_half = self.conv_series(self.block_outputs["0"], conv_set_num, conv_dimensions)
+        self.block_outs["1_1_half"] = self.conv_series(self.block_outputs["0"], conv_set_num, conv_dimensions)
         conv_dimensions = [(128, 512), (512, 38)]
         conv_set_num += 1
-        self.block_outs["1_1"] = self.conv_series(block1_1_half, conv_set_num, conv_dimensions, k_size=1, lastRelu=False)
+        self.block_outs["1_1"] = self.conv_series(self.block_outs["1_1_half"], conv_set_num, conv_dimensions, k_size=1, lastRelu=False)
 
         # BLOCK 1_2
         conv_set_num += 1
         conv_dimensions = [(128, 128), (128, 128), (128, 128)]
-        block1_2_half = self.conv_series(self.block_outputs["0"], conv_set_num, conv_dimensions)
+        self.block_outs["1_2_half"] = self.conv_series(self.block_outputs["0"], conv_set_num, conv_dimensions)
         conv_dimensions = [(128, 512), (512, 19)]
         conv_set_num += 1
-        self.block_outs["1_2"] = self.conv_series(block1_2_half, conv_set_num, conv_dimensions, k_size=1, lastRelu=False)
+        self.block_outs["1_2"] = self.conv_series(self.block_outs["1_2_half"], conv_set_num, conv_dimensions, k_size=1, lastRelu=False)
 
         # BLOCKS x_1 and x_2 for 2 <= x <= 6
         for stage_num in range(2, 7):
@@ -86,13 +86,20 @@ class PoseEstimation(FeatureNet):
         return output_layer, conv_set_num
 
     """
+    creates flattened version of all output layers
     gets the output of this network by itself
     not used for feature representations
     """
     def construct_fc_layers(self):
-        shape = int(np.prod(self.conv_out.get_shape()[1:]))
-        self.conv_out_flat = tf.reshape(self.conv_out, [-1, shape])
+        self.blocks_flat = {}
+        for key in self.block_outs:
+            curr_out = self.block_outs[key]
+            shape = int(np.prod(curr_out.get_shape()[1:]))
+            self.blocks_flat[key] = tf.reshape(curr_out, [-1, shape])
 
+        #fc doesn't actually matter here
+        self.fc_in = self.blocks_flat["0"]
+        shape = int(np.prod(self.block_outs["0"].get_shape()[1:]))
         self.fc1 = self.fc(self.pool5_flat, "fc1", shape, 4096)
         self.fc2 = self.fc(self.fc1, "fc2", 4096, 4096)
         self.fc3 = self.fc(self.fc2, "fc3", 4096, 1000, relu=False)

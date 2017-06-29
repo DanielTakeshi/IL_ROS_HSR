@@ -150,7 +150,7 @@ with open("model_struct.txt", "a") as out_file:
         struct = models[k].__str__()
         out_file.write("%s\n" % title)
         out_file.write("%s\n" % struct)
-    
+
 
 #model.model0 is re_trained VGG
 #model.modelx_y is layer x of branch y
@@ -161,4 +161,4 @@ for key in model.state_dict().keys():
     format_weight = numpy.array(weight.tolist())
     weights[key] = format_weight
 
-numpy.savez( "weights", weights )
+numpy.savez( "pose_weights", weights )

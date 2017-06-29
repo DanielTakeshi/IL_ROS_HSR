@@ -31,13 +31,13 @@ if __name__ == '__main__':
     for (dirpath, dirnames, filenames) in os.walk(options.rollouts_dir):
         f.extend(dirnames)
 
-    data = []
+    raw_data = []
     labels = []
 
     for filename in f:
         rollout_data = pickle.load(open(options.rollouts_dir+filename+'/rollout.p','r'))
 
-        data.append(rollout_data)
+        raw_data.append(rollout_data)
         labels.append(filename)
 
     state_stats = []
@@ -53,7 +53,7 @@ if __name__ == '__main__':
     for feature_space in feature_spaces:
         if feature_space["run"]:
             print("precomputing " + feature_space["name"] + " features")
-            data = inputdata_f.IMData(data, state_space = feature_space["feature"] ,precompute= True)
+            data = inputdata_f.IMData(raw_data, state_space = feature_space["feature"] ,precompute= True)
 
             all_train_losses = []
             all_test_losses = []
@@ -68,12 +68,10 @@ if __name__ == '__main__':
 
                 net.clean_up()
 
-            print("checking lengths of all losses- should be 10 each")
-            print(len(all_train_losses))
-            print(len(all_test_losses))
+            print("finished cross validation- saving stats")
 
             avg_train_loss = np.mean(np.array(all_train_losses), axis=0)
-            avg_train_loss = np.mean(np.array(all_test_losses), axis=0)
+            avg_test_loss = np.mean(np.array(all_test_losses), axis=0)
 
             stat = {}
             stat['type'] = feature_space["name"]

@@ -19,12 +19,12 @@ import numpy as np
 from scipy.misc import imread, imresize
 # from imagenet_classes import class_names
 import IPython
-
+from il_ros_hsr.p_pi.feature_nets.feature_net import FeatureNet
 
 class vgg16(FeatureNet):
-    def __init__(self, imgs, weights=None, sess=None):
+    def __init__(self, imgs, weights_path=None, sess=None):
         self.imgs = imgs
-        super(PoseEstimation, self).__init__()
+        super(vgg16, self).__init__()
 
         self.probs = tf.nn.softmax(self.fc3)
 

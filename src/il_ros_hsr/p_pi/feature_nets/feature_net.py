@@ -5,7 +5,7 @@ import IPython
 import pickle
 import cv2
 
-class FeatureNet():
+class FeatureNet(object):
     def __init__(self):
         self.parameters = []
         #img_mean from vgg- left unchanged

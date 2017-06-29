@@ -172,7 +172,7 @@ class Features():
         c_img = state['color_img']
         c_img = imresize(c_img, (224, 224))
 
-        vgg_feat = self.sessPose.run(self.pose.block_outs["0"],feed_dict={self.vgg.imgs: [c_img]})[0]
+        vgg_feat = self.sessPose.run(self.pose.blocks_flat["0"],feed_dict={self.vgg.imgs: [c_img]})[0]
 
         return vgg_feat
 
@@ -181,7 +181,7 @@ class Features():
         c_img = state['color_img']
         c_img = imresize(c_img, (224, 224))
 
-        vgg_feat = self.sessPose.run(self.pose.block_outs["1_1_half"],feed_dict={self.vgg.imgs: [c_img]})[0]
+        vgg_feat = self.sessPose.run(self.pose.blocks_flat["1_1_half"],feed_dict={self.vgg.imgs: [c_img]})[0]
 
         return vgg_feat
 
@@ -190,6 +190,6 @@ class Features():
         c_img = state['color_img']
         c_img = imresize(c_img, (224, 224))
 
-        vgg_feat = self.sessPose.run(self.pose.block_outs["1_2_half"],feed_dict={self.vgg.imgs: [c_img]})[0]
+        vgg_feat = self.sessPose.run(self.pose.blocks_flat["1_2_half"],feed_dict={self.vgg.imgs: [c_img]})[0]
 
         return vgg_feat

@@ -48,7 +48,7 @@ class PoseEstimation(FeatureNet):
         # BLOCK 1_1
         conv_set_num += 1
         conv_dimensions = [(128, 128), (128, 128), (128, 128)]
-        self.block_outs["1_1_half"] = self.conv_series(self.block_outputs["0"], conv_set_num, conv_dimensions)
+        self.block_outs["1_1_half"] = self.conv_series(self.block_outs["0"], conv_set_num, conv_dimensions)
         conv_dimensions = [(128, 512), (512, 38)]
         conv_set_num += 1
         self.block_outs["1_1"] = self.conv_series(self.block_outs["1_1_half"], conv_set_num, conv_dimensions, k_size=1, lastRelu=False)
@@ -56,7 +56,7 @@ class PoseEstimation(FeatureNet):
         # BLOCK 1_2
         conv_set_num += 1
         conv_dimensions = [(128, 128), (128, 128), (128, 128)]
-        self.block_outs["1_2_half"] = self.conv_series(self.block_outputs["0"], conv_set_num, conv_dimensions)
+        self.block_outs["1_2_half"] = self.conv_series(self.block_outs["0"], conv_set_num, conv_dimensions)
         conv_dimensions = [(128, 512), (512, 19)]
         conv_set_num += 1
         self.block_outs["1_2"] = self.conv_series(self.block_outs["1_2_half"], conv_set_num, conv_dimensions, k_size=1, lastRelu=False)
@@ -64,13 +64,18 @@ class PoseEstimation(FeatureNet):
         # BLOCKS x_1 and x_2 for 2 <= x <= 6
         for stage_num in range(2, 7):
             prev_stage = str(stage_num - 1)
-            stage_input = tf.concat(self.block_outs["0"], self.block_outs[prev_stage + "_1"], self.block_outs[prev_stage + "_2"])
-
+            prev1 = self.block_outs[prev_stage + "_1"]
+            prev2 = self.block_outs[prev_stage + "_2"]
+            orig0 = self.block_outs["0"]
+            
+            prev_out = tf.concat([prev1, prev2], 3)
+            stage_input = tf.concat([orig0, prev_out], 3)
+            
             block1 = str(stage_num) + "_1"
-            self.block_outs[block], conv_set_num = self.construct_recurrent_block(stage_input, 1, conv_set_num)
+            self.block_outs[block1], conv_set_num = self.construct_recurrent_block(stage_input, 1, conv_set_num)
 
             block2 = str(stage_num) + "_2"
-            self.block_outs[block], conv_set_num = self.construct_recurrent_block(stage_input, 2, conv_set_num)
+            self.block_outs[block2], conv_set_num = self.construct_recurrent_block(stage_input, 2, conv_set_num)
 
     """
     specifically for blocks of the form x_1 or x_2 where x > 1
@@ -79,7 +84,7 @@ class PoseEstimation(FeatureNet):
         conv_set_num += 1
         conv_dimensions = [(185, 128), (128, 128), (128, 128), (128, 128), (128, 128)]
         block_half = self.conv_series(input_layer, conv_set_num, conv_dimensions, k_size=7)
-        out_dim = 39 if branch == 1 else 19
+        out_dim = 38 if branch == 1 else 19
         conv_dimensions = [(128, 128), (128, out_dim)]
         conv_set_num += 1
         output_layer = self.conv_series(block_half, conv_set_num, conv_dimensions, k_size=1, lastRelu=False)
@@ -100,7 +105,7 @@ class PoseEstimation(FeatureNet):
         #fc doesn't actually matter here
         self.fc_in = self.blocks_flat["0"]
         shape = int(np.prod(self.block_outs["0"].get_shape()[1:]))
-        self.fc1 = self.fc(self.pool5_flat, "fc1", shape, 4096)
+        self.fc1 = self.fc(self.fc_in, "fc1", shape, 4096)
         self.fc2 = self.fc(self.fc1, "fc2", 4096, 4096)
         self.fc3 = self.fc(self.fc2, "fc3", 4096, 1000, relu=False)
 
@@ -130,6 +135,9 @@ class PoseEstimation(FeatureNet):
 
         #check this part for correctness
         for i, k in enumerate(keys):
+            print(k)
+            print(weights[k].shape)
+            print(self.parameters[i].shape)
             #reverse shape for weights (not biases)
             if len(np.shape(weights[k])) == 4:
                 weights[k] = np.swapaxes(weights[k], 0, 3)

@@ -55,6 +55,8 @@ if __name__ == '__main__':
                         help="enter the starting value of rollouts to be used for training")
     parser.add_argument("-l", "--last", type=int,
                         help="enter the last value of the rollouts to be used for training")
+    parser.add_argument("-u", "--username", type=str,
+                        help="enter the name of the person in the study")
 
 
     args = parser.parse_args()
@@ -71,6 +73,14 @@ if __name__ == '__main__':
         print "please enter a last value with -l (not inclusive)"
         sys.exit()
 
+    if args.username is not None:
+        user_name = args.username
+    else:
+        print "please enter a username"
+        sys.exit()
+
+
+    Options.setup(Options.root_dir,user_name)
 
 
    
@@ -85,45 +95,46 @@ if __name__ == '__main__':
     com = COM()
 
     for filename in f:
+        if( filename == 'rollout42'):
        
-        rollout_data = pickle.load(open(Options.rollouts_dir+filename+'/rollout.p','r'))
+            rollout_data = pickle.load(open(Options.rollouts_dir+filename+'/rollout.p','r'))
 
-        state = rollout_data[0]
-        
-        img = state['color_img']
-
-        com.depth_state(state)
-
-        height,width,layers = img.shape
-      
-        a = cv2.cv.CV_FOURCC('M','J','P','G')
-        
-        #video = vwrite(Options.movies_dir+filename+'.mp4',(width,height))
-        
-        videos_depth = []
-        videos_color = []
-        videos_binary = []
-        print "BEGINING ROLLOUT"
-        count = 0
-        for state in rollout_data:
-
-            img = state['color_img']
-            img = img[:, :, (2, 1, 0)]
-            print 'COUNT ',count
-            print state['action']
-            print state['image_time'] - state['action_time']
-            cv2.imwrite('frame_'+str(count)+'.png',img)
-
-            # cv2.imshow('debug',state['color_img'])
-            # cv2.waitKey(100)
+            state = rollout_data[0]
             
-            videos_color.append(img)
-            videos_depth.append(com.depth_state_cv(state))
-            videos_binary.append(com.binary_cropped_state(state))
-            count += 1
-    
-        vwrite(Options.movies_dir+filename+'_color.mp4',videos_color)
-        vwrite(Options.movies_dir+filename+'_depth.mp4',videos_depth)
-        vwrite(Options.movies_dir+filename+'_binary.mp4',videos_binary)
+            img = state['color_img']
+
+            com.depth_state(state)
+
+            height,width,layers = img.shape
+          
+            a = cv2.cv.CV_FOURCC('M','J','P','G')
+            
+            #video = vwrite(Options.movies_dir+filename+'.mp4',(width,height))
+            
+            videos_depth = []
+            videos_color = []
+            videos_binary = []
+            print "BEGINING ROLLOUT"
+            count = 0
+            for state in rollout_data:
+
+                img = state['color_img']
+                #img = img[:, :, (2, 1, 0)]
+                print 'COUNT ',count
+                print state['action']
+               
+                cv2.imwrite('frame_'+str(count)+'.png',img)
+
+                # cv2.imshow('debug',state['color_img'])
+                # cv2.waitKey(100)
+                
+                videos_color.append(img)
+                # videos_depth.append(com.depth_state_cv(state))
+                # videos_binary.append(com.binary_cropped_state(state))
+                count += 1
+        
+            vwrite(Options.movies_dir+filename+'_color.mp4',videos_color)
+            # vwrite(Options.movies_dir+filename+'_depth.mp4',videos_depth)
+            # vwrite(Options.movies_dir+filename+'_binary.mp4',videos_binary)
        
     

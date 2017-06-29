@@ -53,9 +53,10 @@ class FindObject():
 		self.whole_body = self.robot.get('whole_body')
 		self.gripper = self.robot.get('gripper')
 
-		self.com.go_to_initial_state(self.whole_body,self.gripper)
+		#self.com.go_to_initial_state(self.whole_body,self.gripper)
 
 		self.joystick = JoyStick_X(self.com)
+		self.tl = TransformListener() 
 
 		self.policy = Policy(self.com,self.features)
 
@@ -73,6 +74,14 @@ class FindObject():
 	def check_initial_state(self):
 
 		go = False
+		sticky = True
+		while  sticky: 
+			self.joystick.apply_control()
+			cur_recording = self.joystick.get_record_actions()
+			if(cur_recording[1] > -0.1):
+				print "BEGIN ROLLOUT"
+				sticky  = False
+
 
 		while not go:
 			img_rgb = self.policy.cam.read_color_data()
@@ -92,28 +101,92 @@ class FindObject():
 		self.com.go_to_initial_state(self.whole_body,self.gripper)
 
 
+	def clear_data(self):
+		self.trajectory = []
+
+	def mark_success(self,q):
+
+		state = {}
+		if(q == 'y'):
+			state['success'] = 1
+		else:
+			state['success'] = 0
+
+		self.trajectory.append(state)
+
+	def is_goal_objet(self):
+
+		
+		try:
+		
+			full_pose = self.tl.lookupTransform('head_l_stereo_camera_frame','ar_marker/9', rospy.Time(0))
+			trans = full_pose[0]
+
+			transforms = self.tl.getFrameStrings()
+			poses = []
+
+
+			
+
+			for transform in transforms:
+				if 'bottle' in transform:
+					f_p = self.tl.lookupTransform('head_rgbd_sensor_link',transform, rospy.Time(0))
+					poses.append(f_p[0])
+					print 'augmented pose ',f_p
+					print 'ar_marker ', trans
+
+
+			for pose in poses:
+				
+				if(LA.norm(pose[2]-0.1-trans[2])< 0.03):
+					return True
+		except: 
+			rospy.logerr('AR MARKER NOT THERE')
+
+		return False
+
+
 	def check_success(self):
 
 		self.com.clean_up()
 
-		self.b_d = Bottle_Detect()
+		self.b_d = Bottle_Detect(self.policy.cam.read_info_data())
 
 		img_rgb = self.policy.cam.read_color_data()
+		img_depth = self.policy.cam.read_depth_data()
 
-		success = self.b_d.detect_bottle(img_rgb)
+		s_obj,img_detect,poses = self.b_d.detect_bottle(img_rgb,img_depth)
+
+		success = self.is_goal_objet()
 
 		self.b_d.clean_up()
+
+		self.process_data(img_rgb,img_detect,poses,success)
+
+
 
 		print "BOTTLE FOUND ",success
 
 		return success
 
-	def save_data(self,img_rgb,img_detect):
+	def process_data(self,img_rgb,img_detect,object_poses,success):
 
-		state = self.com.format_data(img_rgb,None)
+		img_rgb_cr,img_d = self.com.format_data(img_rgb,None)
 
+		state = {}
+		state['color_img'] = img_rgb_cr
 		state['found_object'] = img_detect
-		state['object_poses'] = 
+		state['object_poses'] = object_poses
+		state['was_success'] = success
+
+		self.trajectory.append(state)
+
+	def save_data(self):
+
+		self.com.save_evaluation(self.trajectory)
+
+
+
 	def execute_grasp(self):
 
 		self.gripper.grasp(0.01)
@@ -121,7 +194,7 @@ class FindObject():
 		nothing = True
 		while nothing: 
 			try:
-				self.whole_body.move_end_effector_pose(geometry.pose(y=0.15,z=-0.11, ek=-1.57),'ar_marker/9')
+				self.whole_body.move_end_effector_pose(geometry.pose(y=0.15,z=-0.09, ek=-1.57),'ar_marker/9')
 				nothing = False
 			except:
 				rospy.logerr('mustard bottle found')
@@ -146,25 +219,29 @@ if __name__=='__main__':
 	
 
 	features = Features()
-	username = 'corl_anne_n1/'
+	username = 'corl_chris_n1/'
 	fo = FindObject(features.vgg_features,user_name = username)
 	
 
-	
 	time.sleep(5)
+
+
 	count = 0
 	T = 20
-	grasp_on = False
+	grasp_on = True
 
 	while True:
 		success = False
 		e_stop = False
 		fo.count = 0
 		fo.check_initial_state()
+		# fo.execute_grasp()
+		# fo.go_to_initial_state()
 
 		
+		fo.clear_data()
 
-		while fo.count < T and not success and not e_stop: 
+		while fo.count < T  and not e_stop: 
 			fo.run()
 			success = fo.check_success()
 
@@ -176,9 +253,19 @@ if __name__=='__main__':
 
 			
 			print "CURRENT COUNT ",count
-			if success and grasp_on:
+			if e_stop and grasp_on:
 				fo.execute_grasp()
 				fo.go_to_initial_state()
+
+
+		q = input('WAS SUCCESFUL: y or n ')
+
+		fo.mark_success(q)
+
+		q = input('SAVE DATA: y or n: ')
+
+		if(q == 'y'):
+			fo.save_data()
 
 
 	

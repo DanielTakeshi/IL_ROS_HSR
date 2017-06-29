@@ -166,6 +166,27 @@ class Common:
         return 'rollout' + str(i)
 
 
+    def next_evaluation(self):
+        """
+        :return: the String name of the next new potential rollout
+                (i.e. do not overwrite another rollout)
+        """
+        i = 0
+        
+        prefix = self.Options.evaluations_dir
+        
+
+        path = prefix + 'rollout'+str(i) + "/"
+        
+
+        while os.path.exists(path):
+            i += 1
+            path = prefix + 'rollout'+str(i) + "/"
+            
+        return 'rollout' + str(i)
+
+
+
     def fix_buffer(self,data):
         frame_offset = 5
 
@@ -182,7 +203,7 @@ class Common:
             cur_action = state_p['action']
 
 
-            if(LA.norm(cur_action) > 1e-3):
+            if(LA.norm(cur_action) > -1e-3):
                 print "GOT ACCEPTED"
                 cleaned_state.append(state_p)
 
@@ -216,6 +237,39 @@ class Common:
         os.makedirs(path)
 
         pickle.dump(recording,open(path+'rollout.p','wb'))
+
+        print "Done saving."
+
+    """
+    Use for Xbox Controller. Not Supported Currently
+
+    """
+
+    def save_evaluation(self,evaluation,rollouts=False):
+        """  
+        Saves the recoring to the specified file
+
+        Paramters
+        ---------
+        recording: list 
+            The recording of the label point shoud be a list of images and labels
+
+        bc: BinaryCamera
+
+        rollouts: bool 
+            If True will save to a rollout directory instead of Supervisor (Default False)
+        """
+      
+        #recording = self.fix_buffer(recording)
+        name = self.next_evaluation()
+        path = self.Options.evaluations_dir + name + '/'
+       
+
+        print "Saving to " + path + "..."
+        
+        os.makedirs(path)
+
+        pickle.dump(evaluation,open(path+'rollout.p','wb'))
 
         print "Done saving."
 

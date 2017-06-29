@@ -39,7 +39,9 @@ class Collect_Demos():
 		self.whole_body = self.robot.get('whole_body')
 		self.gripper = self.robot.get('gripper')
 		self.tl = TransformListener()  
-		self.b_d = Bottle_Detect()
+		self.cam = RGBD()
+		time.sleep(5)
+		self.b_d = Bottle_Detect(self.cam.read_info_data())
 
 		self.start_recording = False
 		self.stop_recording = False
@@ -49,11 +51,11 @@ class Collect_Demos():
 		if(not user_name == None):
 			self.com.Options.setup(self.com.Options.root_dir,user_name)
 
-		self.com.go_to_initial_state(self.whole_body,self.gripper)
+		#self.com.go_to_initial_state(self.whole_body,self.gripper)
 
 		#self.whole_body.move_to_joint_positions({'head_tilt_joint':-0.3})
 
-		self.cam = RGBD()
+		
 
 		self.joystick = JoyStick_X(self.com,inject_noise = inject_noise,noise_scale = noise_scale)
 		self.torque = Gripper_Torque()
@@ -100,8 +102,9 @@ class Collect_Demos():
 	def check_success(self):
 
 		img_rgb = self.cam.read_color_data()
+		img_depth = self.cam.read_depth_data()
 
-		success = self.b_d.detect_bottle(img_rgb)
+		success = self.b_d.detect_bottle(img_rgb,img_depth)
 
 		print "BOTTLE FOUND ",success
 
@@ -156,8 +159,8 @@ class Collect_Demos():
 
 
 if __name__=='__main__':
-	user_name = 'corl_matt_n1/'
-	noise_scale = 3.0
+	user_name = 'corl_anne_n1/'
+	noise_scale = 4.0
 	inject_noise = True
 
 	cd = Collect_Demos(user_name,inject_noise=inject_noise,noise_scale = noise_scale)

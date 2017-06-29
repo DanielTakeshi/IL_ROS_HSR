@@ -18,6 +18,7 @@ src/il_ros_hsr/tensor/gridlog.py
 src/il_ros_hsr/tensor/gridnet.py
 src/il_ros_hsr/tensor/input_b.py
 src/il_ros_hsr/tensor/inputdata.py
+src/il_ros_hsr/tensor/inputdata_f.py
 src/il_ros_hsr/tensor/learner.py
 src/il_ros_hsr/tensor/logger.py
 src/il_ros_hsr/tensor/net11.py

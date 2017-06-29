@@ -129,7 +129,7 @@ class TensorNet():
                         print "[ Iteration " + str(i) + " ] Test loss: " + str(test_loss)
                         self.test_loss.append(test_loss)
 
-                        if(test_loss < 0.06):
+                        if(test_loss < 0.025):
                             break
 
                     self.train.run(feed_dict=feed_dict)

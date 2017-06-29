@@ -29,7 +29,7 @@ class Safe_COM(Common):
     def __init__(self,load_net = False,features = None):
 
         self.Options = Options()
-        self.var_path='ycb_06-15-2017_21h14m54s.ckpt'
+        self.var_path='ycb_06-18-2017_18h02m08s.ckpt'
         
 
         self.depth_thresh = 1000
@@ -50,7 +50,11 @@ class Safe_COM(Common):
     def format_data(self,color_img,depth_img):
 
         c_img = color_img[self.Options.OFFSET_X:self.Options.OFFSET_X+self.Options.WIDTH,self.Options.OFFSET_Y:self.Options.OFFSET_Y+self.Options.HEIGHT,:]
-        d_img = depth_img[self.Options.OFFSET_X:self.Options.OFFSET_X+self.Options.WIDTH,self.Options.OFFSET_Y:self.Options.OFFSET_Y+self.Options.HEIGHT]
+
+        if(not depth_img == None):
+            d_img = depth_img[self.Options.OFFSET_X:self.Options.OFFSET_X+self.Options.WIDTH,self.Options.OFFSET_Y:self.Options.OFFSET_Y+self.Options.HEIGHT]
+        else: 
+            d_img = None
 
 
         return [c_img, d_img]

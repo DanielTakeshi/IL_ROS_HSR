@@ -55,6 +55,8 @@ class Options():
         self.rollouts_file = self.setup_dir + "rollouts.txt"
 
         self.rollouts_dir = self.setup_dir + "rollouts/"
+
+        self.evaluations_dir = self.setup_dir + "evaluation/"
         self.movies_dir = self.setup_dir + "movies/"
         self.sup_dir = self.setup_dir + "supervisor/"
         self.binaries_dir = self.setup_dir + "binaries/"

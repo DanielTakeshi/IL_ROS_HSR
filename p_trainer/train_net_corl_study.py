@@ -47,7 +47,7 @@ from il_ros_hsr.tensor.nets.net_ycb_vgg import Net_YCB_VGG as Net_VGG
 from il_ros_hsr.tensor.nets.net_ycb_vgg_l import Net_YCB_VGG_L as Net_VGG_L
 ########################################################
 
-ITERATIONS = 1200
+ITERATIONS = 600
 BATCH_SIZE = 200
 
 

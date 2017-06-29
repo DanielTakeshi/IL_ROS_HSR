@@ -52,10 +52,9 @@ if __name__ == '__main__':
 
     feature_spaces = []
     feature_spaces.append({"feature": features.vgg_extract, "run": True, "name": "vgg", "net": Net_VGG})
-    feature_spaces.append({"feature": features.vgg_kinematic_pre_extract, "run": False, "name": "kinpre", "net": Net_Pose_Estimation})
-    feature_spaces.append({"feature": features.vgg_kinematic1_extract, "run": False, "name": "kin1", "net": Net_Pose_Estimation})
-    feature_spaces.append({"feature": features.vgg_kinematic2_extract, "run": False, "name": "kin2", "net": Net_Pose_Estimation})
-    feature_spaces.append({"feature": features.vgg_kinematic_concat_extract, "run": False, "name": "kinconcat", "net": Net_Pose_Estimation})
+    feature_spaces.append({"feature": features.pose_0_extract, "run": True, "name": "pose0", "net": Net_Pose_Estimation})
+    feature_spaces.append({"feature": features.pose_1_1_extract, "run": True, "name": "pose1_1", "net": Net_Pose_Estimation})
+    feature_spaces.append({"feature": features.pose_1_2_extract, "run": True, "name": "pose1_2", "net": Net_Pose_Estimation})
 
     for feature_space in feature_spaces:
         if feature_space["run"]:
@@ -75,3 +74,5 @@ if __name__ == '__main__':
             net.clean_up()
 
             pickle.dump(state_stats,open(options.stats_dir+'feature_stats.p','wb'))
+
+    features.clean_up_nets()

@@ -55,14 +55,17 @@ if __name__ == '__main__':
     feature_spaces.append({"feature": features.pose_0_extract, "run": False, "name": "pose0", "net": Net_Pose_Estimation})
     feature_spaces.append({"feature": features.pose_1_1_extract, "run": False, "name": "pose1_1", "net": Net_Pose_Estimation})
     feature_spaces.append({"feature": features.pose_1_2_extract, "run": False, "name": "pose1_2", "net": Net_Pose_Estimation})
-    feature_spaces.append({"feature": features.pose_6_1_extract, "run": True, "name": "pose6_1", "net": Net_Pose_Estimation})
+    feature_spaces.append({"feature": features.pose_6_1_extract, "run": True, "name": "pose6_1", "net": Net_Pose_Estimation, "sdim": 29792})
 
     for feature_space in feature_spaces:
         if feature_space["run"]:
             print("starting " + feature_space["name"] + " features")
             data = inputdata.IMData(train_data, test_data, state_space = feature_space["feature"] ,precompute= True)
             print("finished precomputing features")
-            net = feature_space["net"](options)
+            if "sdim" in feature_space:
+                net = feature_space["net"](options, state_dim = feature_space["sdim"])
+            else:
+                net = feature_space["net"](options)
             save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
 
             stat = {}

@@ -20,14 +20,13 @@ import datetime
 
 class PoseEstimationNet(TensorNet):
 
-    def __init__(self, options,branch_type=0,channels=3):
+    def __init__(self, options,state_dim=100352,channels=3):
         self.dir = "./net6/"
         self.name = "ycb"
         self.channels = channels
         self.Options = options
         self.sess = tf.Session()
 
-        state_dim = 100352
         fc1_num_nodes = 25
 
         self.x = tf.placeholder('float', shape=[None,state_dim])

@@ -132,12 +132,12 @@ class PoseEstimation(FeatureNet):
             return (block_num1, block_num2, layer_num, type_num)
 
         keys = sorted(weights.keys(), key = get_key_info)
-        print(keys)
+        #print(keys)
         #check this part for correctness
         for i, k in enumerate(keys):
-            print(k)
-            print(weights[k].shape)
-            print(self.parameters[i].shape)
+            #print(k)
+            #print(weights[k].shape)
+            #print(self.parameters[i].shape)
             #reverse shape for weights (not biases)
             if len(np.shape(weights[k])) == 4:
                 weights[k] = np.swapaxes(weights[k], 0, 3)

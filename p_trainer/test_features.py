@@ -22,7 +22,7 @@ from il_ros_hsr.tensor.nets.net_pose_estimation import PoseEstimationNet as Net_
 ########################################################
 
 if __name__ == '__main__':
-    ITERATIONS = 2000
+    ITERATIONS = 1000
     BATCH_SIZE = 200
     options = Options()
 
@@ -49,10 +49,13 @@ if __name__ == '__main__':
     state_stats = []
     com = COM()
     features = Features()
-
+    print("here")
+    keys = features.pose.block_outs.keys()
+    print([(k, features.pose.block_outs[k]) for k in keys])
+    
     feature_spaces = []
     #VGG
-    feature_spaces.append({"feature": features.vgg_extract, "run": True, "name": "vgg", "net": Net_VGG})
+    feature_spaces.append({"feature": features.vgg_extract, "run": False, "name": "vgg", "net": Net_VGG})
     #pose branch 0
     func0 = lambda state: features.pose_extract(state, 0, -1)
     feature_spaces.append({"feature": func0, "run": False, "name": "pose0", "net": Net_Pose_Estimation})
@@ -61,21 +64,23 @@ if __name__ == '__main__':
         for branch in range(1, 3):
             func = lambda state: features.pose_extract(state, branch, step)
             name = "pose" + str(step) + "_" + str(branch)
-            if step > 1:
-                feature_spaces.append({"feature": func, "run": True, "name": name, "net": Net_Pose_Estimation, "sdim": 29792})
-            else:
-                feature_spaces.append({"feature": func, "run": True, "name": name, "net": Net_Pose_Estimation})
+            if branch == 1:
+                feature_spaces.append({"feature": func, "run": True, "name": name, "net": Net_Pose_Estimation, "sdim": 14896})
+            elif branch == 2:
+                feature_spaces.append({"feature": func, "run": True, "name": name, "net": Net_Pose_Estimation, "sdim": 14896})
 
     for feature_space in feature_spaces:
         if feature_space["run"]:
             print("starting " + feature_space["name"] + " features")
+            print("sdim is " + str(feature_space["sdim"]))
+            
             data = inputdata.IMData(train_data, test_data, state_space = feature_space["feature"] ,precompute= True)
             print("finished precomputing features")
             if "sdim" in feature_space:
                 net = feature_space["net"](options, state_dim = feature_space["sdim"])
             else:
                 net = feature_space["net"](options)
-            save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE)
+            save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE,save=False)
 
             stat = {}
             stat['type'] = feature_space["name"]

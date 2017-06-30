@@ -51,11 +51,20 @@ if __name__ == '__main__':
     features = Features()
 
     feature_spaces = []
-    feature_spaces.append({"feature": features.vgg_extract, "run": False, "name": "vgg", "net": Net_VGG})
-    feature_spaces.append({"feature": features.pose_0_extract, "run": False, "name": "pose0", "net": Net_Pose_Estimation})
-    feature_spaces.append({"feature": features.pose_1_1_extract, "run": False, "name": "pose1_1", "net": Net_Pose_Estimation})
-    feature_spaces.append({"feature": features.pose_1_2_extract, "run": False, "name": "pose1_2", "net": Net_Pose_Estimation})
-    feature_spaces.append({"feature": features.pose_6_1_extract, "run": True, "name": "pose6_1", "net": Net_Pose_Estimation, "sdim": 29792})
+    #VGG
+    feature_spaces.append({"feature": features.vgg_extract, "run": True, "name": "vgg", "net": Net_VGG})
+    #pose branch 0
+    func0 = lambda state: features.pose_extract(state, 0, -1)
+    feature_spaces.append({"feature": func0, "run": False, "name": "pose0", "net": Net_Pose_Estimation})
+    #pose branch1/2
+    for step in range(1, 7):
+        for branch in range(1, 3):
+            func = lambda state: features.pose_extract(state, branch, step)
+            name = "pose" + str(step) + "_" + str(branch)
+            if step > 1:
+                feature_spaces.append({"feature": func, "run": True, "name": name, "net": Net_Pose_Estimation, "sdim": 29792})
+            else:
+                feature_spaces.append({"feature": func, "run": True, "name": name, "net": Net_Pose_Estimation})
 
     for feature_space in feature_spaces:
         if feature_space["run"]:
@@ -77,6 +86,6 @@ if __name__ == '__main__':
 
             net.clean_up()
 
-            pickle.dump(state_stats,open(options.stats_dir+'feature_stats.p','wb'))
+            pickle.dump(state_stats,open(options.stats_dir+'all_feature_stats.p','wb'))
 
     features.clean_up_nets()

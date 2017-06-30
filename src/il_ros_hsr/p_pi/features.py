@@ -167,38 +167,15 @@ class Features():
 
         return vgg_feat
 
-    #vgg section of pose
-    def pose_0_extract(self, state):
+    def pose_extract(self, state, branch, step):
         c_img = state['color_img']
         c_img = imresize(c_img, (224, 224))
 
-        vgg_feat = self.sessPose.run(self.pose.blocks_flat["0"],feed_dict={self.vgg.imgs: [c_img]})[0]
+        if branch == 0:
+            name = "0"
+        else:
+            name = str(step) + "_" + str(branch)
 
-        return vgg_feat
-
-    #halfway through 1st layer of 1st branch
-    def pose_1_1_extract(self, state):
-        c_img = state['color_img']
-        c_img = imresize(c_img, (224, 224))
-
-        vgg_feat = self.sessPose.run(self.pose.blocks_flat["1_1_half"],feed_dict={self.vgg.imgs: [c_img]})[0]
-
-        return vgg_feat
-
-    #halfway through 1st layer of 2nd branch
-    def pose_1_2_extract(self, state):
-        c_img = state['color_img']
-        c_img = imresize(c_img, (224, 224))
-
-        vgg_feat = self.sessPose.run(self.pose.blocks_flat["1_2_half"],feed_dict={self.vgg.imgs: [c_img]})[0]
-
-        return vgg_feat
-
-    #testing if the final output of branch 1 can be extracted
-    def pose_6_1_extract(self, state):
-        c_img = state['color_img']
-        c_img = imresize(c_img, (224, 224))
-
-        vgg_feat = self.sessPose.run(self.pose.blocks_flat["6_1"],feed_dict={self.vgg.imgs: [c_img]})[0]
+        vgg_feat = self.sessPose.run(self.pose.blocks_flat[name],feed_dict={self.vgg.imgs: [c_img]})[0]
 
         return vgg_feat

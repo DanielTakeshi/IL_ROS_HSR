@@ -50,9 +50,9 @@ if __name__ == '__main__':
     com = COM()
     features = Features()
     print("here")
-    keys = features.pose.block_outs.keys()
-    print([(k, features.pose.block_outs[k]) for k in keys])
-    
+    keys = features.pose.blocks_flat.keys()
+    print([(k, features.pose.blocks_flat[k]) for k in keys])
+
     feature_spaces = []
     #VGG
     feature_spaces.append({"feature": features.vgg_extract, "run": False, "name": "vgg", "net": Net_VGG})
@@ -73,7 +73,7 @@ if __name__ == '__main__':
         if feature_space["run"]:
             print("starting " + feature_space["name"] + " features")
             print("sdim is " + str(feature_space["sdim"]))
-            
+
             data = inputdata.IMData(train_data, test_data, state_space = feature_space["feature"] ,precompute= True)
             print("finished precomputing features")
             if "sdim" in feature_space:

@@ -45,10 +45,20 @@ if __name__ == '__main__':
     features = Features()
 
     feature_spaces = []
+    #VGG
     feature_spaces.append({"feature": features.vgg_extract, "run": True, "name": "vgg", "net": Net_VGG})
-    feature_spaces.append({"feature": features.pose_0_extract, "run": True, "name": "pose0", "net": Net_Pose_Estimation})
-    feature_spaces.append({"feature": features.pose_1_1_extract, "run": True, "name": "pose1_1", "net": Net_Pose_Estimation})
-    feature_spaces.append({"feature": features.pose_1_2_extract, "run": True, "name": "pose1_2", "net": Net_Pose_Estimation})
+    #pose branch 0
+    func0 = lambda state: features.pose_extract(state, 0, -1)
+    feature_spaces.append({"feature": func0, "run": True, "name": "pose0", "net": Net_Pose_Estimation})
+    #pose branch1/2
+    for step in range(1, 7):
+        for branch in range(1, 3):
+            func = lambda state, theBranch=branch, theStep=step: features.pose_extract(state, theBranch, theStep)
+            name = "pose" + str(step) + "_" + str(branch)
+            if branch == 1:
+                feature_spaces.append({"feature": func, "run": True, "name": name, "net": Net_Pose_Estimation, "sdim": 29792})
+            elif branch == 2:
+                feature_spaces.append({"feature": func, "run": True, "name": name, "net": Net_Pose_Estimation, "sdim": 14896})
 
     for feature_space in feature_spaces:
         if feature_space["run"]:
@@ -60,7 +70,10 @@ if __name__ == '__main__':
             print("running cross-validation trials for " + feature_space["name"])
             for trial in range(10):
                 data.shuffle()
-                net = feature_space["net"](options)
+                if "sdim" in feature_space:
+                    net = feature_space["net"](options, state_dim = feature_space["sdim"])
+                else:
+                    net = feature_space["net"](options)
                 save_path, train_loss,test_loss = net.optimize(ITERATIONS,data, batch_size=BATCH_SIZE,save=False)
 
                 all_train_losses.append(train_loss)
@@ -79,6 +92,6 @@ if __name__ == '__main__':
             stat['train_loss'] = avg_train_loss
             state_stats.append(stat)
 
-            pickle.dump(state_stats,open(options.stats_dir+'cross_validate_stats.p','wb'))
+            pickle.dump(state_stats,open(options.stats_dir+'all_cross_validate_stats.p','wb'))
 
     features.clean_up_nets()

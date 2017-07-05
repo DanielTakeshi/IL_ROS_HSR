@@ -49,31 +49,26 @@ if __name__ == '__main__':
     state_stats = []
     com = COM()
     features = Features()
-    print("here")
-    keys = features.pose.blocks_flat.keys()
-    print([(k, features.pose.blocks_flat[k]) for k in keys])
 
     feature_spaces = []
     #VGG
-    feature_spaces.append({"feature": features.vgg_extract, "run": False, "name": "vgg", "net": Net_VGG})
+    feature_spaces.append({"feature": features.vgg_extract, "run": True, "name": "vgg", "net": Net_VGG})
     #pose branch 0
     func0 = lambda state: features.pose_extract(state, 0, -1)
-    feature_spaces.append({"feature": func0, "run": False, "name": "pose0", "net": Net_Pose_Estimation})
+    feature_spaces.append({"feature": func0, "run": True, "name": "pose0", "net": Net_Pose_Estimation})
     #pose branch1/2
     for step in range(1, 7):
         for branch in range(1, 3):
-            func = lambda state: features.pose_extract(state, branch, step)
+            func = lambda state, theBranch=branch, theStep=step: features.pose_extract(state, theBranch, theStep)
             name = "pose" + str(step) + "_" + str(branch)
             if branch == 1:
-                feature_spaces.append({"feature": func, "run": True, "name": name, "net": Net_Pose_Estimation, "sdim": 14896})
+                feature_spaces.append({"feature": func, "run": True, "name": name, "net": Net_Pose_Estimation, "sdim": 29792})
             elif branch == 2:
                 feature_spaces.append({"feature": func, "run": True, "name": name, "net": Net_Pose_Estimation, "sdim": 14896})
-
+    
     for feature_space in feature_spaces:
         if feature_space["run"]:
             print("starting " + feature_space["name"] + " features")
-            print("sdim is " + str(feature_space["sdim"]))
-
             data = inputdata.IMData(train_data, test_data, state_space = feature_space["feature"] ,precompute= True)
             print("finished precomputing features")
             if "sdim" in feature_space:

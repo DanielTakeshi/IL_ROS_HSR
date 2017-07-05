@@ -175,7 +175,7 @@ class Features():
             name = "0"
         else:
             name = str(step) + "_" + str(branch)
-
+        
         vgg_feat = self.sessPose.run(self.pose.blocks_flat[name],feed_dict={self.vgg.imgs: [c_img]})[0]
 
         return vgg_feat

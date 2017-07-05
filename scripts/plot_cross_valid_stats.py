@@ -60,7 +60,7 @@ if __name__ == '__main__':
         c = next(color)
         ax.plot(stat['test_loss'],label=stat['type'], c = c)
         print stat['type']
-        all_test_mins.append([stat['type'], min(state['test_loss'])])
+        all_test_mins.append([stat['type'], min(stat['test_loss'])])
 
     lgd = ax.legend(bbox_to_anchor=(1.05,1),loc=2,borderaxespad=0.)
     all_test_mins.sort(key = lambda x: x[1])

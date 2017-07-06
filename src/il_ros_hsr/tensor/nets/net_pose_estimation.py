@@ -20,7 +20,7 @@ import datetime
 
 class PoseEstimationNet(TensorNet):
 
-    def __init__(self, options,state_dim=100352,channels=3):
+    def __init__(self, options, input_x=None, channels=3, state_dim=100352):
         self.dir = "./net6/"
         self.name = "ycb"
         self.channels = channels
@@ -29,7 +29,11 @@ class PoseEstimationNet(TensorNet):
 
         fc1_num_nodes = 25
 
-        self.x = tf.placeholder('float', shape=[None,state_dim])
+        if input_x:
+            self.x = input_x
+        else:
+            self.x = tf.placeholder('float', shape=[None,state_dim])
+
         self.y_ = tf.placeholder("float", shape=[None, 3])
 
 

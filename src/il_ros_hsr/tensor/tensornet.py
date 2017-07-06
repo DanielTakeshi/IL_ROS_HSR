@@ -80,7 +80,7 @@ class TensorNet():
         return sess
 
 
-    def optimize(self, iterations, data, unbiased=False, path=None, batch_size=100, test_print=100, save=True):
+    def optimize(self, iterations, data, unbiased=False, path=None, batch_size=100, test_print=100, save=True, feed_in=None):
         """
             optimize net for [iterations]. path is either absolute or
             relative to current working directory. data is InputData object (see class for details)
@@ -106,7 +106,10 @@ class TensorNet():
                     batch = data.next_train_batch(batch_size)
                     ims, labels = batch
 
-                    feed_dict = { self.x: ims, self.y_: labels }
+                    if not feed_in:
+                        feed_dict = { self.x: ims, self.y_: labels }
+                    else:
+                        feed_dict = {feed_in: ims, self.y_: labels }
 
                     if i % 10 == 0:
                         batch_loss = self.loss.eval(feed_dict=feed_dict)
@@ -120,8 +123,11 @@ class TensorNet():
                     if i % test_print == 0:
                         test_batch = data.next_test_batch()
                         test_ims, test_labels = test_batch
-                        test_dict = { self.x: test_ims, self.y_: test_labels }
 
+                        if not feed_in:
+                            test_dict = { self.x: test_ims, self.y_: test_labels }
+                        else:
+                            test_dict = { feed_in: test_ims, self.y_: test_labels }
                         test_loss = self.loss.eval(feed_dict=test_dict)
                         #test_acc = self.acc.eval(feed_dict=test_dict)
 

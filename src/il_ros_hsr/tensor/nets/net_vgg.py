@@ -19,7 +19,7 @@ import datetime
 
 class VggNet(TensorNet):
 
-    def __init__(self, options,channels=3):
+    def __init__(self, options,channels=3, input_x=None):
         self.dir = "./net6/"
         self.name = "ycb"
         self.channels = channels
@@ -29,7 +29,11 @@ class VggNet(TensorNet):
         state_dim = 25088
         fc1_num_nodes = 25
 
-        self.x = tf.placeholder('float', shape=[None,state_dim])
+        if input_x:
+            self.x = input_x
+        else:
+            self.x = tf.placeholder('float', shape=[None,state_dim])
+            
         self.y_ = tf.placeholder("float", shape=[None, 3])
 
         self.w_fc1 = self.weight_variable([state_dim, fc1_num_nodes])

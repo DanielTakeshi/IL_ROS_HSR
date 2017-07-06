@@ -106,12 +106,13 @@ class TensorNet():
                     batch = data.next_train_batch(batch_size)
                     ims, labels = batch
 
-                    if not feed_in:
-                        feed_dict = { self.x: ims, self.y_: labels }
+                    if feed_in is not None:
+                        feed_dict = { feed_in: ims, self.y_: labels }
                     else:
-                        feed_dict = {feed_in: ims, self.y_: labels }
+                        feed_dict = { self.x: ims, self.y_: labels }
 
                     if i % 10 == 0:
+                        #IPython.embed()
                         batch_loss = self.loss.eval(feed_dict=feed_dict)
                         #batch_acc = self.acc.eval(feed_dict=feed_dict)
 
@@ -124,10 +125,10 @@ class TensorNet():
                         test_batch = data.next_test_batch()
                         test_ims, test_labels = test_batch
 
-                        if not feed_in:
-                            test_dict = { self.x: test_ims, self.y_: test_labels }
-                        else:
+                        if feed_in is not None:
                             test_dict = { feed_in: test_ims, self.y_: test_labels }
+                        else:
+                            test_dict = { self.x: test_ims, self.y_: test_labels }
                         test_loss = self.loss.eval(feed_dict=test_dict)
                         #test_acc = self.acc.eval(feed_dict=test_dict)
 

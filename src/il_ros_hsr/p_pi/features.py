@@ -26,19 +26,22 @@ def overrides(super_class):
 
 class Features():
 
-    def __init__(self):
+    def __init__(self, sessions=True):
         self.hog = cv2.HOGDescriptor()
         imgs = tf.placeholder(tf.float32, [None, 224, 224, 3])
-        self.sess16 = tf.Session()
-        self.sessPose = tf.Session()
+        self.sessions = sessions
+        if self.sessions:
+            self.sess16 = tf.Session()
+            self.sessPose = tf.Session()
 
         self.vgg = vgg16(imgs, 'src/il_ros_hsr/p_pi/safe_corl/vgg/vgg16_weights.npz', self.sess16)
         self.pose = PoseEstimation(imgs, 'pytorch_kinematic/pose_weights.npz', self.sessPose)
 
 
     def clean_up_nets(self):
-        self.sess16.close()
-        self.sessPose.close()
+        if self.sessions:
+            self.sess16.close()
+            self.sessPose.close()
 
     def im2tensor(self,im,channels=3):
 
@@ -151,6 +154,10 @@ class Features():
 
         return data
 
+    def identity_color(self, state):
+        c_img = state['color_img']
+        c_img = imresize(c_img, (224, 224))
+        return c_img
 
     def hog_color(self,state):
 

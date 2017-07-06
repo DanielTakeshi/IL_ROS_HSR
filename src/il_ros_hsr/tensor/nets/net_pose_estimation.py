@@ -29,7 +29,7 @@ class PoseEstimationNet(TensorNet):
 
         fc1_num_nodes = 25
 
-        if input_x:
+        if input_x is not None:
             self.x = input_x
         else:
             self.x = tf.placeholder('float', shape=[None,state_dim])

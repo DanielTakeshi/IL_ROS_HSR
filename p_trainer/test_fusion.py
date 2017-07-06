@@ -6,6 +6,7 @@ from il_ros_hsr.tensor import inputdata
 import numpy as np, argparse
 from numpy.random import random
 import cv2
+import tensorflow as tf
 
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
 os.environ["CUDA_VISIBLE_DEVICES"]="0"
@@ -48,17 +49,18 @@ if __name__ == '__main__':
 
     state_stats = []
     com = COM()
-    features = Features()
+    features = Features(sessions=False)
     features.clean_up_nets()
 
     feature_spaces = []
     #VGG
     fvgg = features.vgg
-    feature_spaces.append({"f_in": fvgg.imgs, "f_out": fvgg.pool5_flat, "run": True, "name": "vgg", "onet": Net_VGG})
+    feature_spaces.append({"f_in": fvgg.imgs, "f_out": fvgg.pool5_flat, "run": True, "name": "vgg", "o_net": Net_VGG})
+    
     #pose branch 0
     f_in = features.pose.imgs
     f_blk = features.pose.blocks_flat
-    feature_spaces.append({"f_in": f_in, "f_out": f_blk["0"], "run": True, "name": "pose0", "net": Net_Pose_Estimation})
+    feature_spaces.append({"f_in": f_in, "f_out": f_blk["0"][0], "run": False, "name": "pose0", "o_net": Net_Pose_Estimation})
     #pose branch1/2
     for step in range(1, 7):
         for branch in range(1, 3):
@@ -68,17 +70,17 @@ if __name__ == '__main__':
                 the_sdim = 29792
             elif branch == 2:
                 the_sdim = 14896
-            feature_spaces.append({"f_in": f_in, "f_out": f_blk[ind], "run": True, "name": name, "net": Net_Pose_Estimation, "sdim": the_sdim})
+            feature_spaces.append({"f_in": f_in, "f_out": f_blk[ind][0], "run": False, "name": name, "o_net": Net_Pose_Estimation, "sdim": the_sdim})
 
     for feature_space in feature_spaces:
         if feature_space["run"]:
             print("starting " + feature_space["name"])
-            data = inputdata.IMData(train_data, test_data, state_space = lambda x: x ,precompute=True)
-
+            data = inputdata.IMData(train_data, test_data, state_space = features.identity_color  ,precompute=True)
+            
             if "sdim" in feature_space:
-                net = feature_space["onet"](options, input_x=feature_space["f_out"], state_dim=feature_space["sdim"])
+                net = feature_space["o_net"](options, input_x=feature_space["f_out"], state_dim=feature_space["sdim"])
             else:
-                net = feature_space["onet"](options, input_x=feature_space["f_out"])
+                net = feature_space["o_net"](options, input_x=feature_space["f_out"])
 
             save_path, train_loss, test_loss = net.optimize(ITERATIONS, data, batch_size=BATCH_SIZE, save=False, feed_in=feature_space["f_in"])
 

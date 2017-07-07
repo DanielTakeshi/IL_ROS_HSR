@@ -7,6 +7,7 @@ import numpy as np, argparse
 from numpy.random import random
 import cv2
 import tensorflow as tf
+from scipy.misc import imresize
 
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
 os.environ["CUDA_VISIBLE_DEVICES"]="0"

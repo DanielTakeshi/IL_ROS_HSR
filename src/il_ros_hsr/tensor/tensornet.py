@@ -125,6 +125,8 @@ class TensorNet():
                     if i % test_print == 0:
                         test_batch = data.next_test_batch()
                         test_ims, test_labels = test_batch
+                        #test_ims = test_ims[:batch_size]
+                        #test_labels = test_labels[:batch_size]
 
                         if feed_in is not None:
                             test_dict = { feed_in: test_ims, self.y_: test_labels }

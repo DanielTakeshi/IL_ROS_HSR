@@ -25,8 +25,9 @@ from il_ros_hsr.tensor.nets.net_pose_estimation import PoseEstimationNet as Net_
 ########################################################
 
 if __name__ == '__main__':
-    ITERATIONS = 1000
-    BATCH_SIZE = 200
+    #ITERATIONS = 1000
+    ITERATIONS = 50
+    BATCH_SIZE = 100
     options = Options()
 
     f = []
@@ -49,6 +50,8 @@ if __name__ == '__main__':
             test_data.append(rollout_data)
             test_labels.append(filename)
 
+    IPython.embed()
+            
     state_stats = []
     com = COM()
     def identity_color(state):
@@ -105,6 +108,6 @@ if __name__ == '__main__':
             stat['train_loss'] = train_loss
             state_stats.append(stat)
 
-            net.clean_up()
+            optimize_net.clean_up()
 
             pickle.dump(state_stats,open(options.stats_dir+'fusion_feature_stats.p','wb'))

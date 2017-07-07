@@ -125,9 +125,9 @@ class TensorNet():
                             break
                     if i % test_print == 0:
                         if split_test:
-                            test_batch = data.next_test_batch()
-                        else:
                             test_batch = data.next_test_batch(batch_size)
+                        else:
+                            test_batch = data.next_test_batch()
                     
                         test_ims, test_labels = test_batch
 

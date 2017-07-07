@@ -175,8 +175,8 @@ class IMData():
         if n is not None:
             if self.i_test + n > len(self.test_tups):
                 self.i_test = 0
-                random.shuffl(self.test_tups)
-            batch_tups = self.test_tups[self.j:n+self.j]
+                random.shuffle(self.test_tups)
+            batch_tups = self.test_tups[self.i_test:n+self.i_test]
         else:
             batch_tups = self.test_tups
         batch = []
@@ -194,5 +194,6 @@ class IMData():
                     batch.append((state,action))
 
         batch = zip(*batch)
-        self.i_test = self.i_test + n
+        if n is not None:
+            self.i_test = self.i_test + n
         return list(batch[0]), list(batch[1])

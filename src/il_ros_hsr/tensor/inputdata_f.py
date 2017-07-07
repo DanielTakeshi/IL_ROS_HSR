@@ -25,7 +25,7 @@ def process_out(n):
     ----------
     n : numpy array
 
-    Returns 
+    Returns
     -------
     out: int
     '''
@@ -42,7 +42,7 @@ def im2tensor(im,channels=1):
 
     Prameters
     ---------
-    im : numpy array 
+    im : numpy array
         matrix with shape of image
 
     channels : int
@@ -62,12 +62,12 @@ def im2tensor(im,channels=1):
 
 
 class IMData():
-    
+
     def __init__(self, data,channels=3,state_space = None,synth = False,precompute = False):
 
 
         self.data_tups = data
-       
+
 
         if(synth):
             self.synth_traj()
@@ -76,11 +76,12 @@ class IMData():
         self.test_tups = []
 
         self.i = 0
+        self.i_test = 0
         self.channels = channels
 
         self.state_space = state_space
 
-    
+
         self.precompute = precompute
 
         if(precompute):
@@ -89,11 +90,11 @@ class IMData():
     def shuffle(self):
         self.train_tups = []
         self.test_tups = []
-        
+
         for traj in self.data_tups:
             if(rndnp() > 0.2):
                 self.train_tups.append(traj)
-            else: 
+            else:
                 self.test_tups.append(traj)
 
 
@@ -118,7 +119,7 @@ class IMData():
             for data in traj:
                 data['feature'] = self.state_space(data)
 
-      
+
     def synth_color(self,data):
 
         img = data['color_img']
@@ -128,7 +129,7 @@ class IMData():
 
         for img in img_aug:
             data_a = copy.deepcopy(data)
-         
+
             data_a['color_img'] = img
 
             states_aug.append(data_a)
@@ -149,7 +150,7 @@ class IMData():
         for traj in batch_tups:
             random.shuffle(traj)
             for data in traj:
-                
+
 
                 action = data['action']
 
@@ -166,25 +167,32 @@ class IMData():
         return list(batch[0]), list(batch[1])
 
 
-    def next_test_batch(self):
+    def next_test_batch(self, n=None):
         """
         read into memory on request
         :return: tuple with images in [0], labels in [1]
         """
+        if n is not None:
+            if self.i_test + n > len(self.test_tups):
+                self.i_test = 0
+                random.shuffl(self.test_tups)
+            batch_tups = self.test_tups[self.j:n+self.j]
+        else:
+            batch_tups = self.test_tups
         batch = []
-        for traj in self.test_tups:
+        for traj in batch_tups:
             random.shuffle(traj)
             for data in traj:
                 action = data['action']
-                
+
                 if(self.precompute):
                     state = data['feature']
                 else:
                     state = self.state_space(data)
 
-                
-                batch.append((state,action))
+                if n is None or (len(batch) < n):
+                    batch.append((state,action))
 
-        
         batch = zip(*batch)
+        self.i_test = self.i_test + n
         return list(batch[0]), list(batch[1])

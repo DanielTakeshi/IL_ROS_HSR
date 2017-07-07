@@ -69,13 +69,14 @@ class IMData():
         self.train_tups = train_data
         self.test_tups = test_data
 
-        
+
         if(synth):
             self.synth_traj()
 
 
 
         self.i = 0
+        self.i_test = 0
         self.channels = channels
 
         self.state_space = state_space
@@ -153,19 +154,26 @@ class IMData():
 
                 if(len(batch) < n):
                     batch.append((state,action))
-        
+
         batch = zip(*batch)
         self.i = self.i + n
         return list(batch[0]), list(batch[1])
 
 
-    def next_test_batch(self):
+    def next_test_batch(self, n=None):
         """
         read into memory on request
         :return: tuple with images in [0], labels in [1]
         """
+        if n is not None:
+            if self.i_test + n > len(self.test_tups):
+                self.i_test = 0
+                random.shuffl(self.test_tups)
+            batch_tups = self.test_tups[self.j:n+self.j]
+        else:
+            batch_tups = self.test_tups
         batch = []
-        for traj in self.test_tups:
+        for traj in batch_tups:
             # print("TESTING")
             # print(len(traj))
             # print(traj)
@@ -178,9 +186,9 @@ class IMData():
                 else:
                     state = self.state_space(data)
 
-
-                batch.append((state,action))
-
+                if n is None or (len(batch) < n):
+                    batch.append((state,action))
 
         batch = zip(*batch)
+        self.i_test = self.i_test + n
         return list(batch[0]), list(batch[1])

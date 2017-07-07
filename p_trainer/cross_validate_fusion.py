@@ -2,7 +2,7 @@ import cPickle as pickle
 import sys, os
 import IPython
 from compile_sup import Compile_Sup
-from il_ros_hsr.tensor import inputdata
+from il_ros_hsr.tensor import inputdata_f
 import numpy as np, argparse
 from numpy.random import random
 import cv2
@@ -34,20 +34,14 @@ if __name__ == '__main__':
     for (dirpath, dirnames, filenames) in os.walk(options.rollouts_dir):
         f.extend(dirnames)
 
-    train_data = []
-    test_data = []
+    raw_data = []
+    labels = []
 
-    train_labels = []
-    test_labels = []
     for filename in f:
         rollout_data = pickle.load(open(options.rollouts_dir+filename+'/rollout.p','r'))
 
-        if(random() > 0.2):
-            train_data.append(rollout_data)
-            train_labels.append(filename)
-        else:
-            test_data.append(rollout_data)
-            test_labels.append(filename)
+        raw_data.append(rollout_data)
+        labels.append(filename)
 
     state_stats = []
     com = COM()
@@ -83,28 +77,40 @@ if __name__ == '__main__':
     for feature_space in feature_spaces:
         if feature_space["run"]:
             print("starting " + feature_space["name"])
-            data = inputdata.IMData(train_data, test_data, state_space=identity_color, precompute=True)
+            data = inputdata_f.IMData(raw_data, state_space=identity_color, precompute=True)
 
-            net_input = tf.placeholder(tf.float32, [None, 224, 224, 3])
-            feature_net = feature_space["f_net"](net_input)
-            f_out = feature_space["f_out"](feature_net)
+            all_train_losses = []
+            all_test_losses = []
+            print("running cross-validation trials for " + feature_space["name"])
 
-            optimize_net = feature_space["o_net"](options, input_x=f_out, state_dim=feature_space["sdim"])
+            for trial in range(10):
+                print("starting trial " + str(trial))
+                data.shuffle()
 
-            sess = tf.Session()
-            sess.run(tf.initialize_all_variables())
-            feature_net.load_weights(feature_space["weights"], sess)
+                net_input = tf.placeholder(tf.float32, [None, 224, 224, 3])
+                feature_net = feature_space["f_net"](net_input)
+                f_out = feature_space["f_out"](feature_net)
 
-            save_path, train_loss, test_loss = optimize_net.optimize(ITERATIONS, data, sess=sess,
-                batch_size=BATCH_SIZE, save=False, feed_in=feature_net.imgs, split_test=True)
+                optimize_net = feature_space["o_net"](options, input_x=f_out, state_dim=feature_space["sdim"])
+
+                sess = tf.Session()
+                sess.run(tf.initialize_all_variables())
+                feature_net.load_weights(feature_space["weights"], sess)
+
+                save_path, train_loss, test_loss = optimize_net.optimize(ITERATIONS, data, sess=sess,
+                    batch_size=BATCH_SIZE, save=False, feed_in=feature_net.imgs, split_test=True)
+
+                optimize_net.clean_up()
+
+            avg_train_loss = np.mean(np.array(all_train_losses), axis=0)
+            avg_test_loss = np.mean(np.array(all_test_losses), axis=0)
 
             stat = {}
             stat['type'] = feature_space["name"]
             stat['path'] = save_path
-            stat['test_loss'] = test_loss
-            stat['train_loss'] = train_loss
+            stat['test_loss'] = avg_test_loss
+            stat['train_loss'] = avg_train_loss
             state_stats.append(stat)
 
-            optimize_net.clean_up()
 
-            pickle.dump(state_stats,open(options.stats_dir+'fusion_feature_stats.p','wb'))
+            pickle.dump(state_stats,open(options.stats_dir+'fusion_cross_validate_stats.p','wb'))

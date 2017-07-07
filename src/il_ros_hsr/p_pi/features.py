@@ -26,22 +26,20 @@ def overrides(super_class):
 
 class Features():
 
-    def __init__(self, sessions=True):
+    def __init__(self):
         self.hog = cv2.HOGDescriptor()
         imgs = tf.placeholder(tf.float32, [None, 224, 224, 3])
-        self.sessions = sessions
-        if self.sessions:
-            self.sess16 = tf.Session()
-            self.sessPose = tf.Session()
+
+        self.sess16 = tf.Session()
+        self.sessPose = tf.Session()
 
         self.vgg = vgg16(imgs, 'src/il_ros_hsr/p_pi/safe_corl/vgg/vgg16_weights.npz', self.sess16)
         self.pose = PoseEstimation(imgs, 'pytorch_kinematic/pose_weights.npz', self.sessPose)
 
 
     def clean_up_nets(self):
-        if self.sessions:
-            self.sess16.close()
-            self.sessPose.close()
+        self.sess16.close()
+        self.sessPose.close()
 
     def im2tensor(self,im,channels=3):
 
@@ -182,7 +180,7 @@ class Features():
             name = "0"
         else:
             name = str(step) + "_" + str(branch)
-        
+
         vgg_feat = self.sessPose.run(self.pose.blocks_flat[name],feed_dict={self.vgg.imgs: [c_img]})[0]
 
         return vgg_feat

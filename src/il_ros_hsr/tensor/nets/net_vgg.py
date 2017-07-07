@@ -19,21 +19,20 @@ import datetime
 
 class VggNet(TensorNet):
 
-    def __init__(self, options,channels=3, input_x=None):
+    def __init__(self, options,channels=3, input_x=None, state_dim=25088):
         self.dir = "./net6/"
         self.name = "ycb"
         self.channels = channels
         self.Options = options
         self.sess = tf.Session()
 
-        state_dim = 25088
         fc1_num_nodes = 25
 
         if input_x is not None:
             self.x = input_x
         else:
             self.x = tf.placeholder('float', shape=[None,state_dim])
-            
+
         self.y_ = tf.placeholder("float", shape=[None, 3])
 
         self.w_fc1 = self.weight_variable([state_dim, fc1_num_nodes])

@@ -80,7 +80,7 @@ class TensorNet():
         return sess
 
 
-    def optimize(self, iterations, data, unbiased=False, path=None, batch_size=100, test_print=100, save=True, feed_in=None):
+    def optimize(self, iterations, data, unbiased=False, path=None, sess=None, batch_size=100, test_print=100, save=True, feed_in=None):
         """
             optimize net for [iterations]. path is either absolute or
             relative to current working directory. data is InputData object (see class for details)
@@ -88,6 +88,8 @@ class TensorNet():
         """
         if path:
             self.sess = self.load(var_path=path)
+        elif sess:
+            self.sess = sess
         else:
             print "Initializing new variables..."
             self.sess = tf.Session()
@@ -106,13 +108,12 @@ class TensorNet():
                     batch = data.next_train_batch(batch_size)
                     ims, labels = batch
 
-                    if feed_in is not None:
-                        feed_dict = { feed_in: ims, self.y_: labels }
-                    else:
+                    if not feed_in:
                         feed_dict = { self.x: ims, self.y_: labels }
+                    else:
+                        feed_dict = {feed_in: ims, self.y_: labels }
 
                     if i % 10 == 0:
-                        #IPython.embed()
                         batch_loss = self.loss.eval(feed_dict=feed_dict)
                         #batch_acc = self.acc.eval(feed_dict=feed_dict)
 
@@ -125,10 +126,11 @@ class TensorNet():
                         test_batch = data.next_test_batch()
                         test_ims, test_labels = test_batch
 
-                        if feed_in is not None:
-                            test_dict = { feed_in: test_ims, self.y_: test_labels }
-                        else:
+                        if not feed_in:
                             test_dict = { self.x: test_ims, self.y_: test_labels }
+                        else:
+                            test_dict = { feed_in: test_ims, self.y_: test_labels }
+
                         test_loss = self.loss.eval(feed_dict=test_dict)
                         #test_acc = self.acc.eval(feed_dict=test_dict)
 

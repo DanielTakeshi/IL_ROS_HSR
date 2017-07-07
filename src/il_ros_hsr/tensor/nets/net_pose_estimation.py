@@ -20,7 +20,7 @@ import datetime
 
 class PoseEstimationNet(TensorNet):
 
-    def __init__(self, options, input_x=None, channels=3, state_dim=100352):
+    def __init__(self, options, channels=3, input_x=None, state_dim=100352):
         self.dir = "./net6/"
         self.name = "ycb"
         self.channels = channels

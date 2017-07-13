@@ -36,7 +36,6 @@ class PoseEstimationNet(TensorNet):
 
         self.y_ = tf.placeholder("float", shape=[None, 3])
 
-
         self.w_fc1 = self.weight_variable([state_dim, fc1_num_nodes])
         self.b_fc1 = self.bias_variable([fc1_num_nodes])
         self.h_fc1 = tf.nn.relu(tf.matmul(self.x, self.w_fc1) + self.b_fc1)

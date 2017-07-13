@@ -157,6 +157,12 @@ class Features():
         c_img = imresize(c_img, (224, 224))
         return c_img
 
+    def identity_flatten(self, state):
+        ic = self.identity_color(state)
+        shape = int(np.prod(ic.get_shape()[1:]))
+        ic_flat = tf.reshape(ic, [-1, shape])
+        return ic_flat
+
     def hog_color(self,state):
 
         c_img = state['color_img']

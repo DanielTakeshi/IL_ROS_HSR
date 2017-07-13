@@ -19,7 +19,7 @@ import datetime
 
 class VggNet(TensorNet):
 
-    def __init__(self, options,channels=3, input_x=None, state_dim=25088):
+    def __init__(self, options, channels=3, input_x=None, state_dim=25088):
         self.dir = "./net6/"
         self.name = "ycb"
         self.channels = channels

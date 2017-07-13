@@ -8,6 +8,7 @@ from numpy.random import random
 import cv2
 import tensorflow as tf
 from scipy.misc import imresize
+import time
 
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
 os.environ["CUDA_VISIBLE_DEVICES"]="0"
@@ -61,7 +62,7 @@ if __name__ == '__main__':
     p_w = 'pytorch_kinematic/pose_weights.npz'
     #pose branch 0
     pose0_f_out = lambda netclass: netclass.blocks_flat["0"]
-    pose0_dict = {"f_net": PE, "f_out": pose0_f_out, "weights": p_w, "o_net": Net_PE, "sdim": 100352, "run": False, "name": "pose0"}
+    pose0_dict = {"f_net": PE, "f_out": pose0_f_out, "weights": p_w, "o_net": Net_PE, "sdim": 100352, "run": True, "name": "pose0"}
     feature_spaces.append(pose0_dict)
     #pose branch1/2
     for step in range(1, 7):
@@ -71,7 +72,7 @@ if __name__ == '__main__':
             sdim = 29792 if branch == 1 else 14896
 
             pose_f_out = lambda netclass, theInd=ind: netclass.blocks_flat[theInd]
-            pose_dict = {"f_net": PE, "f_out": pose_f_out, "weights": p_w, "o_net": Net_PE, "sdim": sdim, "run": False, "name": name}
+            pose_dict = {"f_net": PE, "f_out": pose_f_out, "weights": p_w, "o_net": Net_PE, "sdim": sdim, "run": True, "name": name}
             feature_spaces.append(pose_dict)
 
     for feature_space in feature_spaces:
@@ -81,6 +82,7 @@ if __name__ == '__main__':
 
             all_train_losses = []
             all_test_losses = []
+            train_times = []
             print("running cross-validation trials for " + feature_space["name"])
 
             for trial in range(10):
@@ -97,19 +99,31 @@ if __name__ == '__main__':
                 sess.run(tf.initialize_all_variables())
                 feature_net.load_weights(feature_space["weights"], sess)
 
+                start = time.time()
                 save_path, train_loss, test_loss = optimize_net.optimize(ITERATIONS, data, sess=sess,
-                    batch_size=BATCH_SIZE, save=False, feed_in=feature_net.imgs, split_test=True)
+                    batch_size=BATCH_SIZE, save=False, feed_in=feature_net.imgs, split_test=False)
+                end = time.time()
+                train_times.append(end - start)
+
+                all_train_losses.append(train_loss)
+                all_test_losses.append(test_loss)
 
                 optimize_net.clean_up()
 
             avg_train_loss = np.mean(np.array(all_train_losses), axis=0)
             avg_test_loss = np.mean(np.array(all_test_losses), axis=0)
+            avg_train_time = np.mean(train_times)
 
             stat = {}
             stat['type'] = feature_space["name"]
             stat['path'] = save_path
-            stat['test_loss'] = avg_test_loss
-            stat['train_loss'] = avg_train_loss
+            stat['all_train_time'] = train_times
+            stat['avg_train_time'] = avg_train_time
+            stat['all_test_loss'] = all_test_losses
+            stat['all_train_loss'] = all_train_losses
+            stat['avg_test_loss'] = avg_test_loss
+            stat['avg_train_loss'] = avg_train_loss
+
             state_stats.append(stat)
 
 

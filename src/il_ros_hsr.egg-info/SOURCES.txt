@@ -11,11 +11,17 @@ src/il_ros_hsr/core/options.py
 src/il_ros_hsr/core/policy.py
 src/il_ros_hsr/core/sensors.py
 src/il_ros_hsr/p_pi/__init__.py
+src/il_ros_hsr/p_pi/com.py
+src/il_ros_hsr/p_pi/features.py
+src/il_ros_hsr/p_pi/lighting.py
+src/il_ros_hsr/p_pi/options.py
+src/il_ros_hsr/p_pi/vgg_options.py
 src/il_ros_hsr/tensor/__init__.py
 src/il_ros_hsr/tensor/gridlog.py
 src/il_ros_hsr/tensor/gridnet.py
 src/il_ros_hsr/tensor/input_b.py
 src/il_ros_hsr/tensor/inputdata.py
+src/il_ros_hsr/tensor/inputdata_f.py
 src/il_ros_hsr/tensor/learner.py
 src/il_ros_hsr/tensor/logger.py
 src/il_ros_hsr/tensor/net11.py

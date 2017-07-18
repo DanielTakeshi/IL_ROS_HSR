@@ -23,8 +23,8 @@ from il_ros_hsr.tensor.nets.net_pose_estimation import PoseEstimationNet as Net_
 ########################################################
 
 if __name__ == '__main__':
-    ITERATIONS = 1000
-    BATCH_SIZE = 100
+    ITERATIONS = 2000
+    BATCH_SIZE = 200
     options = Options()
 
     f = []
@@ -47,9 +47,9 @@ if __name__ == '__main__':
 
     feature_spaces = []
     #control- no featurization
-    feature_spaces.append({"feature": features.identity_flatten, "run": True, "name": "control", "net": Net_VGG, "sdim": 50176})
+    feature_spaces.append({"feature": features.identity_flatten, "run": False, "name": "control", "net": Net_VGG, "sdim": 50176})
     #VGG
-    feature_spaces.append({"feature": features.vgg_extract, "run": True, "name": "vgg", "net": Net_VGG, "sdim": 25088})
+    feature_spaces.append({"feature": features.vgg_extract, "run": False, "name": "vgg", "net": Net_VGG, "sdim": 25088})
     #pose branch 0
     func0 = lambda state: features.pose_extract(state, 0, -1)
     feature_spaces.append({"feature": func0, "run": True, "name": "pose0", "net": Net_Pose_Estimation, "sdim": 100352})
@@ -59,9 +59,9 @@ if __name__ == '__main__':
             func = lambda state, theBranch=branch, theStep=step: features.pose_extract(state, theBranch, theStep)
             name = "pose" + str(step) + "_" + str(branch)
             if branch == 1:
-                feature_spaces.append({"feature": func, "run": True, "name": name, "net": Net_Pose_Estimation, "sdim": 29792})
+                feature_spaces.append({"feature": func, "run": False, "name": name, "net": Net_Pose_Estimation, "sdim": 29792})
             elif branch == 2:
-                feature_spaces.append({"feature": func, "run": True, "name": name, "net": Net_Pose_Estimation, "sdim": 14896})
+                feature_spaces.append({"feature": func, "run": False, "name": name, "net": Net_Pose_Estimation, "sdim": 14896})
 
     for feature_space in feature_spaces:
         if feature_space["run"]:
@@ -106,6 +106,6 @@ if __name__ == '__main__':
 
             state_stats.append(stat)
 
-            pickle.dump(state_stats,open(options.stats_dir+'all_cross_validate_stats.p','wb'))
+            pickle.dump(state_stats,open(options.stats_dir+'0all_cross_validate_stats.p','wb'))
 
     features.clean_up_nets()

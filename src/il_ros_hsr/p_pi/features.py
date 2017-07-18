@@ -159,7 +159,7 @@ class Features():
 
     def identity_flatten(self, state):
         ic = self.identity_color(state)
-        shape = int(np.prod(ic.get_shape()[1:]))
+        shape = int(np.prod(ic.shape[1:]))
         ic_flat = tf.reshape(ic, [-1, shape])
         return ic_flat
 

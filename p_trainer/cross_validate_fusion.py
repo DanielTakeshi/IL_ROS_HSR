@@ -85,7 +85,7 @@ if __name__ == '__main__':
             train_times = []
             print("running cross-validation trials for " + feature_space["name"])
 
-            for trial in range(10):
+            for trial in range(1):
                 print("starting trial " + str(trial))
                 data.shuffle()
 
@@ -101,7 +101,7 @@ if __name__ == '__main__':
 
                 start = time.time()
                 save_path, train_loss, test_loss = optimize_net.optimize(ITERATIONS, data, sess=sess,
-                    batch_size=BATCH_SIZE, save=False, feed_in=feature_net.imgs, split_test=False)
+                    batch_size=BATCH_SIZE, save=False, feed_in=feature_net.imgs, split_test=True)
                 end = time.time()
                 train_times.append(end - start)
 

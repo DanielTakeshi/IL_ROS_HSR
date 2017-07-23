@@ -10,7 +10,7 @@ from geometry_msgs.msg import Twist
 
 
 ###############CHANGGE FOR DIFFERENT PRIMITIVES#########################
-from il_ros_hsr.p_pi.safe_corl.options import Corl_Options as Options 
+from il_ros_hsr.p_pi.cards_picking.options import Card_Options as Options 
 from il_ros_hsr.tensor.nets.net_ycb import Net_YCB as Net
 from il_ros_hsr.tensor.nets.net_ycb_vgg import Net_YCB_VGG as Net_VGG
 #########################################################################
@@ -22,7 +22,7 @@ def overrides(super_class):
         return method
     return overrider
 
-class Safe_COM(Common):
+class Cards_COM(Common):
 
     @overrides(Common)
 
@@ -36,15 +36,10 @@ class Safe_COM(Common):
         
  
     @overrides(Common)
-    def go_to_initial_state(self,whole_body,gripper):
-        #whole_body.move_to_neutral()
-
-        whole_body.move_to_joint_positions({'arm_roll_joint':0.0})
-        whole_body.move_to_joint_positions({'wrist_flex_joint':0.0})
-        whole_body.move_to_joint_positions({'head_tilt_joint':-0.4})
-        whole_body.move_to_joint_positions({'arm_flex_joint':-1.5708})
-        whole_body.move_to_joint_positions({'arm_lift_joint':0.23})
-        gripper.grasp(-0.1)
+    def go_to_initial_state(self,whole_body):
+        whole_body.move_to_go()
+        whole_body.move_to_joint_positions({'head_tilt_joint':-0.8})
+        
 
 
     def format_data(self,color_img,depth_img):
@@ -57,7 +52,7 @@ class Safe_COM(Common):
             d_img = None
 
 
-        return [c_img, d_img]
+        return c_img, d_img
 
 
     def format_twist(self,pos):

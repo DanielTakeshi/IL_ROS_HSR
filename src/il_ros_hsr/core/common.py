@@ -12,6 +12,7 @@ import numpy as np
 import IPython
 import cPickle as pickle
 import numpy.linalg as LA
+import rospy
 
 def list2str(deltas):
     label = " "
@@ -185,7 +186,18 @@ class Common:
             
         return 'rollout' + str(i)
 
+    def grip_open(self,gripper):
+        
+        try:
+            gripper.command(1.2)
+        except:
+            rospy.logerr('grasp open error')
 
+    def grip_squeeze(self,gripper):
+        try:
+            gripper.grasp(-0.1)
+        except:
+            rospy.logerr('grasp close error')
 
     def fix_buffer(self,data):
         frame_offset = 5

@@ -23,7 +23,7 @@ class RGBD(object):
 
     def __init__(self):
         #topic_name = '/hsrb/head_rgbd_sensor/depth_registered/image_raw'
-        topic_name_c = '/hsrb/head_rgbd_sensor/rgb/image_color'
+        topic_name_c = '/hsrb/head_rgbd_sensor/rgb/image_rect_color'
         topic_name_i = '/hsrb/head_rgbd_sensor/rgb/camera_info'
         topic_name_d = '/hsrb/head_rgbd_sensor/depth_registered/image_raw'
         self._bridge = CvBridge()

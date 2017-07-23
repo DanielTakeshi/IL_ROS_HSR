@@ -59,6 +59,8 @@ class FindObject():
 
 		self.policy = Policy(self.com,self.features)
 
+		self.com.change_grip(self.gripper)
+
 	def run(self):
 
 		if(self.policy.cam.is_updated):
@@ -114,27 +116,37 @@ class FindObject():
 
 		state['found_object'] = img_detect
 		state['object_poses']
+
+	def check_marker(self):
+
+		try: 
+			A = self.tl.lookupTransform('head_l_stereo_camera_frame','ar_marker/12', rospy.Time(0))
+		except: 
+			rospy.logerr('trash not found')
+			return False
+
+		return True
+
 	def execute_grasp(self):
 
-		self.gripper.grasp(0.01)
+		self.com.grip_open(self.gripper)
+		
 		self.whole_body.end_effector_frame = 'hand_palm_link'
 		nothing = True
-		while nothing: 
-			try:
-				self.whole_body.move_end_effector_pose(geometry.pose(y=0.15,z=-0.11, ek=-1.57),'ar_marker/9')
-				nothing = False
-			except:
-				rospy.logerr('mustard bottle found')
-
+		
 		try:
-			self.gripper.grasp(-0.5)
+			self.whole_body.move_end_effector_pose(geometry.pose(y=0.15,z=-0.11, ek=-1.57),'ar_marker/9')
+			nothing = False
 		except:
-			rospy.logerr('grasp error')
+			rospy.logerr('mustard bottle found')
+
+
+		self.com.grip_squeeze(self.gripper)
 
 		self.whole_body.move_end_effector_pose(geometry.pose(z=-0.9),'hand_palm_link')
 
-		self.gripper.grasp(0.01)
-		self.gripper.grasp(-0.01)
+		self.com.grip_open(self.gripper)
+		self.com.grip_squeeze(self.gripper)
 
 
 
@@ -146,7 +158,7 @@ if __name__=='__main__':
 	
 
 	features = Features()
-	username = 'corl_anne_n1/'
+	username = 'corl_chris_n1/'
 	fo = FindObject(features.vgg_features,user_name = username)
 	
 

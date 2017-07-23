@@ -186,28 +186,35 @@ class FindObject():
 		self.com.save_evaluation(self.trajectory)
 
 
+	def check_marker(self):
+
+		try: 
+			A = self.tl.lookupTransform('head_l_stereo_camera_frame','ar_marker/9', rospy.Time(0))
+		except: 
+			rospy.logerr('trash not found')
+			return False
+
+		return True
+
 
 	def execute_grasp(self):
 
-		self.gripper.grasp(0.01)
+		self.com.grip_open(self.gripper)
 		self.whole_body.end_effector_frame = 'hand_palm_link'
 		nothing = True
-		while nothing: 
-			try:
-				self.whole_body.move_end_effector_pose(geometry.pose(y=0.15,z=-0.09, ek=-1.57),'ar_marker/9')
-				nothing = False
-			except:
-				rospy.logerr('mustard bottle found')
-
+		
 		try:
-			self.gripper.grasp(-0.5)
+			self.whole_body.move_end_effector_pose(geometry.pose(y=0.15,z=-0.09, ek=-1.57),'ar_marker/9')
+			
 		except:
-			rospy.logerr('grasp error')
+			rospy.logerr('mustard bottle found')
+
+		self.com.grip_squeeze(self.gripper)
 
 		self.whole_body.move_end_effector_pose(geometry.pose(z=-0.9),'hand_palm_link')
 
-		self.gripper.grasp(0.01)
-		self.gripper.grasp(-0.01)
+		self.com.grip_open(self.gripper)
+		self.com.grip_squeeze(self.gripper)
 
 
 
@@ -227,7 +234,7 @@ if __name__=='__main__':
 
 
 	count = 0
-	T = 20
+	T = 100
 	grasp_on = True
 
 	while True:
@@ -243,7 +250,7 @@ if __name__=='__main__':
 
 		while fo.count < T  and not e_stop: 
 			fo.run()
-			success = fo.check_success()
+			#success = fo.check_success()
 
 			
 			cur_recording = fo.joystick.get_record_actions_passive()
@@ -253,7 +260,7 @@ if __name__=='__main__':
 
 			
 			print "CURRENT COUNT ",count
-			if e_stop and grasp_on:
+			if e_stop and grasp_on and fo.check_marker():
 				fo.execute_grasp()
 				fo.go_to_initial_state()
 

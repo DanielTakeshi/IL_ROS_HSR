@@ -31,7 +31,7 @@ from il_ros_hsr.p_pi.cards_picking.com import Cards_COM as COM
 import sys
 sys.path.append('/home/autolab/Workspaces/michael_working/yolo_tensorflow/')
 from yolo.detector import Detector
-import yolo.config as cfg
+import yolo.config_card as cfg
 
 from online_labeler import QueryLabeler
 from image_geometry import PinholeCameraModel as PCM
@@ -68,7 +68,7 @@ class CardPicker():
 
         #self.com.go_to_initial_state(self.whole_body)
 
-        self.count = 76
+        self.count = 425
 
         self.joystick = JoyStick_X(self.com)
         self.true_count = 0

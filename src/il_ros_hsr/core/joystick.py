@@ -19,8 +19,6 @@ class JoyStick():
 
         self.noise = 0.2
 
-        self.xbob = XboxController()
-
         self.controller = rospy.Subscriber("/hsrb/joy",Joy , self.c_callback)
 
         self.record_actions = np.zeros(2)
@@ -30,6 +28,7 @@ class JoyStick():
 
     def c_callback(self,joyData):
         twist = Twist()
+        IPython.embed()
         twist.linear.x = joyData.axes[1] #+ 1*normal()
         twist.angular.z = joyData.axes[0] #+ 1*normal()
 

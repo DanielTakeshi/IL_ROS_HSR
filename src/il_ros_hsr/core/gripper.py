@@ -32,7 +32,7 @@ _CONNECTION_TIMEOUT = 10.0
 
 class VGripper(object):
 
-    def __init__(self,graspPlanner,cam):
+    def __init__(self,graspPlanner,cam,options):
         #topic_name = '/hsrb/head_rgbd_sensor/depth_registered/image_raw'
         suction_action = '/hsrb/suction_control'
 
@@ -66,6 +66,8 @@ class VGripper(object):
         self.br = tf.TransformBroadcaster()
         self.gp = graspPlanner
 
+        self.options = options
+
 
     def broadcast_poses(self,poses):
         #while True: 
@@ -84,15 +86,15 @@ class VGripper(object):
             pose = np.array([td_points[0],td_points[1],0.001*num_pose[2]])
             
 
-            self.br.sendTransform((td_points[0], td_points[1], pose[2]-0.013),
-                    (0.0, 0.0, 0.0, 1.0),
+            self.br.sendTransform((td_points[0], td_points[1], pose[2]),
+                    tf.transformations.quaternion_from_euler(ai=-3.14,aj=-3.14,ak=0.0),
                     rospy.Time.now(),
-                    'card',
+                    'card_'+str(count),
                     'head_rgbd_sensor_rgb_frame')
             count += 1
 
 
-    def find_to_pick_region(self,results,c_img,d_img):
+    def find_pick_region(self,results,c_img,d_img):
         '''
         Evaluates the current policy and then executes the motion 
         specified in the the common class
@@ -116,6 +118,7 @@ class VGripper(object):
             cv2.imshow('debug',c_img[int(y_min):int(y_max),int(x_min):int(x_max)])
 
             cv2.waitKey(30)
+            #IPython.embed()
             
             #Crop D+img
             d_img_c = d_img[int(y_min):int(y_max),int(x_min):int(x_max)]
@@ -124,6 +127,44 @@ class VGripper(object):
             poses.append([result['num_class_label'],[x,y,depth]])
 
         self.broadcast_poses(poses)
+
+    def convert_crop(self,pose):
+
+        pose[0] = self.options.OFFSET_Y + pose[0]
+        pose[1] = self.options.OFFSET_X + pose[1]
+
+        return pose
+
+
+    def find_pick_region_net(self,results,c_img,d_img):
+        '''
+        Evaluates the current policy and then executes the motion 
+        specified in the the common class
+        '''
+
+        poses = []
+        #IPython.embed()
+        
+        p_list = []
+        for result in results:
+            print result
+
+            x = int(result['box'][0])
+            y = int(result['box'][1])
+            w = int(result['box'][2]/ 2.0)
+            h = int(result['box'][3]/ 2.0)
+
+            #Crop D+img
+            
+            
+            #Crop D+img
+            d_img_c = d_img[y-h:y+h,x-w:x+w]
+
+            depth = self.gp.find_max_depth(d_img_c)
+            poses.append([result['class'],self.convert_crop([x,y,depth])])
+
+        self.broadcast_poses(poses)
+
 
 
 

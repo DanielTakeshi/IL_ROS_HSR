@@ -15,7 +15,7 @@ from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Joy
 
 from il_ros_hsr.core.sensors import  RGBD, Gripper_Torque, Joint_Positions
-from il_ros_hsr.core.joystick import  JoyStick
+from il_ros_hsr.core.joystick_X import  JoyStick_X
 from il_ros_hsr.core.suction import Suction
 import matplotlib.pyplot as plt
 
@@ -30,7 +30,7 @@ from il_ros_hsr.core.grasp_planner import GraspPlanner
 from il_ros_hsr.p_pi.cards_picking.com import Cards_COM as COM
 import sys
 sys.path.append('/home/autolab/Workspaces/michael_working/yolo_tensorflow/')
-from yolo.detector import Detector
+from yolo.detector_fast import Detector
 from online_labeler import QueryLabeler
 from image_geometry import PinholeCameraModel as PCM
 
@@ -69,9 +69,13 @@ class CardPicker():
         self.br = tf.TransformBroadcaster()
         self.tl = TransformListener()
         self.gp = GraspPlanner()
+        self.detector = Detector()
 
-        self.suction = Suction(self.gp,self.cam)
-        
+        self.joystick = JoyStick_X(self.com)
+
+        self.suction = Suction(self.gp,self.cam,self.com.Options)
+
+        #self.suction.stop()
         #thread.start_new_thread(self.ql.run,())
         print "after thread"
 
@@ -99,22 +103,24 @@ class CardPicker():
             d_img = self.cam.read_depth_data()
             if(not c_img == None and not d_img == None):
 
-                self.ql = QueryLabeler()
-                self.ql.run(c_img)
-                data = self.ql.label_data
-                del self.ql
+                c_img,d_img = self.com.format_data(c_img,d_img)
 
+                data = self.detector.numpy_detector(c_img)
 
-                self.suction.find_pick_region(data,c_img,d_img)
+                cur_recording = self.joystick.get_record_actions_passive()
+                self.suction.find_pick_region_net(data,c_img,d_img)
+                if(cur_recording[0] < -0.1):
+                    
+                    
                 
-                # card_found,cards = self.check_card_found()
+                    card_found,cards = self.check_card_found()
 
-                
+                    
 
-                # if(card_found):
-                #     self.suction.execute_grasp(cards,self.whole_body)
+                    if(card_found):
+                        self.suction.execute_grasp(cards,self.whole_body)
 
-                # self.com.go_to_initial_state(self.whole_body)
+                        self.com.go_to_initial_state(self.whole_body)
 
 
     def check_card_found(self):
@@ -130,11 +136,10 @@ class CardPicker():
                 print 'got here'
                 f_p = self.tl.lookupTransform('head_rgbd_sensor_rgb_frame',transform, rospy.Time(0))
                 cards.append(transform)
-                
-
-        return True, cards
+        
+                return True, cards
         # except: 
-        #     return False, []
+        return False, []
 
         
 

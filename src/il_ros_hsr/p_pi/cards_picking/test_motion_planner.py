@@ -62,7 +62,7 @@ class CardPicker():
         #self.cam = RGBD()
         self.com = COM()
 
-        #self.com.go_to_initial_state(self.whole_body)
+        self.com.go_to_initial_state(self.whole_body)
        
 
         self.br = tf.TransformBroadcaster()

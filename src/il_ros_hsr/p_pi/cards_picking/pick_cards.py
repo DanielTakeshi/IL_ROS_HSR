@@ -63,7 +63,7 @@ class CardPicker():
         self.cam = RGBD()
         self.com = COM()
 
-        self.com.go_to_initial_state(self.whole_body)
+        #self.com.go_to_initial_state(self.whole_body)
        
 
         self.br = tf.TransformBroadcaster()
@@ -100,22 +100,23 @@ class CardPicker():
         while True:
 
             c_img = self.cam.read_color_data()
+            c_img_c = np.copy(c_img)
+            cv2.imshow('debug_true',c_img_c)
+            cv2.waitKey(30)
             d_img = self.cam.read_depth_data()
             if(not c_img == None and not d_img == None):
 
-                c_img,d_img = self.com.format_data(c_img,d_img)
+                c_img_cropped,d_img = self.com.format_data(np.copy(c_img),d_img)
 
-                data = self.detector.numpy_detector(c_img)
+                data = self.detector.numpy_detector(np.copy(c_img_cropped))
 
                 cur_recording = self.joystick.get_record_actions_passive()
-                self.suction.find_pick_region_net(data,c_img,d_img)
+                self.suction.find_pick_region_net(data,c_img,d_img,c_img_c)
                 if(cur_recording[0] < -0.1):
                     
                     
                 
                     card_found,cards = self.check_card_found()
-
-                    
 
                     if(card_found):
                         self.suction.execute_grasp(cards,self.whole_body)

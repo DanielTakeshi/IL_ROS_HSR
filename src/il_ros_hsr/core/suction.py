@@ -63,12 +63,14 @@ class Suction(VGripper):
         nothing = True
         
         #self.whole_body.move_to_neutral()
-        whole_body.linear_weight = 99.0
+        #whole_body.linear_weight = 99.0
         whole_body.move_end_effector_pose(geometry.pose(),cards[0])
 
         #whole_body.end_effector_frame = 'hand_palm_link'
 
-        whole_body.move_end_effector_by_line((0,0,1),0.02)
+        #IPython.embed()
+
+        whole_body.move_end_effector_by_line((0,0,1),0.04)
         
         self.start()
 

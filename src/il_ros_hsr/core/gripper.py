@@ -62,6 +62,7 @@ class VGripper(object):
        
 
         self.pcm = PCM()
+        IPython.embed()
         self.pcm.fromCameraInfo(cam_info)
         self.br = tf.TransformBroadcaster()
         self.gp = graspPlanner
@@ -83,13 +84,19 @@ class VGripper(object):
             
 
             td_points = self.pcm.projectPixelTo3dRay((num_pose[0],num_pose[1]))
-            pose = np.array([td_points[0],td_points[1],0.001*num_pose[2]])
+            norm_pose = np.array(td_points)
+            norm_pose = norm_pose/norm_pose[2]
+            norm_pose = norm_pose*(0.001*num_pose[2])
+            
+            #pose = np.array([td_points[0],td_points[1],0.001*num_pose[2]])
             
 
-            self.br.sendTransform((td_points[0], td_points[1], pose[2]),
-                    tf.transformations.quaternion_from_euler(ai=-3.14,aj=-3.14,ak=0.0),
+            self.br.sendTransform((norm_pose[0], norm_pose[1], norm_pose[2]),
+                    #tf.transformations.quaternion_from_euler(ai=0.0,aj=0.0,ak=0.0),
+                    tf.transformations.quaternion_from_euler(ai=-2.355,aj=-3.14,ak=0.0),
                     rospy.Time.now(),
                     'card_'+str(count),
+                    #'head_rgbd_sensor_link')
                     'head_rgbd_sensor_rgb_frame')
             count += 1
 
@@ -136,7 +143,19 @@ class VGripper(object):
         return pose
 
 
-    def find_pick_region_net(self,results,c_img,d_img):
+
+
+    def plot_on_true(self,pose,true_img):
+
+        pose = self.convert_crop(pose)
+
+        true_img[pose[1]-5:pose[1]+5,pose[0]-5:pose[0]+5,0] = 255.0
+        cv2.imshow('debug_wrap',true_img)
+
+        cv2.waitKey(30)
+
+
+    def find_pick_region_net(self,results,c_img,d_img,c_img_true):
         '''
         Evaluates the current policy and then executes the motion 
         specified in the the common class
@@ -154,7 +173,7 @@ class VGripper(object):
             w = int(result['box'][2]/ 2.0)
             h = int(result['box'][3]/ 2.0)
 
-            #Crop D+img
+            self.plot_on_true([x,y],c_img_true)
             
             
             #Crop D+img

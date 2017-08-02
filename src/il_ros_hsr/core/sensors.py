@@ -25,7 +25,15 @@ class RGBD(object):
         #topic_name = '/hsrb/head_rgbd_sensor/depth_registered/image_raw'
         topic_name_c = '/hsrb/head_rgbd_sensor/rgb/image_rect_color'
         topic_name_i = '/hsrb/head_rgbd_sensor/rgb/camera_info'
+        #topic_name_i = '/hsrb/head_rgbd_sensor/projector/camera_info'
         topic_name_d = '/hsrb/head_rgbd_sensor/depth_registered/image_raw'
+
+        # /hsrb/head_rgbd_sensor/rgb/image_color
+        # /hsrb/head_rgbd_sensor/rgb/image_mono
+        # /hsrb/head_rgbd_sensor/rgb/image_raw
+        # /hsrb/head_rgbd_sensor/rgb/image_rect_color
+        # /hsrb/head_rgbd_sensor/rgb/image_rect_mono
+
         self._bridge = CvBridge()
 
         self._input_color_image = None

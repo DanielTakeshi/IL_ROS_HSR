@@ -9,7 +9,7 @@ from il_ros_hsr.core.options import Options
 
 from il_ros_hsr.core.sensors import RGBD
 
-class Card_Options(Options):
+class Bed_Options(Options):
     # OFFSET_X = 102
     # OFFSET_Y = 150
 
@@ -39,7 +39,7 @@ class Card_Options(Options):
 
     T = 40
 
-    setup_dir = "corl_safe/"
+    setup_dir = "bed_making/"
 
     root_dir = "/media/autolab/1tb/"
 

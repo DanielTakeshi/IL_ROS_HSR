@@ -119,6 +119,9 @@ class Gripper_Torque(object):
         topic_name = '/hsrb/wrist_wrench/compensated'
         self._bridge = CvBridge()
         self._input_image = None
+
+        self.record = False
+        self.history = []
      
         # Subscribe color image data from HSR
         self._input_torque = rospy.Subscriber(
@@ -129,11 +132,23 @@ class Gripper_Torque(object):
     def _wrench_cb(self, data):
         try:
             self._input_torque = data
+            if(self.record):
+                self.history.append(data)
         except CvBridgeError as cv_bridge_exception:
             rospy.logerr(cv_bridge_exception)
 
     def read_data(self):
         return self._input_torque
+
+    def save(self):
+        self.record = True
+
+    def stop(self):
+        self.record = False
+
+    def get_history(self):
+        return self.history
+
 
 class Wrist_RGB(object):
 

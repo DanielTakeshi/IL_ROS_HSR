@@ -9,7 +9,7 @@ from il_ros_hsr.core.options import Options
 
 from il_ros_hsr.core.sensors import RGBD
 
-class Bed_Options(Options):
+class Card_Options(Options):
     # OFFSET_X = 102
     # OFFSET_Y = 150
 

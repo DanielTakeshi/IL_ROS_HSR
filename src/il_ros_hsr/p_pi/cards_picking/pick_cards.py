@@ -95,6 +95,23 @@ class CardPicker():
         return
 
 
+
+    def find_card(self):
+
+        self.whole_body.move_to_neutral()
+        self.whole_body.move_to_joint_positions({'arm_flex_joint': -1.57, 'head_tilt_joint': -.785})
+        print self.check_card_found()[0]
+        i = 0
+        while True:
+            print "panning ", i
+            self.whole_body.move_to_joint_positions({'head_pan_joint': .30})
+            i+=1
+            if self.check_card_found()[0]:
+                break
+        print "found card!"
+        self.card_pick()
+
+
     def card_pick(self):
 
         while True:
@@ -105,7 +122,6 @@ class CardPicker():
             cv2.waitKey(30)
             d_img = self.cam.read_depth_data()
             if(not c_img == None and not d_img == None):
-
                 c_img_cropped,d_img = self.com.format_data(np.copy(c_img),d_img)
 
                 data = self.detector.numpy_detector(np.copy(c_img_cropped))
@@ -132,7 +148,7 @@ class CardPicker():
         cards = []
         
         for transform in transforms:
-            print transform
+            #print transform
             if 'card' in transform:
                 print 'got here'
                 f_p = self.tl.lookupTransform('head_rgbd_sensor_rgb_frame',transform, rospy.Time(0))
@@ -152,5 +168,5 @@ if __name__ == "__main__":
     
     cp = CardPicker()
 
-    cp.card_pick()
+    cp.find_card()
 

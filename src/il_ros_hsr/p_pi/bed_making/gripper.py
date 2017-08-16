@@ -18,6 +18,7 @@ from tmc_suction.msg import (
 )
 
 import actionlib
+import time
 
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
@@ -31,13 +32,13 @@ from il_ros_hsr.p_pi.bed_making.com import Bed_COM as COM
 from il_ros_hsr.p_pi.bed_making.tensioner import Tensioner
 
 from il_ros_hsr.core.sensors import Gripper_Torque
+import il_ros_hsr.p_pi.bed_making.config_bed as cfg
+import thread
 
 
 __SUCTION_TIMEOUT__ = rospy.Duration(20.0)
 _CONNECTION_TIMEOUT = 10.0
-GRIPPER_HEIGHT = 90.0
-MM_TO_M = 0.001
-FORCE_LIMT = 33.0
+
 
 class Bed_Gripper(object):
 
@@ -69,8 +70,28 @@ class Bed_Gripper(object):
         self.tension = Tensioner()
 
         self.torque = Gripper_Torque()
+
+    def loop_broadcast(self,norm_pose,rot,count):
+
+        while True:
+            self.br.sendTransform((norm_pose[0], norm_pose[1], norm_pose[2]),
+                    #tf.transformations.quaternion_from_euler(ai=0.0,aj=0.0,ak=0.0),
+                    rot,
+                    rospy.Time.now(),
+                    'bed_i_'+str(count),
+                    #'head_rgbd_sensor_link')
+                    'head_rgbd_sensor_rgb_frame')
+
+            self.br.sendTransform((0.0, 0.0, -cfg.GRIPPER_HEIGHT),
+                    tf.transformations.quaternion_from_euler(ai=0.0,aj=0.0,ak=0.0),
+                    rospy.Time.now(),
+                    'bed_'+str(count),
+                    #'head_rgbd_sensor_link')
+                    'bed_i_'+str(count))
+
+
     
-    def broadcast_poses(self,poses):
+    def broadcast_poses(self,poses,g_count):
         #while True: 
         
         count = 0
@@ -96,14 +117,9 @@ class Bed_Gripper(object):
 
             c = tf.transformations.quaternion_multiply(a,b)
 
-
-            self.br.sendTransform((norm_pose[0], norm_pose[1], norm_pose[2]),
-                    #tf.transformations.quaternion_from_euler(ai=0.0,aj=0.0,ak=0.0),
-                    c,
-                    rospy.Time.now(),
-                    'bed_'+str(count),
-                    #'head_rgbd_sensor_link')
-                    'head_rgbd_sensor_rgb_frame')
+            thread.start_new_thread(self.loop_broadcast,(norm_pose,c,g_count))
+            time.sleep(0.3)
+          
             count += 1
 
 
@@ -127,7 +143,7 @@ class Bed_Gripper(object):
 
 
 
-    def find_pick_region_labeler(self,results,c_img,d_img):
+    def find_pick_region_labeler(self,results,c_img,d_img,count):
         '''
         Evaluates the current policy and then executes the motion 
         specified in the the common class
@@ -153,11 +169,11 @@ class Bed_Gripper(object):
             #Crop D+img
             d_img_c = d_img[int(y_min):int(y_max),int(x_min):int(x_max)]
 
-            depth = self.gp.find_max_depth(d_img_c)
+            depth = self.gp.find_mean_depth(d_img_c)
 
             poses.append([result['class'],[x,y,depth]])
 
-        self.broadcast_poses(poses)
+        self.broadcast_poses(poses,count)
 
     def find_pick_region(self,results,c_img,d_img):
         '''

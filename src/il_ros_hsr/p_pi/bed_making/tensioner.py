@@ -31,14 +31,13 @@ from image_geometry import PinholeCameraModel as PCM
 from il_ros_hsr.p_pi.bed_making.com import Bed_COM as COM
 
 from il_ros_hsr.core.sensors import Gripper_Torque
+import il_ros_hsr.p_pi.bed_making.config_bed as cfg
+
 
 
 from tf import TransformListener
 
-FORCE_LIMT = 34.0
-HIGH_FORCE = 15.0
-LOW_FORCE = 2.0
-MAX_PULLS = 8
+
 class Tensioner(object):
 
     def __init__(self):
@@ -60,17 +59,29 @@ class Tensioner(object):
 
         return  trans
 
-    def compute_wrench_norm(self,wrench):
+    def get_rotation(self,direction):
+        pose = self.tl.lookupTransform(direction,'hand_palm_link',rospy.Time(0))
+
+        rot = pose[1]
+
+        return  tf.transformations.quaternion_matrix(rot)
+
+    def compute_bed_tension(self,wrench,direction):
 
         x = wrench.wrench.force.x
         y = wrench.wrench.force.y
         z = wrench.wrench.force.z 
 
-        force = np.array([x,y,z])
+        force = np.array([x,y,z,1.0])
+
+        rot = self.get_rotation(direction)
+        
+        force_perp = np.dot(rot,force)
 
         print "CURRENT FORCES ",force
+        print "FORCE PERP ",force_perp
 
-        return LA.norm(force)
+        return force_perp[1]
 
     def force_pull(self,whole_body,direction):
 
@@ -84,18 +95,18 @@ class Tensioner(object):
             whole_body.move_end_effector_pose(geometry.pose(x = t_o[0]*s, y = t_o[1]*s,z= t_o[2]*s),direction)
 
             wrench = self.torque.read_data()
-            norm = self.compute_wrench_norm(wrench)
+            norm = np.abs(self.compute_bed_tension(wrench,direction))
 
             print "FORCE NORM ", norm
      
 
-            if(norm > HIGH_FORCE):
+            if(norm > cfg.HIGH_FORCE):
                 is_pulling = True
 
-            if(is_pulling and norm < LOW_FORCE):
+            if(is_pulling and norm < cfg.LOW_FORCE):
                 break
 
-            if norm > FORCE_LIMT or count == MAX_PULLS:
+            if norm > cfg.FORCE_LIMT or count == cfg.MAX_PULLS:
                 break
 
             count += 1

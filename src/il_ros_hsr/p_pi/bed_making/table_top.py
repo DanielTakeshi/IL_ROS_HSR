@@ -39,7 +39,7 @@ from image_geometry import PinholeCameraModel as PCM
 import thread
 
 import numpy.linalg as LA
-TABLE_HEIGHT = 0.65
+TABLE_HEIGHT = 0.61
 TABLE_WIDTH = 0.67
 
 OFFSET = 0.5
@@ -73,7 +73,7 @@ class TableTop():
 	
 	def move_to_pose(self,base,label):
 
-		base.move(geometry.pose(),100.0,ref_frame_id = label)
+		base.move(geometry.pose(),500.0,ref_frame_id = label)
 
 	def cal_transform(self,offsets,rot = None):
 		L_t_trans = tf.transformations.translation_matrix(offsets)
@@ -178,8 +178,9 @@ class TableTop():
 	
 
 		#Compute LOWER MID 
-		offsets = np.array([0.0,0.0,0.0])
-		self.make_new_pose(offsets,'lower_mid')
+		offsets = np.array([0.0,-OFFSET,0.0])
+		rot = np.array([0.0,0.0,1.57])
+		self.make_new_pose(offsets,'lower_mid',rot=rot)
 
 		#Compute HEAD DOWN
 		offsets = np.array([-(TABLE_LENGTH/2.0), OFFSET_T, -TABLE_HEIGHT])
@@ -187,7 +188,7 @@ class TableTop():
 		self.make_new_pose(offsets,'head_down',rot = rot)
 
 		#Compute HEAD UP
-		offsets = np.array([-(TABLE_LENGTH/2.0), (OFFSET_T+TABLE_WIDTH-.1), -TABLE_HEIGHT])
+		offsets = np.array([-(TABLE_LENGTH/2.0), (OFFSET_T+TABLE_WIDTH+0.02), -TABLE_HEIGHT-0.02])
 		rot = np.array([0.0,0.0,-1.57])
 		self.make_new_pose(offsets,'head_up',rot = rot)
 

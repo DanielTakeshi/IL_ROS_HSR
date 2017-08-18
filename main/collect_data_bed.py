@@ -38,9 +38,13 @@ from il_ros_hsr.p_pi.bed_making.gripper import Bed_Gripper
 from il_ros_hsr.p_pi.bed_making.table_top import TableTop
 from il_ros_hsr.core.web_labeler import Web_Labeler
 from il_ros_hsr.core.python_labeler import Python_Labeler
+
 from il_ros_hsr.p_pi.bed_making.check_success import Success_Check
+from il_ros_hsr.p_pi.bed_making.self_supervised import Self_Supervised
 import il_ros_hsr.p_pi.bed_making.config_bed as cfg
 
+
+from il_ros_hsr.core.rgbd_to_map import RGBD2Map
 class BedMaker():
 
     def __init__(self):
@@ -61,6 +65,7 @@ class BedMaker():
         '''
 
         self.robot = hsrb_interface.Robot()
+        self.rgbd_map = RGBD2Map()
 
         self.omni_base = self.robot.get('omni_base')
         self.whole_body = self.robot.get('whole_body')
@@ -71,6 +76,8 @@ class BedMaker():
         self.cam = RGBD()
         self.com = COM()
 
+
+
         if cfg.USE_WEB_INTERFACE:
             self.wl = Web_Labeler()
         else:
@@ -79,8 +86,8 @@ class BedMaker():
         self.com.go_to_initial_state(self.whole_body)
         
 
-        self.tt = TableTop()
-        self.tt.find_table(self.robot)
+        self.tt = None#TableTop()
+        #self.tt.find_table(self.robot)
 
     
         self.grasp_count = 0
@@ -88,11 +95,14 @@ class BedMaker():
 
         self.br = tf.TransformBroadcaster()
         self.tl = TransformListener()
+
         self.gp = GraspPlanner()
 
         self.gripper = Bed_Gripper(self.gp,self.cam,self.com.Options,self.robot.get('gripper'))
 
         self.sc = Success_Check(self.whole_body,self.tt,self.cam,self.omni_base)
+
+        self.ss = Self_Supervised(self.cam)
 
         #self.test_current_point()
         time.sleep(4)
@@ -115,7 +125,9 @@ class BedMaker():
         return
 
 
-    def bed_pick(self):
+    def bed_make(self):
+
+        rollout_data = []
 
         while True:
 
@@ -129,8 +141,17 @@ class BedMaker():
                 d_img = self.cam.read_depth_data()
 
                 data = self.wl.label_image(c_img)
-                
+
+                grasp_point = self.make_data_point(c_img,d_img,data,self.side,'grasp')
+
+
+                rollout_data.append(grasp_point)
+
                 self.gripper.find_pick_region_labeler(data,c_img,d_img,self.grasp_count)
+
+
+
+                self.ss.learn(self.whole_body,self.grasp_count)
                 
                 pick_found,bed_pick = self.check_card_found()
 
@@ -139,17 +160,28 @@ class BedMaker():
                 if(pick_found):
                     if(self.side == 'BOTTOM'):
                         self.gripper.execute_grasp(bed_pick,self.whole_body,'head_down')
-                        success = self.sc.check_bottom_success(self.wl)
+                        success, data  = self.sc.check_bottom_success(self.wl)
+
+                        grasp_point = self.make_data_point(c_img,d_img,data,self.side,'success')
+                        rollout_data.append(grasp_point)
 
                         print "WAS SUCCESFUL: "
                         print success
                         if(success):
+
+                            if cfg.DEBUG_MODE:
+                                self.com.save_rollout(rollout_data)
+                                break;
+
                             self.move_to_top_side()
                             self.side = "TOP"
 
                     elif(self.side == "TOP"):
                         self.gripper.execute_grasp(bed_pick,self.whole_body,'head_up')
-                        success = self.sc.check_top_success(self.wl)
+                        success, data  = self.sc.check_bottom_success(self.wl)
+
+                        grasp_point = self.make_data_point(c_img,d_img,data,self.side,'success')
+                        rollout_data.append(grasp_point)
 
                         print "WAS SUCCESFUL: "
                         print success
@@ -157,12 +189,26 @@ class BedMaker():
                         if(success):
                             self.side == "PILLOW"
 
+                            self.com.save_rollout(rollout_data)
+                            break;
 
-    def test_current_point(self):
 
-        self.gripper.tension.force_pull(self.whole_body,(0,1,0))
-        self.gripper.com.grip_open(self.gripper)
-        self.move_to_top_side()
+
+
+    def make_data_point(self,c_img,d_img,data,side,typ):
+
+        grasp_point = {}
+
+        grasp_point['c_img'] = c_img
+        grasp_point['d_img'] = d_img
+        grasp_point['label'] = data
+        grasp_point['side'] = side
+        grasp_point['type'] = typ
+
+        return grasp_point
+
+
+
 
     def move_to_top_side(self):
 
@@ -197,7 +243,7 @@ class BedMaker():
                 current_grasp = 'bed_'+str(self.grasp_count)
                 if current_grasp in transform:
                     print 'got here'
-                    f_p = self.tl.lookupTransform('head_rgbd_sensor_rgb_frame',transform, rospy.Time(0))
+                    f_p = self.tl.lookupTransform('map',transform, rospy.Time(0))
                     cards.append(transform)
 
         except: 
@@ -217,5 +263,5 @@ if __name__ == "__main__":
     
     cp = BedMaker()
     
-    cp.bed_pick()
+    cp.bed_make()
 

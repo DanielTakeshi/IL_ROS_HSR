@@ -50,9 +50,9 @@ class Success_Check:
 		for result in data['objects']:
 
 			if(result['class'] == 0):
-				return True
+				return True, data
 			else:
-				return False
+				return False, data
 
 
 

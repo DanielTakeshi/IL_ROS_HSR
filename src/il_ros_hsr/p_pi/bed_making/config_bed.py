@@ -9,7 +9,7 @@ ROOT_DIR = '/media/autolab/1tb/data/'
 NET_NAME = '07_31_00_09_46save.ckpt-30300'
 DATA_PATH = ROOT_DIR + 'bed_rcnn/'
 
-IMAGE_PATH = DATA_PATH+'images/'
+ROLLOUT_PATH = DATA_PATH+'rollouts/'
 GRASP_LABEL_PATH = DATA_PATH+'grasp_labels/'
 SUCCESS_LABEL_PATH = DATA_PATH+'success_labels/'
 
@@ -39,8 +39,10 @@ HIGH_FORCE = 15.0
 LOW_FORCE = 2.0
 MAX_PULLS = 6
 
+#DEBUG
+DEBUG_MODE = True
 
 
 #GRIPPER 
-GRIPPER_HEIGHT = 0.064
+GRIPPER_HEIGHT = 0.06
 MM_TO_M = 0.001

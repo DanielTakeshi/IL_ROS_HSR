@@ -62,16 +62,44 @@ class Bed_Gripper(object):
         self
         self.pcm.fromCameraInfo(cam_info)
         self.br = tf.TransformBroadcaster()
+        self.tl = tf.TransformListener()
         self.gp = graspPlanner
         self.gripper = gripper
         self.options = options
         self.com = COM()
 
-        self.tension = Tensioner()
+        #self.tension = Tensioner()
 
-        self.torque = Gripper_Torque()
+    
+
+
+    def compute_trans_to_map(self,norm_pose,rot):
+
+        pose = self.tl.lookupTransform('map','rgbd_sensor_rgb_frame_map', rospy.Time(0))
+       
+        M = tf.transformations.quaternion_matrix(pose[1])
+        M_t = tf.transformations.translation_matrix(pose[0])
+        M[:,3] = M_t[:,3]
+
+
+        M_g = tf.transformations.quaternion_matrix(rot)
+        M_g_t = tf.transformations.translation_matrix(norm_pose)
+        M_g[:,3] = M_g_t[:,3] 
+
+        M_T = np.matmul(M,M_g)
+
+        trans = tf.transformations.translation_from_matrix(M_T)
+
+        quat = tf.transformations.quaternion_from_matrix(M_T)
+
+        return trans,quat
+
+
 
     def loop_broadcast(self,norm_pose,rot,count):
+
+
+        norm_pose,rot = self.compute_trans_to_map(norm_pose,rot)
 
         while True:
             self.br.sendTransform((norm_pose[0], norm_pose[1], norm_pose[2]),
@@ -80,7 +108,7 @@ class Bed_Gripper(object):
                     rospy.Time.now(),
                     'bed_i_'+str(count),
                     #'head_rgbd_sensor_link')
-                    'head_rgbd_sensor_rgb_frame')
+                    'map')
 
             self.br.sendTransform((0.0, 0.0, -cfg.GRIPPER_HEIGHT),
                     tf.transformations.quaternion_from_euler(ai=0.0,aj=0.0,ak=0.0),
@@ -108,7 +136,7 @@ class Bed_Gripper(object):
             print "DE PROJECTED POINTS ",td_points
             norm_pose = np.array(td_points)
             norm_pose = norm_pose/norm_pose[2]
-            norm_pose = norm_pose*(MM_TO_M*num_pose[2])
+            norm_pose = norm_pose*(cfg.MM_TO_M*num_pose[2])
             print "NORMALIZED POINTS ",norm_pose
             
             #pose = np.array([td_points[0],td_points[1],0.001*num_pose[2]])
@@ -212,7 +240,7 @@ class Bed_Gripper(object):
     
         #self.whole_body.move_to_neutral()
         #whole_body.linear_weight = 99.0
-        whole_body.move_end_effector_pose(geometry.pose(z = -GRIPPER_HEIGHT*MM_TO_M),cards[0])
+        whole_body.move_end_effector_pose(geometry.pose(),cards[0])
 
         self.com.grip_squeeze(self.gripper)
         

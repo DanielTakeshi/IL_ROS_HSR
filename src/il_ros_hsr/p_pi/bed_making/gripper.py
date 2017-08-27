@@ -24,6 +24,8 @@ import cv2
 from cv_bridge import CvBridge, CvBridgeError
 import numpy as np
 
+from data_aug.draw_cross_hair import DrawPrediction
+
 from sensor_msgs.msg import Image, CameraInfo, JointState
 from image_geometry import PinholeCameraModel as PCM
 
@@ -68,7 +70,7 @@ class Bed_Gripper(object):
         self.options = options
         self.com = COM()
 
-        #self.tension = Tensioner()
+        self.tension = Tensioner()
 
     
 
@@ -163,9 +165,11 @@ class Bed_Gripper(object):
 
         #pose = self.convert_crop(pose)
 
-        true_img[pose[1]-5:pose[1]+5,pose[0]-5:pose[0]+5,:] = 0.0
-        true_img[pose[1]-5:pose[1]+5,pose[0]-5:pose[0]+5,:] = 255.0
-        cv2.imshow('debug_wrap',true_img)
+        dp = DrawPrediction()
+
+        image = dp.draw_prediction(np.copy(true_img),pose)
+
+        cv2.imshow('label_given',image)
 
         cv2.waitKey(30)
 

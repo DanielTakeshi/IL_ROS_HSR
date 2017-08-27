@@ -78,7 +78,7 @@ class Self_Supervised(object):
         c_img = self.cam.read_color_data()
         dp = DrawPrediction()
 
-        image = dp.draw_prediction(c_img,pose)
+        image = dp.draw_prediction(np.copy(c_img),pose)
 
         cv2.imshow('debug',image)
         cv2.waitKey(30)
@@ -116,20 +116,20 @@ class Self_Supervised(object):
         whole_body.move_to_joint_positions({'head_pan_joint': self.c_p+o_p})
         whole_body.move_to_joint_positions({'head_tilt_joint':self.c_t+o_t})
 
-        time.sleep(2)
+        time.sleep(cfg.SS_TIME)
 
 
 
 
     def learn(self,whole_body,grasp_count,cam=None):
 
-
-        self.M_base = self.get_current_head_position()
+        self.d_points = []
+        self.M_base = self.get_current_head_position() 
 
         self.c_p = whole_body.joint_state.position[9]
         self.c_t = whole_body.joint_state.position[10]
         
-        change = np.linspace(-0.05,0.05,num =4)
+        change = np.linspace(-0.05,0.05,num =cfg.NUM_SS_DATA)
 
         for c_t in change:
             for c_p in change:
@@ -143,14 +143,22 @@ class Self_Supervised(object):
                 
                 pose = self.pcm.project3dToPixel(transform)
 
-                
+                self.add_data_point(pose)
                 self.debug_images(pose)
 
+        return self.d_points
 
 
-    def make_data_point(self,d_)
-                
 
+    def add_data_point(self,pose):
+
+        d_point = {}
+
+        d_point['c_img'] = self.cam.read_color_data()
+        d_point['d_img'] = self.cam.read_depth_data()
+        d_point['pose'] = pose
+
+        self.d_points.append(d_point)
 
     def look_up_transform(self,count):
 

@@ -178,12 +178,12 @@ class TableTop():
 	
 
 		#Compute LOWER MID 
-		offsets = np.array([0.0,-OFFSET,0.0])
-		rot = np.array([0.0,0.0,1.57])
+		offsets = np.array([0.0,-OFFSET-0.07,0.0])
+		rot = np.array([0.0,0.0,-3.14])
 		self.make_new_pose(offsets,'lower_mid',rot=rot)
 
 		#Compute HEAD DOWN
-		offsets = np.array([-(TABLE_LENGTH/2.0), OFFSET_T, -TABLE_HEIGHT])
+		offsets = np.array([-(TABLE_LENGTH/2.0), OFFSET_T+0.04, -TABLE_HEIGHT])
 		rot = np.array([0.0,0.0,1.57])
 		self.make_new_pose(offsets,'head_down',rot = rot)
 
@@ -191,6 +191,12 @@ class TableTop():
 		offsets = np.array([-(TABLE_LENGTH/2.0), (OFFSET_T+TABLE_WIDTH+0.02), -TABLE_HEIGHT-0.02])
 		rot = np.array([0.0,0.0,-1.57])
 		self.make_new_pose(offsets,'head_up',rot = rot)
+
+		#Compute LOWER MID 
+		offsets = np.array([0.0,-OFFSET+0.16,0.0])
+		rot = np.array([0.0,0.0,1.57])
+		self.make_new_pose(offsets,'lower_start',rot=rot)
+
 
 
 if __name__ == "__main__":
@@ -208,10 +214,10 @@ if __name__ == "__main__":
 	tt.find_table(robot)
 
 
+	
 	IPython.embed()
-
 	tt.move_to_pose(omni_base,'lower_mid')
-	tt.move_to_pose(omni_base,'right_corner')
-	tt.move_to_pose(omni_base,'right_mid')
+	# tt.move_to_pose(omni_base,'right_corner')
+	# tt.move_to_pose(omni_base,'right_mid')
 	
 

@@ -86,12 +86,12 @@ class BedMaker():
         self.com.go_to_initial_state(self.whole_body)
         
 
-        self.tt = None#TableTop()
-        #self.tt.find_table(self.robot)
+        self.tt = TableTop()
+        self.tt.find_table(self.robot)
 
     
         self.grasp_count = 0
-       
+      
 
         self.br = tf.TransformBroadcaster()
         self.tl = TransformListener()
@@ -127,7 +127,7 @@ class BedMaker():
 
     def bed_make(self):
 
-        rollout_data = []
+        self.rollout_data = []
 
         while True:
 
@@ -135,42 +135,45 @@ class BedMaker():
             d_img = self.cam.read_depth_data()
             if(not c_img == None and not d_img == None):
 
+                self.position_head()
+
                 
+
+                data = self.wl.label_image(c_img)
 
                 c_img = self.cam.read_color_data()
                 d_img = self.cam.read_depth_data()
 
-                data = self.wl.label_image(c_img)
-
-                grasp_point = self.make_data_point(c_img,d_img,data,self.side,'grasp')
-
-
-                rollout_data.append(grasp_point)
+                self.add_data_point(c_img,d_img,data,self.side,'grasp')
 
                 self.gripper.find_pick_region_labeler(data,c_img,d_img,self.grasp_count)
+               
 
-
-
-                self.ss.learn(self.whole_body,self.grasp_count)
+                if cfg.SS_LEARN:
+                    grasp_points = self.ss.learn(self.whole_body,self.grasp_count)
+                    self.add_ss_data(grasp_points,data,self.side,'grasp')
                 
                 pick_found,bed_pick = self.check_card_found()
 
-                self.grasp_count += 1
+               
 
                 if(pick_found):
                     if(self.side == 'BOTTOM'):
                         self.gripper.execute_grasp(bed_pick,self.whole_body,'head_down')
                         success, data  = self.sc.check_bottom_success(self.wl)
 
-                        grasp_point = self.make_data_point(c_img,d_img,data,self.side,'success')
-                        rollout_data.append(grasp_point)
+                        self.add_data_point(c_img,d_img,data,self.side,'success')
+
+                        if cfg.SS_LEARN:
+                            grasp_points = self.ss.learn(self.whole_body,self.grasp_count)
+                            self.add_ss_data(grasp_points,data,self.side,'success')
 
                         print "WAS SUCCESFUL: "
                         print success
                         if(success):
 
                             if cfg.DEBUG_MODE:
-                                self.com.save_rollout(rollout_data)
+                                self.com.save_rollout(self.rollout_data)
                                 break;
 
                             self.move_to_top_side()
@@ -178,10 +181,12 @@ class BedMaker():
 
                     elif(self.side == "TOP"):
                         self.gripper.execute_grasp(bed_pick,self.whole_body,'head_up')
-                        success, data  = self.sc.check_bottom_success(self.wl)
+                        success, data  = self.sc.check_top_success(self.wl)
 
-                        grasp_point = self.make_data_point(c_img,d_img,data,self.side,'success')
-                        rollout_data.append(grasp_point)
+                        self.add_data_point(c_img,d_img,data,self.side,'success')
+                        if cfg.SS_LEARN:
+                            grasp_points = self.ss.learn(self.whole_body,self.grasp_count)
+                            self.add_ss_data(grasp_points,data,self.side,'success')
 
                         print "WAS SUCCESFUL: "
                         print success
@@ -189,23 +194,48 @@ class BedMaker():
                         if(success):
                             self.side == "PILLOW"
 
-                            self.com.save_rollout(rollout_data)
+                            self.com.save_rollout(self.rollout_data)
+                            self.move_to_start()
                             break;
 
+                self.grasp_count += 1
 
 
 
-    def make_data_point(self,c_img,d_img,data,side,typ):
+
+    def add_data_point(self,c_img,d_img,data,side,typ,pose = None):
 
         grasp_point = {}
 
         grasp_point['c_img'] = c_img
         grasp_point['d_img'] = d_img
-        grasp_point['label'] = data
+        
+        if pose == None:
+            label = data['objects'][0]['box']
+            pose = [(label[2]-label[0])/2.0+label[0],(label[3]-label[1])/2.0+label[1]]
+
+        grasp_point['pose'] = pose
+
+        grasp_point['class'] = data['objects'][0]['class']
         grasp_point['side'] = side
         grasp_point['type'] = typ
 
-        return grasp_point
+        self.rollout_data.append(grasp_point)
+
+    def position_head(self):
+
+        if self.side == "TOP":
+            self.whole_body.move_to_joint_positions({'head_tilt_joint':-0.8})
+        elif self.side == "BOTTOM":
+            self.tt.move_to_pose(self.omni_base,'lower_start')
+            self.whole_body.move_to_joint_positions({'head_tilt_joint':-0.8})
+
+    def add_ss_data(self,g_points,data,side,typ):
+
+        for g_point in g_points:
+
+            self.add_data_point(g_point['c_img'],g_point['d_img'],data,side,typ,pose=g_point['pose'])
+
 
 
 
@@ -218,6 +248,25 @@ class BedMaker():
         self.tt.move_to_pose(self.omni_base,'right_up')
         
         self.tt.move_to_pose(self.omni_base,'top_mid')
+
+
+    def move_to_start(self):
+
+        self.tt.move_to_pose(self.omni_base,'right_up')
+        self.tt.move_to_pose(self.omni_base,'right_mid')
+        self.tt.move_to_pose(self.omni_base,'right_down')
+        self.tt.move_to_pose(self.omni_base,'lower_mid')
+        
+    
+        
+        
+       
+
+
+
+
+    
+    
 
 
 

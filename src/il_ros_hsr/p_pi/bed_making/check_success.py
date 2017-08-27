@@ -28,7 +28,8 @@ class Success_Check:
 
 	def check_bottom_success(self,wl):
 		self.whole_body.move_to_go()
-		self.tt.move_to_pose(self.omni_base,'lower_mid')
+		self.tt.move_to_pose(self.omni_base,'lower_start')
+		#self.whole_body.move_to_joint_positions({'head_pan_joint': 1.5})
 		self.whole_body.move_to_joint_positions({'head_tilt_joint':-0.8})
 
 		return self.check_success(wl)

@@ -128,6 +128,7 @@ class BedMaker():
     def bed_make(self):
 
         self.rollout_data = []
+        self.get_new_grasp
 
         while True:
 
@@ -138,70 +139,142 @@ class BedMaker():
                 self.position_head()
 
                 
+                if self.get_new_grasp:
+                    data = self.wl.label_image(c_img)
 
-                data = self.wl.label_image(c_img)
+                    c_img = self.cam.read_color_data()
+                    d_img = self.cam.read_depth_data()
 
-                c_img = self.cam.read_color_data()
-                d_img = self.cam.read_depth_data()
+                    self.add_data_point(c_img,d_img,data,self.side,'grasp')
 
-                self.add_data_point(c_img,d_img,data,self.side,'grasp')
-
-                self.gripper.find_pick_region_labeler(data,c_img,d_img,self.grasp_count)
+                    self.gripper.find_pick_region_labeler(data,c_img,d_img,self.grasp_count)
                
 
-                if cfg.SS_LEARN:
-                    grasp_points = self.ss.learn(self.whole_body,self.grasp_count)
-                    self.add_ss_data(grasp_points,data,self.side,'grasp')
+                    if cfg.SS_LEARN:
+                        grasp_points = self.ss.learn(self.whole_body,self.grasp_count)
+                        self.add_ss_data(grasp_points,data,self.side,'grasp')
+
+               
+
                 
                 pick_found,bed_pick = self.check_card_found()
 
+                if self.side == "BOTTOM":
+                    self.gripper.execute_grasp(bed_pick,self.whole_body,'head_down')
+                else:
+                    self.gripper.execute_grasp(bed_pick,self.whole_body,'head_up')
+
+                self.check_success_state()
                
 
-                if(pick_found):
-                    if(self.side == 'BOTTOM'):
-                        self.gripper.execute_grasp(bed_pick,self.whole_body,'head_down')
-                        success, data  = self.sc.check_bottom_success(self.wl)
+                # if(pick_found):
+                #     if(self.side == 'BOTTOM'):
+                #         self.gripper.execute_grasp(bed_pick,self.whole_body,'head_down')
+                #         success, data  = self.sc.check_bottom_success(self.wl)
 
-                        self.add_data_point(c_img,d_img,data,self.side,'success')
+                #         self.add_data_point(c_img,d_img,data,self.side,'success')
 
-                        if cfg.SS_LEARN:
-                            grasp_points = self.ss.learn(self.whole_body,self.grasp_count)
-                            self.add_ss_data(grasp_points,data,self.side,'success')
+                #         print "WAS SUCCESFUL: "
+                #         print success
+                #         if(success):
 
-                        print "WAS SUCCESFUL: "
-                        print success
-                        if(success):
+                #             if cfg.SS_LEARN:
+                #                 grasp_points = self.ss.learn(self.whole_body,self.grasp_count)
+                #                 self.add_ss_data(grasp_points,data,self.side,'success')
 
-                            if cfg.DEBUG_MODE:
-                                self.com.save_rollout(self.rollout_data)
-                                break;
+                #             if cfg.DEBUG_MODE:
+                #                 self.com.save_rollout(self.rollout_data)
+                #                 break;
 
-                            self.move_to_top_side()
-                            self.side = "TOP"
+                #             self.move_to_top_side()
+                #             self.side = "TOP"
+                #             self.grasp_count += 1
+                #             self.get_new_grasp = True
 
-                    elif(self.side == "TOP"):
-                        self.gripper.execute_grasp(bed_pick,self.whole_body,'head_up')
-                        success, data  = self.sc.check_top_success(self.wl)
-
-                        self.add_data_point(c_img,d_img,data,self.side,'success')
-                        if cfg.SS_LEARN:
-                            grasp_points = self.ss.learn(self.whole_body,self.grasp_count)
-                            self.add_ss_data(grasp_points,data,self.side,'success')
-
-                        print "WAS SUCCESFUL: "
-                        print success
-
-                        if(success):
-                            self.side == "PILLOW"
-
-                            self.com.save_rollout(self.rollout_data)
-                            self.move_to_start()
-                            break;
-
-                self.grasp_count += 1
+                #         else:
+                #             self.grasp_count += 1
+                #             self.gripper.find_pick_region_labeler(data,c_img,d_img,self.grasp_count)
+                #             self.add_data_point(c_img,d_img,data,self.side,'grasp')
+                #             self.get_new_grasp = False
+                #             if cfg.SS_LEARN:
+                #                 grasp_points = self.ss.learn(self.whole_body,self.grasp_count)
+                #                 self.add_ss_data(grasp_points,data,self.side,'success')
+                #                 self.add_ss_data(grasp_points,data,self.side,'grasp')
 
 
+                #     elif(self.side == "TOP"):
+                #         self.gripper.execute_grasp(bed_pick,self.whole_body,'head_up')
+                #         success, data  = self.sc.check_top_success(self.wl)
 
+                #         self.add_data_point(c_img,d_img,data,self.side,'success')
+                #         if cfg.SS_LEARN:
+                #             grasp_points = self.ss.learn(self.whole_body,self.grasp_count)
+                #             self.add_ss_data(grasp_points,data,self.side,'success')
+
+                #         print "WAS SUCCESFUL: "
+                #         print success
+
+                #         if(success):
+                #             self.side == "PILLOW"
+
+                #             self.com.save_rollout(self.rollout_data)
+                #             self.move_to_start()
+                #             self.grasp_count += 1
+                #             break;
+
+               
+    def check_success_state(self):
+
+        
+
+        success, data  = self.sc.check_bottom_success(self.wl)
+
+        self.add_data_point(c_img,d_img,data,self.side,'success')
+
+        print "WAS SUCCESFUL: "
+        print success
+        if(success):
+
+            if cfg.SS_LEARN:
+                grasp_points = self.ss.learn(self.whole_body,self.grasp_count)
+                self.add_ss_data(grasp_points,data,self.side,'success')
+
+            
+
+            self.update_side()
+
+            if self.side == "BOTTOM":
+                self.transition_to_top()
+            else
+                self.transition_to_start()
+
+            self.grasp_count += 1
+            self.get_new_grasp = True
+
+        else:
+            self.grasp_count += 1
+            self.gripper.find_pick_region_labeler(data,c_img,d_img,self.grasp_count)
+            self.add_data_point(c_img,d_img,data,self.side,'grasp')
+            self.get_new_grasp = False
+            if cfg.SS_LEARN:
+                grasp_points = self.ss.learn(self.whole_body,self.grasp_count)
+                self.add_ss_data(grasp_points,data,self.side,'success')
+   
+    def update_side(self):
+
+        if self.side == "BOTTOM":
+            self.side = "TOP"
+
+    def transition_to_bottom(self):
+        if cfg.DEBUG_MODE:
+            self.com.save_rollout(self.rollout_data)
+            self.move_to_start()
+              
+        self.move_to_top_side()
+
+    def transition_to_start(self):
+        self.com.save_rollout(self.rollout_data)
+        self.move_to_start()
 
     def add_data_point(self,c_img,d_img,data,side,typ,pose = None):
 

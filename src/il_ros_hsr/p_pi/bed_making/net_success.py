@@ -10,6 +10,7 @@ from il_ros_hsr.p_pi.bed_making.table_top import TableTop
 from il_ros_hsr.core.web_labeler import Web_Labeler
 from il_ros_hsr.core.python_labeler import Python_Labeler
 import hsrb_interface
+import il_ros_hsr.p_pi.bed_making.config_bed as cfg
 
 from il_ros_hsr.core.sensors import  RGBD
 
@@ -43,20 +44,24 @@ class Success_Check:
 
 
 
-	def check_success(self,wl):
+	def query_net(self,wl):
 
 		img = self.cam.read_color_data()
-		data = wl.label_image(img)
 
-		
+		data = self.suc_predictor(c_img)
+
+		if cfg.MSR_LOSS:
+			sup_data = wl.label_image(img)
+		else:
+			sup_data = None
 
 
 		for result in data['objects']:
 
 			if(result['class'] == 0):
-				return True, data
+				return True, data,sup_data
 			else:
-				return False, data
+				return False, data,sup_data
 
 
 

@@ -34,7 +34,7 @@ from hsrb_interface.collision_world import CollisionWorld
 from il_ros_hsr.p_pi.bed_making.com import Bed_COM as COM
 import sys
 sys.path.append('/home/autolab/Workspaces/michael_working/yolo_tensorflow/')
-from yolo.detector import Detector
+
 from image_geometry import PinholeCameraModel as PCM
 import thread
 
@@ -183,12 +183,12 @@ class TableTop():
 		self.make_new_pose(offsets,'lower_mid',rot=rot)
 
 		#Compute HEAD DOWN
-		offsets = np.array([-(TABLE_LENGTH/2.0), OFFSET_T+0.04, -TABLE_HEIGHT])
+		offsets = np.array([-(TABLE_LENGTH/2.0+0.08), OFFSET_T+0.04, -TABLE_HEIGHT])
 		rot = np.array([0.0,0.0,1.57])
 		self.make_new_pose(offsets,'head_down',rot = rot)
 
 		#Compute HEAD UP
-		offsets = np.array([-(TABLE_LENGTH/2.0), (OFFSET_T+TABLE_WIDTH+0.02), -TABLE_HEIGHT-0.02])
+		offsets = np.array([-(TABLE_LENGTH/2.0+0.08), (OFFSET_T+TABLE_WIDTH+0.02), -TABLE_HEIGHT-0.02])
 		rot = np.array([0.0,0.0,-1.57])
 		self.make_new_pose(offsets,'head_up',rot = rot)
 
@@ -196,6 +196,17 @@ class TableTop():
 		offsets = np.array([0.0,-OFFSET+0.16,0.0])
 		rot = np.array([0.0,0.0,1.57])
 		self.make_new_pose(offsets,'lower_start',rot=rot)
+
+		#Compute HEAD DOWN
+		offsets = np.array([(TABLE_LENGTH/2.0+0.08), OFFSET_T+0.04, -TABLE_HEIGHT])
+		rot = np.array([0.0,0.0,1.57])
+		self.make_new_pose(offsets,'bottom_down',rot = rot)
+
+		#Compute HEAD UP
+		offsets = np.array([(TABLE_LENGTH/2.0+0.08), (OFFSET_T+TABLE_WIDTH+0.02), -TABLE_HEIGHT-0.02])
+		rot = np.array([0.0,0.0,-1.57])
+		self.make_new_pose(offsets,'bottom_up',rot = rot)
+
 
 
 

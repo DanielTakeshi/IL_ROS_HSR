@@ -89,7 +89,7 @@ class Tensioner(object):
         is_pulling = False
         t_o = self.get_translation(direction)
         delta = 0.0
-        while s > 0.0:
+        while delta <= 1.0:
             s = 1.0-delta
 
             whole_body.move_end_effector_pose(geometry.pose(x = t_o[0]*s, y = t_o[1]*s,z= t_o[2]*s),direction)
@@ -106,11 +106,11 @@ class Tensioner(object):
             if(is_pulling and norm < cfg.LOW_FORCE):
                 break
 
-            if norm > cfg.FORCE_LIMT or count == cfg.MAX_PULLS:
+            if norm > cfg.FORCE_LIMT:
                 break
 
-            count += 1
-            delta += 1.0/cfg.MAX_PULLS
+            delta += 1.0/float(cfg.MAX_PULLS)
+            print delta
 
         
 

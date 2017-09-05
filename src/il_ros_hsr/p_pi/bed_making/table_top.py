@@ -42,6 +42,8 @@ import numpy.linalg as LA
 TABLE_HEIGHT = 0.61
 TABLE_WIDTH = 0.67
 
+TABLE_OFFSET = 0.06
+
 OFFSET = 0.5
 OFFSET_T = 0.34
 TABLE_LENGTH = 0.91
@@ -197,13 +199,13 @@ class TableTop():
 		rot = np.array([0.0,0.0,1.57])
 		self.make_new_pose(offsets,'lower_start',rot=rot)
 
-		#Compute HEAD DOWN
-		offsets = np.array([(TABLE_LENGTH/2.0+0.08), OFFSET_T+0.04, -TABLE_HEIGHT])
+		#Compute BOTTOM DOWN AT TABLE HEIGHT
+		offsets = np.array([(TABLE_LENGTH/2.0+0.08), OFFSET_T+0.04, -TABLE_HEIGHT+TABLE_OFFSET])
 		rot = np.array([0.0,0.0,1.57])
 		self.make_new_pose(offsets,'bottom_down',rot = rot)
 
-		#Compute HEAD UP
-		offsets = np.array([(TABLE_LENGTH/2.0+0.08), (OFFSET_T+TABLE_WIDTH+0.02), -TABLE_HEIGHT-0.02])
+		#Compute BOTTOM UP AT TABLE HEIGHT
+		offsets = np.array([(TABLE_LENGTH/2.0+0.08), (OFFSET_T+TABLE_WIDTH+0.02), -TABLE_HEIGHT+TABLE_OFFSET])
 		rot = np.array([0.0,0.0,-1.57])
 		self.make_new_pose(offsets,'bottom_up',rot = rot)
 

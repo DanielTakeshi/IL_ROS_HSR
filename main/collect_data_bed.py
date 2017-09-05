@@ -46,6 +46,8 @@ import il_ros_hsr.p_pi.bed_making.config_bed as cfg
 
 
 from il_ros_hsr.core.rgbd_to_map import RGBD2Map
+
+from il_ros_hsr.p_pi.bed_making.initial_state_sampler import InitialSampler
 class BedMaker():
 
     def __init__(self):
@@ -97,6 +99,9 @@ class BedMaker():
         self.br = tf.TransformBroadcaster()
         self.tl = TransformListener()
 
+
+        self.ins = InitialSampler(self.cam)
+
         self.gp = GraspPlanner()
 
         self.gripper = Bed_Gripper(self.gp,self.cam,self.com.Options,self.robot.get('gripper'))
@@ -131,10 +136,18 @@ class BedMaker():
         self.rollout_data = []
         self.get_new_grasp = True
 
+        if cfg.INS_SAMPLE:
+                u_c,d_c = self.ins.sample_initial_state()
+
+                self.rollout_data.append([u_c,d_c])
+
+
         while True:
 
             c_img = self.cam.read_color_data()
             d_img = self.cam.read_depth_data()
+
+            
             if(not c_img == None and not d_img == None):
 
 
@@ -144,9 +157,9 @@ class BedMaker():
 
                     c_img = self.cam.read_color_data()
                     d_img = self.cam.read_depth_data()
-                    percent, out = get_success(c_img)
+                   
 
-                    self.add_data_point(c_img,d_img,data,self.side,'grasp',percent=percent,out_img=out)
+                    self.add_data_point(c_img,d_img,data,self.side,'grasp')
 
                     self.gripper.find_pick_region_labeler(data,c_img,d_img,self.grasp_count)
                
@@ -181,9 +194,8 @@ class BedMaker():
         c_img = self.cam.read_color_data()
         d_img = self.cam.read_depth_data()
 
-        percent, out = get_success(c_img)
-        print("Covered " + str(percent) + "%")
-        self.add_data_point(c_img,d_img,data,self.side,'success',percent=percent,out_img=out)
+
+        self.add_data_point(c_img,d_img,data,self.side,'success')
 
         print "WAS SUCCESFUL: "
         print success
@@ -208,6 +220,7 @@ class BedMaker():
             self.add_data_point(c_img,d_img,data,self.side,'grasp')
 
             self.get_new_grasp = False
+
             if cfg.SS_LEARN:
                 grasp_points = self.ss.learn(self.whole_body,self.grasp_count)
                 self.add_ss_data(grasp_points,data,self.side,'success')
@@ -230,7 +243,7 @@ class BedMaker():
         self.move_to_start()
         sys.exit()
 
-    def add_data_point(self,c_img,d_img,data,side,typ,percent=None,out_img=None,pose = None):
+    def add_data_point(self,c_img,d_img,data,side,typ,pose = None):
 
         grasp_point = {}
 
@@ -246,8 +259,6 @@ class BedMaker():
         grasp_point['class'] = data['objects'][0]['class']
         grasp_point['side'] = side
         grasp_point['type'] = typ
-        grasp_point['per'] = percent
-        grasp_point['out_img'] = out_img
 
         self.rollout_data.append(grasp_point)
 
@@ -340,6 +351,6 @@ if __name__ == "__main__":
    
     
     cp = BedMaker()
-    
+
     cp.bed_make()
 

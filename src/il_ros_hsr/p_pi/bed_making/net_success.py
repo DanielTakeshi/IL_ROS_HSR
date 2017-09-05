@@ -1,4 +1,4 @@
-import os
+cd import os
 import Pyro4
 import time
 import cPickle as pickle

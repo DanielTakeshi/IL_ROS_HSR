@@ -61,7 +61,7 @@ class Bed_Gripper(object):
        
 
         self.pcm = PCM()
-        self
+  
         self.pcm.fromCameraInfo(cam_info)
         self.br = tf.TransformBroadcaster()
         self.tl = tf.TransformListener()

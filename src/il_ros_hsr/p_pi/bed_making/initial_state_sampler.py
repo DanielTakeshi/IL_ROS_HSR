@@ -225,7 +225,7 @@ class InitialSampler(object):
         u_down = np.random.uniform(low=0.0,high=0.5)
         v_down = np.random.uniform(low=0.3,high=1.0)
         x_down = center[0] + u_down*LA.norm(center - bottom_middle)
-        y_down = center[1] - v_down*LA.norm(center - middle_down)
+        y_down = center[1] + v_down*LA.norm(center - middle_down)
         down_corner = (x_down, y_down, center[2])
 
         # Generate random point in sensor frame for the further corner
@@ -233,8 +233,14 @@ class InitialSampler(object):
         u_up = np.random.uniform(low=0.0,high=0.5)
         v_up = np.random.uniform(low=0.3,high=1.0)
         x_up = center[0] - u_up*LA.norm(center - bottom_middle)
-        y_up = center[1] + v_up*LA.norm(center - middle_up)
+        y_up = center[1] - v_up*LA.norm(center - middle_up)
         up_corner = (x_up, y_up, center[2])    
+
+
+        print "CENTER ",center
+
+        if  center[1] < 0.0 or center[2] < 0.0:
+            raise "ROBOT TRANSFROM INCORRECT"
 
         print "UP CORNER ", up_corner
         print "DOWN CORNER ", down_corner
@@ -272,12 +278,13 @@ if __name__=='__main__':
     tt = TableTop()
     tt.find_table(robot)
 
-    tt.move_to_pose(omni_base,'lower_start')
-    whole_body.move_to_joint_positions({'head_tilt_joint':-0.8})
+    # tt.move_to_pose(omni_base,'lower_start')
+    # whole_body.move_to_joint_positions({'head_tilt_joint':-0.8})
     time.sleep(5)
     IS = InitialSampler(cam)
 
-    IS.sample_initial_state()
+    while True:
+        IS.sample_initial_state()
 
         
 

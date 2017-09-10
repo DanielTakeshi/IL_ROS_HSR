@@ -146,12 +146,12 @@ class Bed_Gripper(object):
             b = tf.transformations.quaternion_from_euler(ai=0.0,aj=0.0,ak=1.57)
 
             c = tf.transformations.quaternion_multiply(a,b)
-
+            
             thread.start_new_thread(self.loop_broadcast,(norm_pose,c,g_count))
             time.sleep(0.3)
           
             count += 1
-
+        
 
 
     def convert_crop(self,pose):
@@ -173,7 +173,33 @@ class Bed_Gripper(object):
 
         cv2.waitKey(30)
 
+    def find_pick_region_net(self,pose,c_img,d_img,count):
+        '''
+        Evaluates the current policy and then executes the motion 
+        specified in the the common class
+        '''
 
+        poses = []
+        #IPython.embed()
+        
+        p_list = []
+       
+        x,y = pose
+        #Crop D+img
+
+        self.plot_on_true([x,y],c_img)
+
+    
+    
+        d_img_c = d_img[y-cfg.BOX:y+cfg.BOX,x-cfg.BOX:cfg.BOX+x]
+
+        depth = self.gp.find_mean_depth(d_img_c)
+
+        poses.append([1.0,[x,y,depth]])
+
+       
+
+        self.broadcast_poses(poses,count)
 
     def find_pick_region_labeler(self,results,c_img,d_img,count):
         '''

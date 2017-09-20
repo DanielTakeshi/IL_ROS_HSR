@@ -30,52 +30,70 @@ from il_ros_hsr.core.grasp_planner import GraspPlanner
 from il_ros_hsr.p_pi.bed_making.com import Bed_COM as COM
 import sys
 sys.path.append('/home/autolab/Workspaces/michael_working/yolo_tensorflow/')
-# from yolo.detector import Detector
+from yolo.detector import Detector
 from online_labeler import QueryLabeler
 from image_geometry import PinholeCameraModel as PCM
 
 from il_ros_hsr.p_pi.bed_making.gripper import Bed_Gripper
 from il_ros_hsr.p_pi.bed_making.table_top import TableTop
 from il_ros_hsr.core.web_labeler import Web_Labeler
-from il_ros_hsr.core.python_labeler import Python_Labeler
 
-from il_ros_hsr.p_pi.bed_making.check_success import Success_Check
-from il_ros_hsr.p_pi.bed_making.self_supervised import Self_Supervised
-import il_ros_hsr.p_pi.bed_making.config_bed as cfg
-import cPickle as pickle
+class Tester():
 
-from il_ros_hsr.core.rgbd_to_map import RGBD2Map
+    def __init__(self):
+        '''
+        Initialization class for a Policy
 
-from data_aug.draw_cross_hair import DrawPrediction
+        Parameters
+        ----------
+        yumi : An instianted yumi robot 
+        com : The common class for the robot
+        cam : An open bincam class
 
-dp = DrawPrediction()
+        debug : bool 
 
-for rnum in range(0, 8):
-	path = cfg.ROLLOUT_PATH+'rollout_' + str(rnum) + '/rollout.p'
-	data = pickle.load(open(path,'rb'))
-	print(data)
-	count = 0
-	for datum in data:
+            A bool to indicate whether or not to display a training set point for 
+            debuging. 
 
-		if type(datum) == list: 
-			continue
+        '''
 
-		if datum['type'] == 'grasp':
-			pose = datum['pose']
-			c_img = datum['c_img']
 
-			img = dp.draw_prediction(np.copy(c_img),pose)
-			cv2.imshow('debug',img)
-			cv2.waitKey(300)
-			cv2.imwrite('test_data/rollout_' + str(rnum) + '_grasp_'+str(count)+'.png',c_img)
-			
-		else:
-			# cv2.imshow('debug',datum['c_img'])
-			cv2.imwrite('test_data/rollout_' + str(rnum) + '_tran_'+str(count)+'.png',datum['c_img'])
-			# cv2.waitKey(300)
+        
+        self.side = 'BOTTOM'
 
-		count += 1
+        self.wl = Web_Labeler()
 
-	
+        self.img_1 = cv2.imread('shared_data/img_24.png')
+        self.img_2 = cv2.imread('shared_data/img_25.png')
 
+
+    def get_pick(self):
+
+        while True:
+            
+                print "IMAGE 1 "
+                data = self.wl.label_image(self.img_1)
+
+                print "DATA ",data
+
+               
+
+                print "IMAGE 2 "
+                data = self.wl.label_image(self.img_2)
+
+                print "DATA ",data
+
+
+               
+                
+        
+
+            
+
+if __name__ == "__main__":
+   
+    
+    cp = Tester()
+    
+    cp.get_pick()
 

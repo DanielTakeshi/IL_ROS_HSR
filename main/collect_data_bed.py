@@ -161,6 +161,9 @@ class BedMaker():
 
                     self.add_data_point(c_img,d_img,data,self.side,'grasp')
 
+
+                    
+
                     self.gripper.find_pick_region_labeler(data,c_img,d_img,self.grasp_count)
                
 

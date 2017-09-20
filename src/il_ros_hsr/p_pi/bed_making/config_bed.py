@@ -1,4 +1,5 @@
 import os
+import numpy as np
 
 #
 # path and dataset parameter
@@ -9,11 +10,28 @@ ROOT_DIR = '/media/autolab/1tb/data/'
 NET_NAME = '07_31_00_09_46save.ckpt-30300'
 DATA_PATH = ROOT_DIR + 'bed_rcnn/'
 
-ROLLOUT_PATH = DATA_PATH+'rollouts/'
 
-BC_HELD_OUT = DATA_PATH+'held_out_bc'
-#STAT_PATH = DATA_PATH+'stats_adverserial/'
-STAT_PATH = DATA_PATH+'stats/'
+USE_DART = True
+
+
+if USE_DART: 
+
+	ROLLOUT_PATH = DATA_PATH+'rollouts_dart/'
+
+	BC_HELD_OUT = DATA_PATH+'held_out_dart'
+else: 
+	ROLLOUT_PATH = DATA_PATH+'rollouts/'
+
+	BC_HELD_OUT = DATA_PATH+'held_out_bc'
+
+
+#STAT_PATH = DATA_PATH+'stats_dart_adv/'
+STAT_PATH = DATA_PATH+'movie_bc/'
+#STAT_PATH = DATA_PATH+'stats/'
+#STAT_PATH = DATA_PATH+'stats_analytic_adv/'
+
+
+
 GRASP_LABEL_PATH = DATA_PATH+'grasp_labels/'
 SUCCESS_LABEL_PATH = DATA_PATH+'success_labels/'
 
@@ -43,8 +61,19 @@ CLASSES = ['yes','no']
 # 			'train', 'tvmonitor']
 
 
-TRAN_NET_NAME = "09_06_00_10_12_SS_0save.ckpt-30300"
-GRASP_NET_NAME = "09_09_12_01_49_CS_0_save.ckpt-1200"
+
+if USE_DART:
+	GRASP_NET_NAME = "09_14_14_40_25_CS_0_save.ckpt-1000"
+	TRAN_NET_NAME = "09_14_14_31_34_SS_0save.ckpt-1000"
+else:
+	#BC_NETWORK
+	TRAN_NET_NAME = "09_06_00_10_12_SS_0save.ckpt-30300"
+
+	#BC_NETWORK 
+	GRASP_NET_NAME = "09_09_12_01_49_CS_0_save.ckpt-1200"
+
+
+
 #GRASP_NET_NAME = "09_08_11_14_12_CS_1_save.ckpt-6000"
 
 
@@ -62,11 +91,11 @@ RIGHT_SIDE = True
 
 
 #TENSIONER 
-FORCE_LIMT = 30.0
-HIGH_FORCE = 15.0
+FORCE_LIMT = 25.0
+HIGH_FORCE = 25.0
 LOW_FORCE = 2.0
 MAX_PULLS = 6
-BOX = 5
+BOX = 10
 
 #DEBUG
 DEBUG_MODE = False
@@ -76,4 +105,11 @@ DEBUG_MODE = False
 GRIPPER_HEIGHT = 0.060
 MM_TO_M = 0.001
 
+
+
+GRASP_OUT = 3
 INS_SAMPLE = True
+
+
+DART_MAT = np.array([[ 1421.21439203,  -158.39422591],
+ 					[ -158.39422591, 165.80726958]])

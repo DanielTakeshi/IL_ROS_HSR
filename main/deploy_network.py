@@ -24,6 +24,7 @@ import numpy.linalg as LA
 from tf import TransformListener
 import tf
 import rospy
+import time
 
 from il_ros_hsr.core.grasp_planner import GraspPlanner
 
@@ -142,29 +143,37 @@ class BedMaker():
 
                 self.rollout_stats.append([u_c,d_c])
 
-
+        self.new_grasp = True
         while True:
 
             c_img = self.cam.read_color_data()
             d_img = self.cam.read_depth_data()
             if(not c_img == None and not d_img == None):
 
-                self.position_head()
+                if self.new_grasp:
+                    self.position_head()
+                else: 
+                    self.new_grasp = True
                 time.sleep(3)
+                
                 c_img = self.cam.read_color_data()
                 d_img = self.cam.read_depth_data()
 
 
-                data = self.g_detector.predict(c_img)
+                sgraspt = time.time()
+                data = self.g_detector.predict(np.copy(c_img))
+                egraspt = time.time()
+          
+                print("Grasp predict time: " + str(egraspt - sgraspt))
                 
-                
-                self.record_stats(c_img,d_img,self.side,'grasp')
+                self.record_stats(c_img,d_img,data,self.side,'grasp')
                     
 
                 
                 
                 self.gripper.find_pick_region_net(data,c_img,d_img,self.grasp_count)
-           
+                
+
 
             
                 pick_found,bed_pick = self.check_card_found()
@@ -181,15 +190,14 @@ class BedMaker():
 
         
         if self.side == "BOTTOM":
-            success, data  = self.sn.check_bottom_success(self.wl)
+            success, data, c_img  = self.sn.check_bottom_success(self.wl)
         else: 
-            success, data = self.sn.check_top_success(self.wl)
+            success, data, c_img = self.sn.check_top_success(self.wl)
 
      
-        self.record_stats(c_img,d_img,self.side,'success')
+        self.record_stats(c_img,d_img,data,self.side,'success')
 
        
-
         print "WAS SUCCESFUL: "
         print success
         if(success):
@@ -201,7 +209,13 @@ class BedMaker():
 
             self.update_side()
 
-            self.grasp_count += 1
+        else: 
+            self.new_grasp = False
+
+        self.grasp_count += 1
+
+        if self.grasp_count > cfg.GRASP_OUT: 
+            self.transition_to_start()
            
    
     def update_side(self):
@@ -222,14 +236,17 @@ class BedMaker():
         self.move_to_start()
         sys.exit()
 
-    def record_stats(self,c_img,d_img,side,typ):
+    def record_stats(self,c_img,d_img,data,side,typ):
 
         grasp_point = {}
 
         grasp_point['c_img'] = c_img
         grasp_point['d_img'] = d_img
         
-        
+        if typ == "grasp":
+            grasp_point['net_pose'] = data
+        else: 
+            grasp_point['net_trans'] = data
 
         grasp_point['side'] = side
         grasp_point['type'] = typ
@@ -258,24 +275,15 @@ class BedMaker():
 
     def move_to_start(self):
 
-        self.tt.move_to_pose(self.omni_base,'right_up')
-       
-        self.tt.move_to_pose(self.omni_base,'right_down')
-        self.tt.move_to_pose(self.omni_base,'lower_mid')
-        
+        if self.side == "BOTTOM":
+            self.tt.move_to_pose(self.omni_base,'lower_mid')
+        else:
+
+            self.tt.move_to_pose(self.omni_base,'right_up')
+           
+            self.tt.move_to_pose(self.omni_base,'right_down')
+            self.tt.move_to_pose(self.omni_base,'lower_mid')
     
-        
-        
-       
-
-
-
-
-    
-    
-
-
-
 
     def check_bottom_success(self):
 

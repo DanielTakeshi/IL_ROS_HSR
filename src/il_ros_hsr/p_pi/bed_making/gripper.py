@@ -37,6 +37,8 @@ from il_ros_hsr.core.sensors import Gripper_Torque
 import il_ros_hsr.p_pi.bed_making.config_bed as cfg
 import thread
 
+from  numpy.random import multivariate_normal as mvn
+
 
 __SUCTION_TIMEOUT__ = rospy.Duration(20.0)
 _CONNECTION_TIMEOUT = 10.0
@@ -173,6 +175,8 @@ class Bed_Gripper(object):
 
         cv2.waitKey(30)
 
+       
+
     def find_pick_region_net(self,pose,c_img,d_img,count):
         '''
         Evaluates the current policy and then executes the motion 
@@ -186,7 +190,7 @@ class Bed_Gripper(object):
        
         x,y = pose
         #Crop D+img
-
+        print "PREDICTION ", pose
         self.plot_on_true([x,y],c_img)
 
     
@@ -222,10 +226,21 @@ class Bed_Gripper(object):
             x = (x_max-x_min)/2.0 + x_min
             y = (y_max - y_min)/2.0 + y_min
 
+
+            if cfg.USE_DART:
+                pose = np.array([x,y])
+                action_rand = mvn(pose,cfg.DART_MAT)
+
+                print "ACTION RAND ",action_rand
+                print "POSE ", pose
+
+                x = action_rand[0]
+                y = action_rand[1]
+
             self.plot_on_true([x,y],c_img)
             
             #Crop D+img
-            d_img_c = d_img[int(y_min):int(y_max),int(x_min):int(x_max)]
+            d_img_c = d_img[y-cfg.BOX:y+cfg.BOX,x-cfg.BOX:cfg.BOX+x]
 
             depth = self.gp.find_mean_depth(d_img_c)
 
@@ -272,7 +287,10 @@ class Bed_Gripper(object):
         #whole_body.linear_weight = 99.0
         whole_body.move_end_effector_pose(geometry.pose(),cards[0])
 
+
         self.com.grip_squeeze(self.gripper)
+
+
         
         self.tension.force_pull(whole_body,direction)
         self.com.grip_open(self.gripper)

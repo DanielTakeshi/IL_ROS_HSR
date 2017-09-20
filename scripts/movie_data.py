@@ -49,9 +49,14 @@ from il_ros_hsr.core.rgbd_to_map import RGBD2Map
 from data_aug.draw_cross_hair import DrawPrediction
 
 dp = DrawPrediction()
+#latest, 46-49 from rollout_dart
 
-for rnum in range(0, 8):
-	path = cfg.ROLLOUT_PATH+'rollout_' + str(rnum) + '/rollout.p'
+MOVIE_PATH = 'movie_bc_data/'
+
+for rnum in range(0, 5):
+	# path = cfg.STAT_PATH+'stat_' + str(rnum) + '/rollout.p'
+	path = cfg.STAT_PATH+'stat_' + str(rnum) + '/rollout.p'
+
 	data = pickle.load(open(path,'rb'))
 	print(data)
 	count = 0
@@ -61,17 +66,23 @@ for rnum in range(0, 8):
 			continue
 
 		if datum['type'] == 'grasp':
-			pose = datum['pose']
+
+			pose = datum['net_pose']
 			c_img = datum['c_img']
+			# cv2.imwrite('test_stat_data/rollout_' + str(rnum) + '_grasp_'+str(count)+'.png',c_img)
 
 			img = dp.draw_prediction(np.copy(c_img),pose)
 			cv2.imshow('debug',img)
 			cv2.waitKey(300)
-			cv2.imwrite('test_data/rollout_' + str(rnum) + '_grasp_'+str(count)+'.png',c_img)
+			cv2.imwrite(MOVIE_PATH+'stat_' + str(rnum) + '_grasp_'+str(count)+'.png',img)
 			
 		else:
-			# cv2.imshow('debug',datum['c_img'])
-			cv2.imwrite('test_data/rollout_' + str(rnum) + '_tran_'+str(count)+'.png',datum['c_img'])
+			
+
+			c_img = datum['c_img']
+			
+			img = dp.draw_tran_prediction(np.copy(c_img),datum['net_trans'])
+			cv2.imwrite(MOVIE_PATH+'stat_' + str(rnum) + '_tran_'+str(count)+'.png',img)
 			# cv2.waitKey(300)
 
 		count += 1

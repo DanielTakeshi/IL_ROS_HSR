@@ -13,7 +13,7 @@ import hsrb_interface
 import il_ros_hsr.p_pi.bed_making.config_bed as cfg
 
 from il_ros_hsr.core.sensors import  RGBD
-from detectors.tran_detector import SDetector
+from il_ros_hsr.p_pi.bed_making.analytic_transition import Analytic_Transition
 import time
 #robot interface
 GLOBAL_PATH = "/home/autolab/Workspaces/michael_working/IL_ROS_HSR/"
@@ -27,7 +27,7 @@ class Success_Net:
 		self.whole_body = whole_body
 		self.tt = tt
 		self.omni_base = base
-		self.sdect = SDetector(cfg.TRAN_NET_NAME)
+		self.sdect = Analytic_Transition()
 
 
 
@@ -52,6 +52,7 @@ class Success_Net:
 		query_res = self.query_net(wl)
 		etranst = time.time()
 		print("Success predict time: " + str(etranst-stranst))
+
 		return query_res
 
 
@@ -66,19 +67,14 @@ class Success_Net:
 
 		img = self.cam.read_color_data()
 
-		data = self.sdect.predict(np.copy(img))
-
-		print "NET OUTPUT ",data
-
-		ans = np.argmax(data)
+		#CHANGE HERE 
+		predict_scale = 3
+		img_small = cv2.resize(np.copy(img),(640/3,480/3))
+		ans = self.sdect.predict(img_small, predict_scale)
 
 
 		
-
-		if(ans == 0):
-			return True, data,img
-		else:
-			return False, data, img
+		return ans,sup_data,img
 
 
 

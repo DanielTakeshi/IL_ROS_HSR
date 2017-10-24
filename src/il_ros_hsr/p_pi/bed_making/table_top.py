@@ -185,12 +185,12 @@ class TableTop():
 		self.make_new_pose(offsets,'lower_mid',rot=rot)
 
 		#Compute HEAD DOWN
-		offsets = np.array([-(TABLE_LENGTH/2.0+0.08), OFFSET_T+0.04, -TABLE_HEIGHT])
+		offsets = np.array([-(TABLE_LENGTH/2.0+0.02), OFFSET_T+0.04, -TABLE_HEIGHT+0.04])
 		rot = np.array([0.0,0.0,1.57])
 		self.make_new_pose(offsets,'head_down',rot = rot)
 
 		#Compute HEAD UP
-		offsets = np.array([-(TABLE_LENGTH/2.0+0.08), (OFFSET_T+TABLE_WIDTH+0.02), -TABLE_HEIGHT-0.02])
+		offsets = np.array([-(TABLE_LENGTH/2.0+0.02), (OFFSET_T+TABLE_WIDTH+0.02), -TABLE_HEIGHT+0.04])
 		rot = np.array([0.0,0.0,-1.57])
 		self.make_new_pose(offsets,'head_up',rot = rot)
 

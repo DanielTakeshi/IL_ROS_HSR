@@ -13,7 +13,7 @@ import hsrb_interface
 import il_ros_hsr.p_pi.bed_making.config_bed as cfg
 
 from il_ros_hsr.core.sensors import  RGBD
-from detectors.tran_detector import SDetector
+from fast_grasp_detect.detectors.tran_detector import SDetector
 import time
 #robot interface
 GLOBAL_PATH = "/home/autolab/Workspaces/michael_working/IL_ROS_HSR/"

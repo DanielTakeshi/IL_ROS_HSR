@@ -30,7 +30,7 @@ rollouts = []
 
 def load_held_out_rollouts():
 
-	rollouts_p = glob.glob(os.path.join(cfg.STAT_PATH, '*_*'))
+	rollouts_p = glob.glob(os.path.join(cfg.STAT_PATH, 'stat_*'))
 
 
 	for rollout_p in rollouts_p: 
@@ -65,13 +65,14 @@ def test_grasp():
 
 				label = np.array(d_point['sup_pose'])
 
-				label = unscale(label,d_point['c_img'])
+				label = label
 
 				out_pred = d_point['net_pose']
 				
-				out_pred = unscale(out_pred,d_point['c_img'])
+				out_pred = out_pred
 
-				l2_grasp_score.append(np.sum(np.square(label-out_pred)))
+				l2_grasp_score.append(np.sum((np.square(label-out_pred))**0.5))
+
 
 	return np.mean(l2_grasp_score)
 
@@ -87,19 +88,20 @@ def test_transistion():
 			if type(d_point) == list:
 					continue
 			
+
 			if d_point['type'] == 'success':
 
 
 				label = d_point['sup_class']
 
-				out_pred = d_point['net_class']
+				out_pred = d_point['net_trans']
 
 			
 				
 				if (label == out_pred):
-					tran_score.append(1.0)
-				else:
 					tran_score.append(0.0)
+				else:
+					tran_score.append(1.0)
 
 
 

@@ -1,2 +1,4 @@
-*.pyc 
+*.pyc
 *.zip
+*.png
+*.npz

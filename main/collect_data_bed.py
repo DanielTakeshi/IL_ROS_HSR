@@ -29,7 +29,7 @@ from il_ros_hsr.core.grasp_planner import GraspPlanner
 
 from il_ros_hsr.p_pi.bed_making.com import Bed_COM as COM
 import sys
-sys.path.append('/home/autolab/Workspaces/michael_working/yolo_tensorflow/')
+sys.path.append('/home/autolab/Workspaces/michael_working/fast_grasp_detect/')
 
 from online_labeler import QueryLabeler
 from image_geometry import PinholeCameraModel as PCM
@@ -84,14 +84,15 @@ class BedMaker():
         if cfg.USE_WEB_INTERFACE:
             self.wl = Web_Labeler()
         else:
-            self.wl = Python_Labeler(self.cam)
+            self.wl = Python_Labeler(cam = self.cam)
+
 
         self.com.go_to_initial_state(self.whole_body)
         
 
         self.tt = TableTop()
         self.tt.find_table(self.robot)
-
+        
     
         self.grasp_count = 0
       
@@ -286,7 +287,7 @@ class BedMaker():
     def move_to_top_side(self):
 
         self.tt.move_to_pose(self.omni_base,'right_down')
-        self.tt.move_to_pose(self.omni_base,'right_mid')
+        #self.tt.move_to_pose(self.omni_base,'right_mid')
     
         self.tt.move_to_pose(self.omni_base,'right_up')
         
@@ -296,7 +297,7 @@ class BedMaker():
     def move_to_start(self):
 
         self.tt.move_to_pose(self.omni_base,'right_up')
-        self.tt.move_to_pose(self.omni_base,'right_mid')
+        #self.tt.move_to_pose(self.omni_base,'right_mid')
         self.tt.move_to_pose(self.omni_base,'right_down')
         self.tt.move_to_pose(self.omni_base,'lower_mid')
         

@@ -46,7 +46,7 @@ import il_ros_hsr.p_pi.bed_making.config_bed as cfg
 
 
 from il_ros_hsr.core.rgbd_to_map import RGBD2Map
-from detectors.grasp_detector import GDetector
+from fast_grasp_detect.detectors.grasp_detector import GDetector
 from il_ros_hsr.p_pi.bed_making.initial_state_sampler import InitialSampler
 class BedMaker():
 
@@ -80,6 +80,8 @@ class BedMaker():
         self.com = COM()
 
 
+        self.g_detector = GDetector(cfg.GRASP_NET_NAME)
+      
 
         if cfg.USE_WEB_INTERFACE:
             self.wl = Web_Labeler()
@@ -103,7 +105,7 @@ class BedMaker():
 
         self.gripper = Bed_Gripper(self.gp,self.cam,self.com.Options,self.robot.get('gripper'))
 
-        self.g_detector = GDetector(cfg.GRASP_NET_NAME)
+       
 
         self.sn = Success_Net(self.whole_body,self.tt,self.cam,self.omni_base)
 
@@ -269,7 +271,7 @@ class BedMaker():
       
     
         self.tt.move_to_pose(self.omni_base,'right_up')
-        
+
         self.tt.move_to_pose(self.omni_base,'top_mid')
 
 

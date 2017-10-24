@@ -22,8 +22,12 @@ sys.path.append('/home/autolab/Workspaces/michael_working/yolo_tensorflow/')
 import il_ros_hsr.p_pi.bed_making.config_bed as cfg
 
 
-from detectors.grasp_detector import GDetector
-from detectors.tran_detector import SDetector
+from fast_grasp_detect.detectors.grasp_detector import GDetector
+from fast_grasp_detect.detectors.tran_detector import SDetector
+
+from data_aug.draw_cross_hair import DrawPrediction
+
+dp = DrawPrediction()
 
 rollouts = []
 
@@ -68,15 +72,22 @@ def test_grasp():
 
 				label = np.array(d_point['pose'])
 
-				#label = unscale(label,d_point['c_img'])
+				label = unscale(label,d_point['c_img'])
 
-				out_pred = np.array(gdect.predict(d_point['c_img']))
+				out_pred = np.array(gdect.predict(np.copy(d_point['c_img'])))
 
+				img = dp.draw_prediction(np.copy(d_point['c_img']),out_pred)
+
+
+				print "LABEL ",label
+				print "OUT PRED ",out_pred
+
+				cv2.imshow('debug',img)
+				cv2.waitKey(300)
 				
-				
-				#out_pred = unscale(out_pred,d_point['c_img'])
+				out_pred = unscale(out_pred,d_point['c_img'])
 
-				l2_grasp_score.append(np.sum((np.square(label-out_pred))**0.5))
+				l2_grasp_score.append(np.sum((np.square(label-out_pred))))
 
 	return np.mean(l2_grasp_score)
 
@@ -107,7 +118,7 @@ def compute_covariance():
 
 				out_pred = np.zeros([2,1])
 
-				out_pred[:,0] = np.array(gdect.predict(d_point['c_img']))
+				out_pred[:,0] = np.array(gdect.predict(np.copy(d_point['c_img'])))
 
 				cov_rank_one = label - out_pred
 
@@ -135,15 +146,22 @@ def test_transistion():
 
 				label = d_point['class']
 
-				out_pred = sdect.predict(d_point['c_img'])
+				out_pred = sdect.predict(np.copy(d_point['c_img']))
 
-				cv2.imshow('image',d_point['c_img'])
-				cv2.waitKey(1000)
-				print "LABEL ", d_point['class']
-				print "OUT_PRED ",out_pred
-				print "------------------"
-				
-				if (np.argmax(label) == np.argmax(out_pred)):
+				# cv2.imshow('image',d_point['c_img'])
+				# cv2.waitKey(1000)
+				# print "LABEL ", d_point['class']
+				# print "OUT_PRED ",out_pred
+				# print "------------------"
+				img = dp.draw_tran_prediction(np.copy(d_point['c_img']),out_pred)
+
+
+				print "LABEL ",label
+				print "OUT PRED ",out_pred
+
+				cv2.imshow('debug',img)
+				cv2.waitKey(300)
+				if (label == np.argmax(out_pred)):
 					tran_score.append(0.0)
 				else:
 					tran_score.append(1.0)
@@ -162,4 +180,4 @@ if __name__ == "__main__":
 
 	print "GRASP SCORE ", test_grasp()
 
-	#print "TRANSITION SCORE ", test_transistion()
+	print "TRANSITION SCORE ", test_transistion()

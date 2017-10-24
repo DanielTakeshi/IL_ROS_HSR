@@ -55,7 +55,7 @@ MOVIE_PATH = 'movie_bc_data/'
 
 for rnum in range(0, 5):
 	# path = cfg.STAT_PATH+'stat_' + str(rnum) + '/rollout.p'
-	path = cfg.STAT_PATH+'stat_' + str(rnum) + '/rollout.p'
+	path = cfg.cfg.BC_HELD_OUT+'rollout_' + str(rnum) + '/rollout.p'
 
 	data = pickle.load(open(path,'rb'))
 	print(data)

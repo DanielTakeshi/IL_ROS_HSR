@@ -23,7 +23,7 @@ import numpy.linalg as LA
 from tf import TransformListener
 import tf
 import rospy
-
+from il_ros_hsr.core.rgbd_project import RGBD_Project
 from il_ros_hsr.p_pi.safe_corl.com import Safe_COM as COM
 import sys
 sys.path.append('/home/autolab/Workspaces/michael_working/yolo_tensorflow/')
@@ -53,6 +53,8 @@ class GraspPlanner():
         NUM_GRASPS = 40
         GRIPPER_WIDTH = 40 #MM
 
+        self.cam_project = RGBD_Project()
+
 
     def find_mean_depth(self,d_img):
         '''
@@ -77,6 +79,31 @@ class GraspPlanner():
         mean = np.max(d_img[indx])
 
         return mean
+
+    def get_deprojected_points(self,points,d_img,c_img):
+        p_0 = points[0]
+        p_1 = points[1]
+
+        points = []
+        for x in range(int(p_0[0]),int(p_1[0])):
+            for y in range(int(p_0[1]),int(p_1[1])):
+
+                z = d_img[x,y]
+
+                if z > 0.0:
+                    pose = self.cam_project.deproject_pose((x,y,z))
+
+                points.append(pose)
+
+        return points
+
+    def compute_grasp(self,points,d_img,c_img):
+
+        points = self.get_deprojected_points(points,d_img,c_img)
+
+        IPython.embed()
+        
+
 
 
 

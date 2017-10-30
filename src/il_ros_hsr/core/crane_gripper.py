@@ -70,6 +70,7 @@ class Crane_Gripper(object):
         self.gp = graspPlanner
         self.gripper = gripper
         self.com = COM()
+        self.count = 0
 
 
     def compute_trans_to_map(self,norm_pose,rot):
@@ -95,58 +96,54 @@ class Crane_Gripper(object):
 
 
 
-    def loop_broadcast(self,norm_pose,rot):
+    def loop_broadcast(self,norm_pose,base_rot,rot_z):
 
 
-        norm_pose,rot = self.compute_trans_to_map(norm_pose,rot)
-
+        norm_pose,rot = self.compute_trans_to_map(norm_pose,base_rot)
+        print "NORM POSE ",norm_pose
+        count = np.copy(self.count)
         while True:
             self.br.sendTransform((norm_pose[0], norm_pose[1], norm_pose[2]),
                     #tf.transformations.quaternion_from_euler(ai=0.0,aj=0.0,ak=0.0),
                     rot,
                     rospy.Time.now(),
-                    'grasp_i_'+str(self.count),
+                    'grasp_i_'+str(count),
                     #'head_rgbd_sensor_link')
                     'map')
 
             
             self.br.sendTransform((0.0, 0.0, -cfg.GRIPPER_HEIGHT),
-                    tf.transformations.quaternion_from_euler(ai=0.0,aj=0.0,ak=rot),
+                    tf.transformations.quaternion_from_euler(ai=0.0,aj=0.0,ak=rot_z),
                     rospy.Time.now(),
-                    'grasp_'+str(self.count),
+                    'grasp_'+str(count),
                     #'head_rgbd_sensor_link')
-                    'grasp_i_'+str(self.count))
+                    'grasp_i_'+str(count))
     
 
     
-    def broadcast_poses(self,poses,g_count):
+    def broadcast_poses(self,position,rot):
         #while True: 
         
         count = 0
         
-        num_pose = pose[1]
-        label = pose[0]
-
-            
-
-        td_points = self.pcm.projectPixelTo3dRay((num_pose[0],num_pose[1]))
+        td_points = self.pcm.projectPixelTo3dRay((position[0],position[1]))
         print "DE PROJECTED POINTS ",td_points
         norm_pose = np.array(td_points)
         norm_pose = norm_pose/norm_pose[2]
-        norm_pose = norm_pose*(cfg.MM_TO_M*num_pose[2])
+        norm_pose = norm_pose*(cfg.MM_TO_M*position[2])
         print "NORMALIZED POINTS ",norm_pose
         
         #pose = np.array([td_points[0],td_points[1],0.001*num_pose[2]])
         a = tf.transformations.quaternion_from_euler(ai=-2.355,aj=-3.14,ak=0.0)
         b = tf.transformations.quaternion_from_euler(ai=0.0,aj=0.0,ak=1.57)
 
-        c = tf.transformations.quaternion_multiply(a,b)
-        
-        thread.start_new_thread(self.loop_broadcast,(norm_pose,c,g_count,label))
+        base_rot = tf.transformations.quaternion_multiply(a,b)
+    
+        thread.start_new_thread(self.loop_broadcast,(norm_pose,base_rot,rot))
 
         time.sleep(0.3)
       
-        count += 1
+        
         
 
 
@@ -182,17 +179,11 @@ class Crane_Gripper(object):
         
         p_list = []
         
-        if not c_img == None:
-            self.plot_on_true([x,y],c_img)
-            
-        #Crop D+img
-        d_img_c = d_img[y-cfg.BOX:y+cfg.BOX,x-cfg.BOX:cfg.BOX+x]
+        
 
-        depth = self.gp.find_mean_depth(d_img_c)
-
-        pose = [rot,[x,y,z]]
-
-        self.broadcast_poses(pose)
+        pose = [x,y,z]
+        self.plot_on_true([x,y],c_img)
+        self.broadcast_poses(pose,rot)
 
         grasp_name = 'grasp_'+str(self.count)
         self.count += 1
@@ -201,35 +192,18 @@ class Crane_Gripper(object):
 
 
 
-    def close_gripper(self):
+    def open_gripper(self):
         try:
             self.gripper.command(1.2)
         except:
             rospy.logerr('grasp open error')
 
 
-    def open_gripper(self):
-         try:
+    def close_gripper(self):
+        try:
             self.gripper.grasp(-0.1)
         except:
             rospy.logerr('grasp close error')
-    # def execute_grasp(self,cards,whole_body,direction):
-
-        
-    #     whole_body.end_effector_frame = 'hand_palm_link'
-    #     nothing = True
-    
-    #     #self.whole_body.move_to_neutral()
-    #     #whole_body.linear_weight = 99.0
-    #     whole_body.move_end_effector_pose(geometry.pose(),cards[0])
-
-
-    #     self.com.grip_squeeze(self.gripper)
-        
-    #     whole_body.move_end_effector_pose(geometry.pose(z=-0.1),'head_down')
-        
-    
-    #     self.com.grip_open(self.gripper)
 
         
 

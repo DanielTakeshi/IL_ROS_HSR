@@ -51,11 +51,11 @@ from data_aug.draw_cross_hair import DrawPrediction
 dp = DrawPrediction()
 #latest, 46-49 from rollout_dart
 
-MOVIE_PATH = 'movie_bc_data/'
+MOVIE_PATH = 'movie_dart_data/'
 
-for rnum in range(0, 5):
+for rnum in range(10, 30):
 	# path = cfg.STAT_PATH+'stat_' + str(rnum) + '/rollout.p'
-	path = cfg.cfg.BC_HELD_OUT+'rollout_' + str(rnum) + '/rollout.p'
+	path = cfg.STAT_PATH+'stat_' + str(rnum) + '/rollout.p'
 
 	data = pickle.load(open(path,'rb'))
 	print(data)
@@ -71,16 +71,16 @@ for rnum in range(0, 5):
 			c_img = datum['c_img']
 			# cv2.imwrite('test_stat_data/rollout_' + str(rnum) + '_grasp_'+str(count)+'.png',c_img)
 
-			img = dp.draw_prediction(np.copy(c_img),pose)
-			cv2.imshow('debug',img)
-			cv2.waitKey(300)
+			img = dp.draw_covariance_mat(np.copy(c_img),pose)
+			# cv2.imshow('debug',img)
+			# cv2.waitKey(300)
 			cv2.imwrite(MOVIE_PATH+'stat_' + str(rnum) + '_grasp_'+str(count)+'.png',img)
 			
 		else:
 			
 
 			c_img = datum['c_img']
-			
+			print datum['net_trans']
 			img = dp.draw_tran_prediction(np.copy(c_img),datum['net_trans'])
 			cv2.imwrite(MOVIE_PATH+'stat_' + str(rnum) + '_tran_'+str(count)+'.png',img)
 			# cv2.waitKey(300)

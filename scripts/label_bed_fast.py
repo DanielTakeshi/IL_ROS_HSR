@@ -56,7 +56,7 @@ sm = 0
 com = COM()
 
 wl = Python_Labeler()
-for rnum in range(12, 50):
+for rnum in range(60,65):
 	# path = cfg.STAT_PATH+'stat_' + str(rnum) + '/rollout.p'
 	
 	b_grasps = glob.glob(cfg.FAST_PATH+'b_grasp/*_'+str(rnum)+'_*')

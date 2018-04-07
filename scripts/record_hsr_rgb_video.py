@@ -59,7 +59,7 @@ if __name__ == '__main__':
             cur_recording = jy.get_record_actions_passive()
             if(cur_recording[0] < -0.1):
                 print "SAVING VIDEO"
-                IPython.embed()
+              
                 vwrite('bed_rgbd.mp4',videos_color)
 
     

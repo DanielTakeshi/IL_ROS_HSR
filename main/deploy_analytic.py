@@ -29,7 +29,7 @@ from il_ros_hsr.core.grasp_planner import GraspPlanner
 
 from il_ros_hsr.p_pi.bed_making.com import Bed_COM as COM
 import sys
-sys.path.append('/home/autolab/Workspaces/michael_working/fast_grasp_detect/')
+sys.path.append('/home/autolab/Workspaces/michael_working/yolo_tensorflow/')
 
 from online_labeler import QueryLabeler
 from image_geometry import PinholeCameraModel as PCM
@@ -39,15 +39,16 @@ from il_ros_hsr.p_pi.bed_making.table_top import TableTop
 from il_ros_hsr.core.web_labeler import Web_Labeler
 from il_ros_hsr.core.python_labeler import Python_Labeler
 
-from il_ros_hsr.p_pi.bed_making.check_success import Success_Check
-from il_ros_hsr.p_pi.bed_making.get_success import get_success
+from il_ros_hsr.p_pi.bed_making.analytic_success import Success_Net
 from il_ros_hsr.p_pi.bed_making.self_supervised import Self_Supervised
 import il_ros_hsr.p_pi.bed_making.config_bed as cfg
 
 
 from il_ros_hsr.core.rgbd_to_map import RGBD2Map
-
+from il_ros_hsr.p_pi.bed_making.analytic_grasp import Analytic_Grasp
 from il_ros_hsr.p_pi.bed_making.initial_state_sampler import InitialSampler
+
+import time
 class BedMaker():
 
     def __init__(self):
@@ -84,15 +85,14 @@ class BedMaker():
         if cfg.USE_WEB_INTERFACE:
             self.wl = Web_Labeler()
         else:
-            self.wl = Python_Labeler(cam = self.cam)
-
+            self.wl = Python_Labeler(self.cam)
 
         self.com.go_to_initial_state(self.whole_body)
         
 
         self.tt = TableTop()
         self.tt.find_table(self.robot)
-        
+        self.ins = InitialSampler(self.cam)
     
         self.grasp_count = 0
       
@@ -100,16 +100,17 @@ class BedMaker():
         self.br = tf.TransformBroadcaster()
         self.tl = TransformListener()
 
-
-        self.ins = InitialSampler(self.cam)
-
         self.gp = GraspPlanner()
 
         self.gripper = Bed_Gripper(self.gp,self.cam,self.com.Options,self.robot.get('gripper'))
 
-        self.sc = Success_Check(self.whole_body,self.tt,self.cam,self.omni_base)
+        self.g_detector = Analytic_Grasp()
 
-        self.ss = Self_Supervised(self.cam)
+        self.sn = Success_Net(self.whole_body,self.tt,self.cam,self.omni_base)
+
+        c_img = self.cam.read_color_data()
+
+        
 
         #self.test_current_point()
         time.sleep(4)
@@ -134,47 +135,52 @@ class BedMaker():
 
     def bed_make(self):
 
-        self.rollout_data = []
+        self.rollout_stats = []
         self.get_new_grasp = True
 
         if cfg.INS_SAMPLE:
                 u_c,d_c = self.ins.sample_initial_state()
 
-                self.rollout_data.append([u_c,d_c])
+                self.rollout_stats.append([u_c,d_c])
 
-
+        self.new_grasp = True
         while True:
 
             c_img = self.cam.read_color_data()
             d_img = self.cam.read_depth_data()
-
-            
             if(not c_img == None and not d_img == None):
 
-
-                if self.get_new_grasp:
+                if self.new_grasp:
                     self.position_head()
-                    data = self.wl.label_image(c_img)
+                else: 
+                    self.new_grasp = True
+                time.sleep(3)
+                
+                c_img = self.cam.read_color_data()
+                d_img = self.cam.read_depth_data()
 
-                    c_img = self.cam.read_color_data()
-                    d_img = self.cam.read_depth_data()
-                   
 
-                    self.add_data_point(c_img,d_img,data,self.side,'grasp')
+                #CHANGE HERE 
+                grasp_factor = 3
+                img_small = cv2.resize(np.copy(c_img),(640/3,480/3))
 
+                sgraspt = time.time()
+                data = self.g_detector.get_grasp(img_small, grasp_factor)
+                egraspt = time.time()
+                print("Grasp predict time: " + str(egraspt - sgraspt))
 
+                data = 3*data
+                IPython.embed()
+
+                self.record_stats(c_img,d_img,data,self.side,'grasp')
                     
 
-                    self.gripper.find_pick_region_labeler(data,c_img,d_img,self.grasp_count)
-               
-
-                    if cfg.SS_LEARN:
-                        grasp_points = self.ss.learn(self.whole_body,self.grasp_count)
-                        self.add_ss_data(grasp_points,data,self.side,'grasp')
-
-               
-
                 
+                
+                self.gripper.find_pick_region_net(data,c_img,d_img,self.grasp_count)
+           
+
+            
                 pick_found,bed_pick = self.check_card_found()
 
                 if self.side == "BOTTOM":
@@ -182,32 +188,25 @@ class BedMaker():
                 else:
                     self.gripper.execute_grasp(bed_pick,self.whole_body,'head_up')
 
-                self.check_success_state()
+                self.check_success_state(c_img,d_img)
+                           
                
-
-             
-               
-    def check_success_state(self):
+    def check_success_state(self,c_img,d_img):
 
         
         if self.side == "BOTTOM":
-            success, data  = self.sc.check_bottom_success(self.wl)
+            success, data, c_img  = self.sn.check_bottom_success(self.wl)
         else: 
-            success, data = self.sc.check_top_success(self.wl)
+            success, data, c_img = self.sn.check_top_success(self.wl)
 
-        c_img = self.cam.read_color_data()
-        d_img = self.cam.read_depth_data()
+     
+        self.record_stats(c_img,d_img,data,self.side,'success')
 
-
-        self.add_data_point(c_img,d_img,data,self.side,'success')
+       
 
         print "WAS SUCCESFUL: "
         print success
         if(success):
-
-            if cfg.SS_LEARN:
-                grasp_points = self.ss.learn(self.whole_body,self.grasp_count)
-                self.add_ss_data(grasp_points,data,self.side,'success')
 
             if self.side == "BOTTOM":
                 self.transition_to_top()
@@ -215,19 +214,14 @@ class BedMaker():
                 self.transition_to_start()
 
             self.update_side()
-            self.grasp_count += 1
-            self.get_new_grasp = True
+        else: 
+            self.new_grasp = False
 
-        else:
-            self.grasp_count += 1
-            self.gripper.find_pick_region_labeler(data,c_img,d_img,self.grasp_count)
-            self.add_data_point(c_img,d_img,data,self.side,'grasp')
+        self.grasp_count += 1
 
-            self.get_new_grasp = False
-
-            if cfg.SS_LEARN:
-                grasp_points = self.ss.learn(self.whole_body,self.grasp_count)
-                self.add_ss_data(grasp_points,data,self.side,'success')
+        if self.grasp_count > cfg.GRASP_OUT: 
+            self.transition_to_start()
+           
    
     def update_side(self):
 
@@ -236,35 +230,33 @@ class BedMaker():
 
     def transition_to_top(self):
         if cfg.DEBUG_MODE:
-            self.com.save_rollout(self.rollout_data)
+            self.com.save_stat(self.rollout_stats)
             self.tt.move_to_pose(self.omni_base,'lower_mid')
             sys.exit()
         else:
             self.move_to_top_side()
 
     def transition_to_start(self):
-        self.com.save_rollout(self.rollout_data)
+        self.com.save_stat(self.rollout_stats)
         self.move_to_start()
         sys.exit()
 
-    def add_data_point(self,c_img,d_img,data,side,typ,pose = None):
+    def record_stats(self,c_img,d_img,data,side,typ):
 
         grasp_point = {}
 
         grasp_point['c_img'] = c_img
         grasp_point['d_img'] = d_img
         
-        if pose == None:
-            label = data['objects'][0]['box']
-            pose = [(label[2]-label[0])/2.0+label[0],(label[3]-label[1])/2.0+label[1]]
+        if typ == "grasp":
+            grasp_point['net_pose'] = data
+        else: 
+            grasp_point['net_trans'] = data
 
-        grasp_point['pose'] = pose
-
-        grasp_point['class'] = data['objects'][0]['class']
         grasp_point['side'] = side
         grasp_point['type'] = typ
 
-        self.rollout_data.append(grasp_point)
+        self.rollout_stats.append(grasp_point)
 
     def position_head(self):
 
@@ -274,20 +266,12 @@ class BedMaker():
             self.tt.move_to_pose(self.omni_base,'lower_start')
             self.whole_body.move_to_joint_positions({'head_tilt_joint':-0.8})
 
-    def add_ss_data(self,g_points,data,side,typ):
-
-        for g_point in g_points:
-
-            self.add_data_point(g_point['c_img'],g_point['d_img'],data,side,typ,pose=g_point['pose'])
-
-
-
 
 
     def move_to_top_side(self):
 
         self.tt.move_to_pose(self.omni_base,'right_down')
-        #self.tt.move_to_pose(self.omni_base,'right_mid')
+      
     
         self.tt.move_to_pose(self.omni_base,'right_up')
         
@@ -296,11 +280,16 @@ class BedMaker():
 
     def move_to_start(self):
 
-        self.tt.move_to_pose(self.omni_base,'right_up')
-        #self.tt.move_to_pose(self.omni_base,'right_mid')
-        self.tt.move_to_pose(self.omni_base,'right_down')
-        self.tt.move_to_pose(self.omni_base,'lower_mid')
+        if self.side == "BOTTOM":
+            self.tt.move_to_pose(self.omni_base,'lower_mid')
+        else:
+
+            self.tt.move_to_pose(self.omni_base,'right_up')
+           
+            self.tt.move_to_pose(self.omni_base,'right_down')
+            self.tt.move_to_pose(self.omni_base,'lower_mid')
         
+    
 
     def check_bottom_success(self):
 
@@ -310,7 +299,7 @@ class BedMaker():
 
 
     def check_card_found(self):
-
+        time.sleep(1)
         # try:
         transforms = self.tl.getFrameStrings()
     
@@ -342,6 +331,6 @@ if __name__ == "__main__":
    
     
     cp = BedMaker()
-
+    
     cp.bed_make()
 

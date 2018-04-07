@@ -24,6 +24,7 @@ import numpy.linalg as LA
 from tf import TransformListener
 import tf
 import rospy
+import glob
 
 from il_ros_hsr.core.grasp_planner import GraspPlanner
 
@@ -49,6 +50,8 @@ from il_ros_hsr.core.rgbd_to_map import RGBD2Map
 
 from il_ros_hsr.p_pi.bed_making.initial_state_sampler import InitialSampler
 from il_ros_hsr.core.joystick_X import  JoyStick_X
+
+
 class BedMaker():
 
     def __init__(self):
@@ -75,8 +78,10 @@ class BedMaker():
         self.whole_body = self.robot.get('whole_body')
 
         #PARAMETERS TO CHANGE 
-        self.side = 'BOTTOM'
-        self.r_count = 40
+        self.side = 'TOP'
+
+
+        self.r_count = 0
 
         self.grasp_count = 0
         self.success_count = 0
@@ -84,7 +89,8 @@ class BedMaker():
         self.true_count = 0
         self.grasp = True
 
-        
+        self.r_count = self.get_rollout_number()
+      
 
 
 
@@ -99,15 +105,13 @@ class BedMaker():
             self.wl = Python_Labeler(cam = self.cam)
 
 
-        # self.com.go_to_initial_state(self.whole_body)
+        self.com.go_to_initial_state(self.whole_body)
         
 
-        # self.tt = TableTop()
-        # self.tt.find_table(self.robot)
-        # self.position_head()
+        self.tt = TableTop()
+        self.tt.find_table(self.robot)
+        self.position_head()
         
-    
-      
 
         self.br = tf.TransformBroadcaster()
         self.tl = TransformListener()
@@ -120,6 +124,26 @@ class BedMaker():
         
         #thread.start_new_thread(self.ql.run,())
         print "after thread"
+
+
+    def get_rollout_number(self):
+
+        if self.side == "BOTTOM":
+            rollouts = glob.glob(cfg.FAST_PATH+'b_grasp/*.png')
+        else:
+            rollouts = glob.glob(cfg.FAST_PATH+'t_grasp/*.png')
+        r_nums = []
+        for r in rollouts:
+
+            a = r[56:]
+
+            i = a.find('_')
+
+            r_num = int(a[:i])
+
+            r_nums.append(r_num)
+
+        return max(r_nums)+1
 
     def position_head(self):
 
@@ -172,9 +196,9 @@ class BedMaker():
     
         if self.side == "BOTTOM":
             if self.grasp:
-                cv2.imwrite(cfg.FAST_PATH + 'tpc/frame_'+str(self.r_count)+'_'+str(self.grasp_count)+'.png',c_img)
-            # else:
-            #     cv2.imwrite(cfg.FAST_PATH + 'b_success/frame_'+str(self.r_count)+'_'+str(self.success_count)+'.png',c_img)
+                cv2.imwrite(cfg.FAST_PATH + 'b_grasp/frame_'+str(self.r_count)+'_'+str(self.grasp_count)+'.png',c_img)
+            else:
+                cv2.imwrite(cfg.FAST_PATH + 'b_success/frame_'+str(self.r_count)+'_'+str(self.success_count)+'.png',c_img)
 
         else:
             if self.grasp:

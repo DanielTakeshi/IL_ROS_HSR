@@ -146,25 +146,7 @@ class Common:
         theta = theta + delta_state[4]
         return pose, g_open,theta
 
-    #Common
-    def next_rollout(self):
-        """
-        :return: the String name of the next new potential rollout
-                (i.e. do not overwrite another rollout)
-        """
-        i = 0
-        
-        prefix = self.Options.rollouts_dir
-        
-
-        path = prefix + 'rollout'+str(i) + "/"
-        
-
-        while os.path.exists(path):
-            i += 1
-            path = prefix + 'rollout'+str(i) + "/"
-            
-        return 'rollout' + str(i)
+    
 
 
     def next_evaluation(self):

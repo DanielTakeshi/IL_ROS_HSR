@@ -72,7 +72,7 @@ def test_grasp():
 
 				label = np.array(d_point['pose'])
 
-				label = unscale(label,d_point['c_img'])
+				#label = unscale(label,d_point['c_img'])
 
 				out_pred = np.array(gdect.predict(np.copy(d_point['c_img'])))
 
@@ -85,7 +85,7 @@ def test_grasp():
 				cv2.imshow('debug',img)
 				cv2.waitKey(300)
 				
-				out_pred = unscale(out_pred,d_point['c_img'])
+				#out_pred = unscale(out_pred,d_point['c_img'])
 
 				l2_grasp_score.append(np.sum((np.square(label-out_pred))))
 
@@ -156,8 +156,8 @@ def test_transistion():
 				img = dp.draw_tran_prediction(np.copy(d_point['c_img']),out_pred)
 
 
-				print "LABEL ",label
-				print "OUT PRED ",out_pred
+				# print "LABEL ",label
+				# print "OUT PRED ",out_pred
 
 				cv2.imshow('debug',img)
 				cv2.waitKey(300)

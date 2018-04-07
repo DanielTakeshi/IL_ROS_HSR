@@ -44,12 +44,7 @@ class Suction(VGripper):
     def start(self):
         thread.start_new_thread(self.call_suction,())
         
-
-
-
-
     def stop(self):
-
         rospy.loginfo('Suction will stop')
         suction_off_goal = SuctionControlGoal()
         suction_off_goal.suction_on.data = False
@@ -57,8 +52,6 @@ class Suction(VGripper):
 
     
     def execute_grasp(self,cards,whole_body):
-
-        
         whole_body.end_effector_frame = 'hand_l_finger_vacuum_frame'
         nothing = True
         

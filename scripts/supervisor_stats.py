@@ -43,6 +43,7 @@ from il_ros_hsr.p_pi.bed_making.check_success import Success_Check
 from il_ros_hsr.p_pi.bed_making.self_supervised import Self_Supervised
 import il_ros_hsr.p_pi.bed_making.config_bed as cfg
 import cPickle as pickle
+import os
 
 from il_ros_hsr.core.rgbd_to_map import RGBD2Map
 
@@ -50,42 +51,32 @@ from data_aug.draw_cross_hair import DrawPrediction
 
 dp = DrawPrediction()
 #latest, 46-49 from rollout_dart
-
-MOVIE_PATH = 'paper_dart_data/'
-
-for rnum in range(10, 30):
+sm = 0
+for rnum in range(0, 57):
 	# path = cfg.STAT_PATH+'stat_' + str(rnum) + '/rollout.p'
 	path = cfg.ROLLOUT_PATH+'rollout_' + str(rnum) + '/rollout.p'
 
-	data = pickle.load(open(path,'rb'))
-	print(data)
-	count = 0
-	for datum in data:
+	#IPython.embed()
 
-		if type(datum) == list: 
-			continue
+	if os.path.exists(path):
+		data = pickle.load(open(path,'rb'))
 
-		if datum['type'] == 'grasp':
+		count = 0
+		
+		for datum in data:
 
-			pose = datum['pose']
-			c_img = datum['c_img']
-			# cv2.imwrite('test_stat_data/rollout_' + str(rnum) + '_grasp_'+str(count)+'.png',c_img)
+			if type(datum) == list: 
+				continue
 
-			img = dp.draw_covariance_mat(np.copy(c_img),pose)
-			# cv2.imshow('debug',img)
-			# cv2.waitKey(300)
-			cv2.imwrite(MOVIE_PATH+'stat_' + str(rnum) + '_grasp_'+str(count)+'.png',img)
-			
-		# else:
-			
+			if datum['type'] == 'success':
 
-		# 	c_img = datum['c_img']
-		# 	print datum['net_trans']
-		# 	img = dp.draw_tran_prediction(np.copy(c_img),datum['net_trans'])
-		# 	cv2.imwrite(MOVIE_PATH+'stat_' + str(rnum) + '_tran_'+str(count)+'.png',img)
-		# 	# cv2.waitKey(300)
+				#pose = datum['pose']
+				
+				sm = sm + datum['class']
+				
 
-		count += 1
+
+print "SM ", sm
 
 	
 

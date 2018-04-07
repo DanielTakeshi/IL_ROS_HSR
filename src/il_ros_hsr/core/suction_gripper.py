@@ -44,12 +44,10 @@ __SUCTION_TIMEOUT__ = rospy.Duration(20.0)
 _CONNECTION_TIMEOUT = 10.0
 
 
-class Crane_Gripper(object):
+class Suction_Gripper(object):
 
-    def __init__(self,graspPlanner,cam,options,gripper):
+    def __init__(self,graspPlanner,cam,options,suction):
         #topic_name = '/hsrb/head_rgbd_sensor/depth_registered/image_raw'
-        
-
 
         not_read = True
         while not_read:
@@ -68,7 +66,7 @@ class Crane_Gripper(object):
         self.br = tf.TransformBroadcaster()
         self.tl = tf.TransformListener()
         self.gp = graspPlanner
-        self.gripper = gripper
+        self.suction = suction
         self.com = COM()
         self.count = 0
 
@@ -94,11 +92,7 @@ class Crane_Gripper(object):
 
         return trans,quat
 
-
-
     def loop_broadcast(self,norm_pose,base_rot,rot_z):
-
-
         norm_pose,rot = self.compute_trans_to_map(norm_pose,base_rot)
         print "NORM POSE ",norm_pose
         count = np.copy(self.count)
@@ -107,7 +101,7 @@ class Crane_Gripper(object):
                     #tf.transformations.quaternion_from_euler(ai=0.0,aj=0.0,ak=0.0),
                     rot,
                     rospy.Time.now(),
-                    'grasp_i_'+str(count),
+                    'suction_i_'+str(count),
                     #'head_rgbd_sensor_link')
                     'map')
 
@@ -115,11 +109,9 @@ class Crane_Gripper(object):
             self.br.sendTransform((0.0, 0.0, -cfg.GRIPPER_HEIGHT),
                     tf.transformations.quaternion_from_euler(ai=0.0,aj=0.0,ak=rot_z),
                     rospy.Time.now(),
-                    'grasp_'+str(count),
+                    'suction'+str(count),
                     #'head_rgbd_sensor_link')
-                    'grasp_i_'+str(count))
-    
-
+                    'suction_i_'+str(count))
     
     def broadcast_poses(self,position,rot):
         #while True: 
@@ -142,10 +134,6 @@ class Crane_Gripper(object):
         thread.start_new_thread(self.loop_broadcast,(norm_pose,base_rot,rot))
 
         time.sleep(0.8)
-      
-        
-        
-
 
     def convert_crop(self,pose):
 
@@ -178,42 +166,32 @@ class Crane_Gripper(object):
         #IPython.embed()
         
         p_list = []
-        
-        
 
         pose = [x,y,z]
         self.plot_on_true([x,y],c_img)
+        rot = 0
         self.broadcast_poses(pose,rot)
 
-        grasp_name = 'grasp_'+str(self.count)
+        grasp_name = 'suction'+str(self.count)
         self.count += 1
 
         return grasp_name
 
 
 
-    def open_gripper(self):
+    def start(self):
         try:
-            self.gripper.command(1.2)
-        except:
-            rospy.logerr('grasp open error')
+            self.suction.command(2)
+        except Exception as e:
+            IPython.embed()
+            rospy.logerr('suction open error')
 
 
-    def close_gripper(self):
+    def stop(self):
         try:
-            self.gripper.grasp(-0.1)
+            self.suction.command(0)
         except:
-            rospy.logerr('grasp close error')
-
-    def half_gripper(self):
-        try:
-            self.gripper.command(0.6)
-        except:
-            rospy.logerr('grasp close error')
-
-
-
-
+            rospy.logerr('suction close error')
 
 
 if __name__=='__main__':

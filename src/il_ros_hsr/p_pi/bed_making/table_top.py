@@ -82,7 +82,7 @@ class TableTop():
 
 		M_t_L = np.matmul(self.M_t_A,L_t_trans)
 
-		if not rot == None:
+		if not (rot is None):
 			q_rot = tf.transformations.quaternion_from_euler(ai=rot[0],aj=rot[1],ak=rot[2])
 			L_t_rot = tf.transformations.quaternion_matrix(q_rot)
 			L_t_rot[:,3] = L_t_trans[:,3]
@@ -172,8 +172,6 @@ class TableTop():
 		offsets = np.array([-(OFFSET+TABLE_LENGTH/2.0), 0.0, 0.0])
 		self.make_new_pose(offsets,'right_down')
 
-
-
 		#Compute RIGHT MID
 		offsets = np.array([-(OFFSET+TABLE_LENGTH/2.0),(OFFSET+TABLE_WIDTH/2.0),0.0])
 		self.make_new_pose(offsets,'right_mid')
@@ -188,6 +186,21 @@ class TableTop():
 		offsets = np.array([-(TABLE_LENGTH/2.0+0.02), OFFSET_T+0.04, -TABLE_HEIGHT+0.04])
 		rot = np.array([0.0,0.0,1.57])
 		self.make_new_pose(offsets,'head_down',rot = rot)
+
+		for lego_class_num in range(8):
+			#Compute LEGO[lego_class_num]ABOVE,BELOW
+			#empirical values measured with find_poses script- can recalibrate for new settings
+			if lego_class_num < 4:
+				l_offset = -.9
+			else:
+				l_offset = -1.02
+			#w_offset = -.45 + 0.15 * (lego_class_num % 4)
+			w_offset = -.58 + 0.15 * (3 - (lego_class_num % 4))
+			offsets_above = np.array([l_offset, w_offset, -TABLE_HEIGHT*0.75])
+			offsets_below = np.array([l_offset, w_offset, -TABLE_HEIGHT/2])
+			rot = np.array([0.0,0.0,0])
+			self.make_new_pose(offsets_above,'lego' + str(lego_class_num) + "above",rot = rot)
+			self.make_new_pose(offsets_below,'lego' + str(lego_class_num) + "below",rot = rot)
 
 		#Compute HEAD UP
 		offsets = np.array([-(TABLE_LENGTH/2.0+0.02), (OFFSET_T+TABLE_WIDTH+0.02), -TABLE_HEIGHT+0.04])
@@ -209,8 +222,15 @@ class TableTop():
 		rot = np.array([0.0,0.0,-1.57])
 		self.make_new_pose(offsets,'bottom_up',rot = rot)
 
+		#Compute TOP MID FAR
+		offsets = np.array([0.0, 3 * OFFSET + TABLE_WIDTH, 0.0])
+		rot = np.array([0.0,0.0,1.57])
+		self.make_new_pose(offsets,'top_mid_far',rot = rot)
 
-
+		#Compute TOP LEFT FAR 
+		offsets = np.array([(TABLE_WIDTH/2.0), 3 * OFFSET + TABLE_WIDTH, 0.0])
+		rot = np.array([0.0, 0.0, 3.14 * 1.0/4.0])
+		self.make_new_pose(offsets, 'top_left_far',rot = rot)
 
 if __name__ == "__main__":
 

@@ -18,7 +18,7 @@ if USE_DART:
 
 	ROLLOUT_PATH = DATA_PATH+'rollouts_dart_cal/'
 
-	BC_HELD_OUT = DATA_PATH+'held_out_cal'
+	BC_HELD_OUT = DATA_PATH+'held_out_debugpython'
 else: 
 	ROLLOUT_PATH = DATA_PATH+'rollouts/'
 
@@ -27,8 +27,9 @@ else:
 FAST_PATH = DATA_PATH+'fast_pic/'
 
 
+
 #STAT_PATH = DATA_PATH+'stats_dart_adv/'
-STAT_PATH = DATA_PATH+'stats/'
+STAT_PATH = DATA_PATH+'stats_cal_debug/'
 #STAT_PATH = DATA_PATH+'stats/'
 #STAT_PATH = DATA_PATH+'stats_analytic_adv/'
 
@@ -65,10 +66,10 @@ CLASSES = ['yes','no']
 
 
 if USE_DART:
-	# GRASP_NET_NAME = "10_17_16_25_45_CS_0_save.ckpt-500"
-	# TRAN_NET_NAME = "10_17_16_33_07_CS_0_save.ckpt-500"
-	GRASP_NET_NAME = '10_19_10_46_09_CS_0_save.ckpt-1000'
-	TRAN_NET_NAME = '10_19_10_54_19_CS_0_save.ckpt-1000'
+	# GRASP_NET_NAME = '11_08_15_47_03_CS_0_save.ckpt-500'
+	# TRAN_NET_NAME = '11_08_16_01_28_CS_0_save.ckpt-1000'
+	GRASP_NET_NAME = '02_10_17_29_27_CS_0_save.ckpt-1000'
+	TRAN_NET_NAME = '02_07_16_52_00_CS_0_save.ckpt-1000'
 else:
 	#BC_NETWORK
 	TRAN_NET_NAME = "09_06_00_10_12_SS_0save.ckpt-30300"
@@ -106,7 +107,7 @@ DEBUG_MODE = False
 
 
 #GRIPPER 
-GRIPPER_HEIGHT = 0.063
+GRIPPER_HEIGHT = 0.065
 #GRIPPER_HEIGHT = 0.090
 MM_TO_M = 0.001
 

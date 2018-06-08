@@ -235,7 +235,7 @@ class BedMaker():
 
 
     def check_card_found(self):
-        """Handles looking up the pose for where the HSR's hand should go to."""
+        """Looks up the pose for where the HSR's hand should go to."""
         transforms = self.tl.getFrameStrings()
         cards = []
         try:

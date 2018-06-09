@@ -188,7 +188,9 @@ class BedMaker():
 
 
     def transition_to_start(self):
-        """Transition to start=bottom, save rollout data, exit program."""
+        """Transition to start=bottom, save rollout data, exit program.
+        Saves to a supervisor's directory since we're using a supervisor.
+        """
         self.com.save_rollout(self.rollout_data)
         self.move_to_start()
         sys.exit()

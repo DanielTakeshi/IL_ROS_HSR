@@ -23,16 +23,13 @@ def overrides(super_class):
         return method
     return overrider
 
+
 class Bed_COM(Common):
 
     @overrides(Common)
-
     def __init__(self,load_net = False,features = None):
-
         self.Options = Options()
         self.var_path='ycb_06-18-2017_18h02m08s.ckpt'
-        
-
         self.depth_thresh = 1000
         
  
@@ -43,32 +40,25 @@ class Bed_COM(Common):
         whole_body.move_to_joint_positions({'head_tilt_joint':-0.8})
         
 
-
     def format_data(self,color_img,depth_img):
-
         c_img = color_img[self.Options.OFFSET_X:self.Options.OFFSET_X+self.Options.WIDTH,self.Options.OFFSET_Y:self.Options.OFFSET_Y+self.Options.HEIGHT,:]
-
         if(not depth_img == None):
             d_img = depth_img[self.Options.OFFSET_X:self.Options.OFFSET_X+self.Options.WIDTH,self.Options.OFFSET_Y:self.Options.OFFSET_Y+self.Options.HEIGHT]
         else: 
             d_img = None
-
-
         return c_img, d_img
 
 
     def format_twist(self,pos):
-
         twist = Twist()
         gain = -0.2
         if(np.abs(pos[1]) < 2e-3):
             pos[1] = 0.0
-
         twist.linear.x = gain*pos[1] #+ self.noise*normal()
         twist.linear.y = gain*pos[0] #+ self.noise*normal()
         twist.angular.z = gain*pos[2] #+ self.noise*normal(
-
         return twist
+
 
     def eval_policy(self,state,features,cropped = False):
         
@@ -293,28 +283,19 @@ class Bed_COM(Common):
         rollouts: bool 
             If True will save to a rollout directory instead of Supervisor (Default False)
         """
-      
-       
         name = self.next_rollout()
         path = cfg.ROLLOUT_PATH + name + '/'
-       
-
         print "Saving to " + path + "..."
-        
         os.makedirs(path)
-
         pickle.dump(recording,open(path+'rollout.p','wb'))
-
         print "Done saving."
 
+
     def joint_force_state(self,state):
-        
         joints = state['joint_positions']
         j_pose = joints.position
         num_joints = len(j_pose)
-
         gripper_torque = state['gripper_torque']
-
         data = np.zeros(num_joints+6)
         data[0:num_joints] = j_pose
         data[num_joints] = gripper_torque.wrench.force.x
@@ -323,17 +304,11 @@ class Bed_COM(Common):
         data[num_joints+3] = gripper_torque.wrench.torque.x
         data[num_joints+4] = gripper_torque.wrench.torque.y
         data[num_joints+5] = gripper_torque.wrench.torque.z
-
         #IPython.embed()
-
         return data
-
-
 
 
 if __name__ == '__main__':
     cm = Bed_COM()
-
     ns = cm.next_stat()
-
     IPython.embed()

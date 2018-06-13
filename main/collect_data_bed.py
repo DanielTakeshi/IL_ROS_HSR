@@ -1,3 +1,5 @@
+import sys
+sys.path.append('/opt/tmc/ros/indigo/lib/python2.7/dist-packages')
 from hsrb_interface import geometry
 import hsrb_interface
 from geometry_msgs.msg import PoseStamped, Point, WrenchStamped
@@ -28,10 +30,10 @@ import rospy
 from il_ros_hsr.core.grasp_planner import GraspPlanner
 
 from il_ros_hsr.p_pi.bed_making.com import Bed_COM as COM
-import sys
-sys.path.append('/home/autolab/Workspaces/michael_working/fast_grasp_detect/')
+sys.path.append('/home/autolab/Workspaces/seita_working/fast_grasp_detect/')
 
-from online_labeler import QueryLabeler
+from fast_grasp_detect.labelers.online_labeler import QueryLabeler
+#from online_labeler import QueryLabeler
 from image_geometry import PinholeCameraModel as PCM
 
 from il_ros_hsr.p_pi.bed_making.gripper import Bed_Gripper
@@ -95,34 +97,34 @@ class BedMaker():
         """
         self.rollout_data = []
         self.get_new_grasp = True
-
+        
         # I think, creates red line in GUI where we adjust the bed to match it.
         if cfg.INS_SAMPLE:
             u_c,d_c = self.ins.sample_initial_state()
             self.rollout_data.append([u_c,d_c])
-
+        
         while True:
             c_img = self.cam.read_color_data()
             d_img = self.cam.read_depth_data()
-
-            if (not c_img == None and not d_img == None):
+        
+            if(not c_img.all() == None and not d_img.all() == None):
                 if self.get_new_grasp:
                     self.position_head()
-
+        
                     # Human supervisor labels. data = dictionary of relevant info
                     data = self.wl.label_image(c_img)
                     c_img = self.cam.read_color_data()
                     d_img = self.cam.read_depth_data()
                     self.add_data_point(c_img,d_img,data,self.side,'grasp')
-
+                    
                     # Broadcasts grasp pose
                     self.gripper.find_pick_region_labeler(data,c_img,d_img,self.grasp_count)
-
+                    
                     # Ignore
                     if cfg.SS_LEARN:
                         grasp_points = self.ss.learn(self.whole_body,self.grasp_count)
                         self.add_ss_data(grasp_points,data,self.side,'grasp')
-
+        
                 # Execute the grasp and check for success.
                 pick_found,bed_pick = self.check_card_found()
                 if self.side == "BOTTOM":

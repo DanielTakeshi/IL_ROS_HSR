@@ -1,3 +1,5 @@
+import sys
+sys.path.append('/opt/tmc/ros/indigo/lib/python2.7/dist-packages')
 import IPython
 from numpy.random import multivariate_normal
 #import listener

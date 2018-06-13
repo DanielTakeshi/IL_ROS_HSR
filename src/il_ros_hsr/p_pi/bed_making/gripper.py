@@ -141,7 +141,7 @@ class Bed_Gripper(object):
         print "PREDICTION ", pose
         self.plot_on_true([x,y],c_img)
         #Crop D+img
-        d_img_c = d_img[y-cfg.BOX:y+cfg.BOX,x-cfg.BOX:cfg.BOX+x]
+        d_img_c = d_img[int(y-cfg.BOX):int(y+cfg.BOX),int(x-cfg.BOX):int(cfg.BOX+x)]
         depth = self.gp.find_mean_depth(d_img_c)
         poses.append([1.0,[x,y,depth]])
         self.broadcast_poses(poses,count)
@@ -177,7 +177,7 @@ class Bed_Gripper(object):
             self.plot_on_true([x,y],c_img)
 
             #Crop D+img
-            d_img_c = d_img[y-cfg.BOX:y+cfg.BOX,x-cfg.BOX:cfg.BOX+x]
+            d_img_c = d_img[int(y-cfg.BOX):int(y+cfg.BOX),int(x-cfg.BOX):int(cfg.BOX+x)]
             depth = self.gp.find_mean_depth(d_img_c)
             # Note that `result['class']` is an integer (a class index).
             # 0=success, anything else indicates a grasping failure.

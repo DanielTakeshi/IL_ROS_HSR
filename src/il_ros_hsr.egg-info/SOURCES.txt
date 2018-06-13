@@ -8,6 +8,7 @@ src/il_ros_hsr/core/Xbox.py
 src/il_ros_hsr/core/__init__.py
 src/il_ros_hsr/core/belief_planning.py
 src/il_ros_hsr/core/common.py
+src/il_ros_hsr/core/crane_gripper.py
 src/il_ros_hsr/core/grasp_planner.py
 src/il_ros_hsr/core/gripper.py
 src/il_ros_hsr/core/joystick.py
@@ -19,6 +20,7 @@ src/il_ros_hsr/core/rgbd_project.py
 src/il_ros_hsr/core/rgbd_to_map.py
 src/il_ros_hsr/core/sensors.py
 src/il_ros_hsr/core/suction.py
+src/il_ros_hsr/core/suction_gripper.py
 src/il_ros_hsr/core/web_labeler.py
 src/il_ros_hsr/core/yolo_detector.py
 src/il_ros_hsr/p_pi/__init__.py

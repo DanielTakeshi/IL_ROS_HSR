@@ -64,7 +64,7 @@ CLASSES = ['yes','no']
 # 			'train', 'tvmonitor']
 
 
-
+# (Daniel note: michael had to switch these around when we were testing)
 if USE_DART:
 	# GRASP_NET_NAME = '11_08_15_47_03_CS_0_save.ckpt-500'
 	# TRAN_NET_NAME = '11_08_16_01_28_CS_0_save.ckpt-1000'

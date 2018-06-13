@@ -1,3 +1,5 @@
+import sys
+sys.path.append('/opt/tmc/ros/indigo/lib/python2.7/dist-packages')
 from hsrb_interface import geometry
 import hsrb_interface
 from geometry_msgs.msg import PoseStamped, Point, WrenchStamped

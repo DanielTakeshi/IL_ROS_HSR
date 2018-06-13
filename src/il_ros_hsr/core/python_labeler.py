@@ -9,7 +9,7 @@ import cv2
 from fast_grasp_detect.labelers.online_labeler import QueryLabeler
 
 #robot interface
-GLOBAL_PATH = "/home/autolab/Workspaces/michael_working/IL_ROS_HSR/"
+GLOBAL_PATH = "/home/autolab/Workspaces/seita_working/IL_ROS_HSR/"
 CANVAS_DIM = 420.0
 
 class Python_Labeler:

@@ -194,7 +194,7 @@ class Crane_Gripper(object):
 
     def open_gripper(self):
         try:
-            self.gripper.command(1.2)
+            self.gripper.command(1.5)
         except:
             rospy.logerr('grasp open error')
 

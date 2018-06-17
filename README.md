@@ -29,8 +29,9 @@ Here are full instructions for the bed-making project.
 
 2. Make sure an AR maker is taped on the ground, [and that it is AR maker
 11][3], and that the robot is in a good starting position by using the joystick,
-so that it can see the AR marker. For this, be sure you are in HSRB mode and in
-the correct python virtual environment!
+so that it can see the AR marker. **For these steps, be sure you are in HSRB
+mode (`export ROS_MASTER_URI ...`) and in the correct python virtual
+environment!**
 
     - Run `python scripts/joystick_X.py` first so that the robot can move. Leave
       this running in a tab.
@@ -40,7 +41,13 @@ the correct python virtual environment!
       following frames: `head up`, `head down`, `bottom up`, and `bottom down`.
       The centers should be fixed, but the orientation can be a bit confusing
       ... for now I'll keep it the way it is. At least the blue axis (z axis I
-      think) should point *downwards*.
+      think) should point *downwards*. In order to do this step, you need to run
+      `python main/collect_data_bed.py` first to get the frames to appear, but
+      hopefully after this, no changes to the bed positioning are needed. If you
+      run this the first time, it is likely you will need to reposition the
+      robot so that the AR marker is visible. Use rviz for visualizing, but
+      again, this requires the data collection script to be run for the AR
+      maker/11 frame to appear.
 
 3. Other reminders:
 
@@ -50,7 +57,7 @@ the correct python virtual environment!
 
 ## Data Collection
 
-1. Run `python collect_data_bed.py`. Make sure there are no error messages. 
+1. Run `python main/collect_data_bed.py`. Make sure there are no error messages. 
 
     - If there are no topics found initially, that likely means the AR marker is
       not visible. Please check rviz.
@@ -62,6 +69,7 @@ the correct python virtual environment!
 2. After the sheet has been adjusted, the robot can move.
 
     - Press B on the joystick. Then the robot should move up to the bed, and pause.
+    - **TODO: figure out why the movement to the bed is so jerky.**
     - An image loader/viewer pops up. Click to load the current camera image of
       the robot.
     - Then, drag the bounding box where the robot should grasp. Click "send

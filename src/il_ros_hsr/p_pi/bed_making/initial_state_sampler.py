@@ -236,20 +236,20 @@ class InitialSampler(object):
         y_up = center[1] - v_up*LA.norm(center - middle_up)
         up_corner = (x_up, y_up, center[2])    
 
-
-        print "CENTER ",center
-
-        if  center[1] < 0.0 or center[2] < 0.0:
-            raise "ROBOT TRANSFROM INCORRECT"
-
-        print "UP CORNER ", up_corner
-        print "DOWN CORNER ", down_corner
-
+        print("Here's the initial state sampled:")
+        print "  CENTER ", center
+        print "  UP CORNER ", up_corner
+        print "  DOWN CORNER ", down_corner
+        # Daniel: this is causing some pjust to see what happens here.
+        #if center[1] < 0.0 or center[2] < 0.0:
+        #    raise "ROBOT TRANSFROM INCORRECT"
+        if center[1] < 0.0 or center[2] < 0.0:
+            print("Warning: initial state `center` is not right; ignoring for now ...")
+        print("")
         return down_corner, up_corner
 
 
     def sample_initial_state(self):
-
         down_corner, up_corner = self.sample_corners()
         button = 1.0
         while button > -0.1:
@@ -257,27 +257,19 @@ class InitialSampler(object):
             d_pad = control_state['d_pad']
             button = d_pad[1]
             self.make_projection(down_corner,up_corner)
-
-
         return down_corner, up_corner
-
 
 
 if __name__=='__main__':
     robot =  hsrb_interface.Robot()
     whole_body = robot.get('whole_body')
     omni_base = robot.get('omni_base')
-
     com = COM()
     rgbd_map = RGBD2Map()
     cam = RGBD()
     com.go_to_initial_state(whole_body)
-
-
-    
     tt = TableTop()
     tt.find_table(robot)
-
     # tt.move_to_pose(omni_base,'lower_start')
     # whole_body.move_to_joint_positions({'head_tilt_joint':-0.8})
     time.sleep(5)
@@ -285,8 +277,3 @@ if __name__=='__main__':
 
     while True:
         IS.sample_initial_state()
-
-        
-
-
-

@@ -1,3 +1,5 @@
+import sys
+sys.path.append('/opt/tmc/ros/indigo/lib/python2.7/dist-packages')
 from hsrb_interface import geometry
 import hsrb_interface
 from geometry_msgs.msg import PoseStamped, Point, WrenchStamped
@@ -33,7 +35,7 @@ from hsrb_interface.collision_world import CollisionWorld
 
 from il_ros_hsr.p_pi.bed_making.com import Bed_COM as COM
 import sys
-sys.path.append('/home/autolab/Workspaces/michael_working/yolo_tensorflow/')
+#sys.path.append('/home/autolab/Workspaces/michael_working/yolo_tensorflow/')
 
 from image_geometry import PinholeCameraModel as PCM
 import thread
@@ -232,25 +234,16 @@ class TableTop():
 		rot = np.array([0.0, 0.0, 3.14 * 1.0/4.0])
 		self.make_new_pose(offsets, 'top_left_far',rot = rot)
 
+
 if __name__ == "__main__":
-
 	robot = hsrb_interface.Robot()
-
 	omni_base = robot.get('omni_base')
 	whole_body = robot.get('whole_body')
-
 	com = COM()
 	com.go_to_initial_state(whole_body)
-
-
 	tt = TableTop()
 	tt.find_table(robot)
-
-
-	
 	IPython.embed()
 	tt.move_to_pose(omni_base,'lower_mid')
 	# tt.move_to_pose(omni_base,'right_corner')
 	# tt.move_to_pose(omni_base,'right_mid')
-	
-

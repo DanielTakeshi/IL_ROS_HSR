@@ -26,6 +26,9 @@ Here are full instructions for the bed-making project.
     - Adjust and double-check the [configuration file][1] and other paths, to
       ensure that you're referring to correct workspaces. TODO: need to get this
       in the configuration rather than `sys.path.append(...)` calls in the code.
+    - Also double check that the overall data directory (by default
+      `/media/autolab/1tb/[something...]`) is mounted and accessible for data
+      writing.
 
 2. Make sure an AR maker is taped on the ground, [and that it is AR maker
 11][3], and that the robot is in a good starting position by using the joystick,
@@ -33,21 +36,28 @@ so that it can see the AR marker. **For these steps, be sure you are in HSRB
 mode (`export ROS_MASTER_URI ...`) and in the correct python virtual
 environment!**
 
-    - Run `python scripts/joystick_X.py` first so that the robot can move. Leave
-      this running in a tab.
+    - Run `python scripts/joystick_X.py` first and then move the robot to the
+      designated starting position. (It should be marked with tape ... put tape
+      on if it isn't!)
     - In another tab, run `rosrun rviz rviz`.
     - Get the bed setup by putting the bed towards where the rviz markers are
-      located. Just a coarse match is expected and sufficient. Match the
-      following frames: `head up`, `head down`, `bottom up`, and `bottom down`.
-      The centers should be fixed, but the orientation can be a bit confusing
-      ... for now I'll keep it the way it is. At least the blue axis (z axis I
-      think) should point *downwards*. In order to do this step, you need to run
-      `python main/collect_data_bed.py` first to get the frames to appear, but
-      hopefully after this, no changes to the bed positioning are needed. If you
-      run this the first time, it is likely you will need to reposition the
-      robot so that the AR marker is visible. Use rviz for visualizing, but
-      again, this requires the data collection script to be run for the AR
-      maker/11 frame to appear.
+      located. Just a coarse match is expected and sufficient. 
+      
+      To be clear:
+      - Match the following frames: `head up`, `head down`, `bottom up`, and
+        `bottom down`.
+      - The centers should be fixed, but the orientation can be a bit confusing
+        ... for now I'll keep it the way it is. At least the blue axis (z axis I
+        think) should point *downwards*. 
+      - In order to do this step, you need to run `python
+        main/collect_data_bed.py` first to get the frames to appear,
+        but hopefully after this, no changes to the bed positioning are needed.
+      - If you run this the first time, it is likely you will need to reposition
+        the robot so that the AR marker is visible. Use rviz for visualizing,
+        but again, this requires the data collection script to be run for the AR
+        maker/11 frame to appear.
+
+    - Turn off the joystick script.
 
 3. Other reminders:
 

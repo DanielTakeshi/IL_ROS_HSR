@@ -6,7 +6,7 @@ ROOT_DIR = '/media/autolab/1tb/daniel-bed-make/'
 NET_NAME = '07_31_00_09_46save.ckpt-30300'
 DATA_PATH = ROOT_DIR + 'bed_rcnn/'
 
-USE_DART = True
+USE_DART = False
 if USE_DART: 
 	ROLLOUT_PATH = DATA_PATH+'rollouts_dart_cal/'
 	BC_HELD_OUT = DATA_PATH+'held_out_debugpython'

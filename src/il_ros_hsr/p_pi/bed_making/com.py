@@ -285,7 +285,7 @@ class Bed_COM(Common):
         """
         name = self.next_rollout()
         path = cfg.ROLLOUT_PATH + name + '/'
-        print "Saving to " + path + "..."
+        print("Inside `p_pi/bed_making/com.py`, saving to: {}".format(path))
         os.makedirs(path)
         pickle.dump(recording,open(path+'rollout.p','wb'))
         print "Done saving."

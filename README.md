@@ -29,6 +29,7 @@ Here are full instructions for the bed-making project.
     - Also double check that the overall data directory (by default
       `/media/autolab/1tb/[something...]`) is mounted and accessible for data
       writing.
+    - Make sure the HSR is charged, but that the charging tube is disconnected.
 
 2. Make sure an AR maker is taped on the ground, [and that it is AR maker
 11][3], and that the robot is in a good starting position by using the joystick,
@@ -39,10 +40,11 @@ environment!**
     - Run `python scripts/joystick_X.py` first and then move the robot to the
       designated starting position. (It should be marked with tape ... put tape
       on if it isn't!)
+    - Turn off the joystick script.
     - In another tab, run `rosrun rviz rviz`.
     - Get the bed setup by putting the bed towards where the rviz markers are
       located. Just a coarse match is expected and sufficient. 
-      
+
       To be clear:
       - Match the following frames: `head up`, `head down`, `bottom up`, and
         `bottom down`.
@@ -57,17 +59,14 @@ environment!**
         but again, this requires the data collection script to be run for the AR
         maker/11 frame to appear.
 
-    - Turn off the joystick script.
-
-3. Other reminders:
-
-    - Make sure the robot is charged, but that the charging tube is
-      disconnected. Otherwise, the robot will behave jerkily while trying to
-      "avoid" it.
+    - The easiest way to do the last step above is by running `python
+      main/collect_data_bed.py` --- which we have to do anyway for the data
+      collection --- and adjusting at the beginning.
 
 ## Data Collection
 
-1. Run `python main/collect_data_bed.py`. Make sure there are no error messages. 
+1. As mentioned above, run `python main/collect_data_bed.py`. Make sure there
+are no error messages. 
 
     - If there are no topics found initially, that likely means the AR marker is
       not visible. Please check rviz.
@@ -78,27 +77,41 @@ environment!**
 
 2. After the sheet has been adjusted, the robot can move.
 
-    - Press B on the joystick. Then the robot should move up to the bed, and pause.
-    - **TODO: figure out why the movement to the bed is so jerky.**
-    - An image loader/viewer pops up. Click to load the current camera image of
-      the robot.
-    - Then, drag the bounding box where the robot should grasp. Click "send
-      command" and then *close* the window. The grasp will not execute until the
-      window is closed.
+    - Press B on the joystick. Then the robot should move up to the bed, and
+      pause.
+    - An image loader/viewer pops up. Click "Load" (upper right corner) to load
+      the current camera image of the robot.
+    - Drag the bounding box where the robot should grasp. Click "send command"
+      and then close the window. *The grasp will not execute until the window is
+      closed*.
 
-3. After the first grasp, we need to check for whether the HSR should
-transition. TODO: the ordering of these operations might need to be tuned.
+3. After the grasp, we need to check for transitioning vs re-grasping.
 
-    - Load the image as usual. 
-    - Draw a bounding box; TODO: not sure if it matters where the box is if we
-      know the robot should transition?
-    - Then in the upper right corner, we drag and drop. Click "grasp" if it was
-      a success, or anything else if it was a failure. (TODO: [I thought I
-      resolved that in this commit?][4] When I tested it, I didn't see a change,
-      but maybe I was using Michael's version, need to get this installed on
-      another machine.)
+    - Load the image as usual by clicking "Load". 
+    - Below the "Load" button, drag and drop either "Yes" or "No".
+    - Draw a bounding box; **TODO: not sure if it matters where the box is if we
+      know the robot should transition?**
+    - Send the command, close the window.
 
-4. Other stuff
+    **TODO: I can't figure out, I click yes and no both times and it causes the
+    robot to move to the other side, never re-grasping. Hmm ...**
+
+4. Data Storage
+
+    - After the HSR has transitioned to the start, it will save the data under
+      the specified directory, as `rollout_X.p` where `X` is the index. Check
+      the print logs for the location (if it doesn't match what you want, check
+      the configuration files again).
+    - The `rollout_X.p` is a list of length 5 assuming the robot just executed
+      one grasp at the bottom then one grasp at the top. It contains:
+        - A list of 3-D points; I think these are poses but not sure.
+        - A dictionary of: `c_img`, `d_img`, `class`, `pose`, `side`, and
+          `type`. So it tells us information about this particular grasp.
+        - Another dictionary with similar keys, this time for success or
+          failure of a grasp.
+        - And then two more for the top version of these.
+
+5. Other stuff
 
     - TODO: DART? Faster ways to collect data?
     - How to deal with the transition back to the start?

@@ -11,7 +11,7 @@ from il_ros_hsr.core.python_labeler import Python_Labeler
 import hsrb_interface
 from il_ros_hsr.core.sensors import  RGBD
 #robot interface
-GLOBAL_PATH = "/home/autolab/Workspaces/michael_working/IL_ROS_HSR/"
+#GLOBAL_PATH = "/home/autolab/Workspaces/michael_working/IL_ROS_HSR/"
 CANVAS_DIM = 420.0
 
 
@@ -41,9 +41,9 @@ class Success_Check:
 
 
     def check_success(self,wl):
-        """
-        Check for success by querying supervisor via `wl.label_image(img)`. The
-        data we get from the web labeler consists of a dictionary, with the
+        """Check for success by querying supervisor via `wl.label_image(img)`. 
+        
+        The data we get from the web labeler consists of a dictionary, with the
         'objects' key being a _list_ of dictionaries, hence the iteration over
         that. See `QueryLabeler.setClass()` in the `fast_grasp_detect` library
         for the classes. If the class is zero, then it is SUCCESS and we should
@@ -51,6 +51,12 @@ class Success_Check:
         """
         img = self.cam.read_color_data()
         data = wl.label_image(img)
+
+        print("\nInside bed_making/check_success.py, the check_success()` method")
+        print("our data from `wl.label_image(img)`:")
+        for key in data:
+            print("data[{}]: {}".format(key, data[key]))
+
         for result in data['objects']:
             # See `QueryLabeler` (e.g., `setClass` method) if confused.
             if (result['class'] == 0): 

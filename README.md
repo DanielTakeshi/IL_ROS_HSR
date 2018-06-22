@@ -88,13 +88,14 @@ are no error messages.
 3. After the grasp, we need to check for transitioning vs re-grasping.
 
     - Load the image as usual by clicking "Load". 
-    - Below the "Load" button, drag and drop either "Yes" or "No".
-    - Draw a bounding box; **TODO: not sure if it matters where the box is if we
-      know the robot should transition?**
+    - Below the "Load" button, drag and drop either "Success" or "Failure"
+      depending on the PREVIOUS image (I *think* that's the code logic, **TODO**
+      need to check).
+    - Click "confirm class". This is especially important! What matters is the
+      class that you see in the list that appears.
+    - Draw a bounding box. I don't think it matters if we know the robot
+      transitions.  **TODO: check**
     - Send the command, close the window.
-
-    **TODO: I can't figure out, I click yes and no both times and it causes the
-    robot to move to the other side, never re-grasping. Hmm ...**
 
 4. Data Storage
 

@@ -53,6 +53,7 @@ if __name__ == '__main__':
  
     people = ['chris_n0','chris_n1','chris_n2','anne_n0','anne_n1','anne_n2','carolyn_n0','carolyn_n1','carolyn_n2','matt_n0','matt_n1']
 
+    print("WARNING: is it `data` or `data-bed-make`??")
     save_path = '/media/autolab/1tb/data/hsr_clutter_rcnn/images/'
     count = 0
     label_count = 0

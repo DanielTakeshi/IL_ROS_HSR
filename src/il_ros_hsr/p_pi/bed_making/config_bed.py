@@ -37,7 +37,7 @@ PRE_TRAINED_DIR = '/home/autolab/Workspaces/michael_working/yolo_tensorflow/data
 WEIGHTS_FILE = None
 # WEIGHTS_FILE = os.path.join(DATA_PATH, 'weights', 'YOLO_small.ckpt')
 
-CLASSES = ['yes','no']
+CLASSES = ['success_bed','failure_bed']
 # #CLASSES = ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
 #            'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
 #            'motorbike', 'person', 'pottedplant', 'sheep', 'sofa',
@@ -80,7 +80,8 @@ BOX = 10
 DEBUG_MODE = False
 
 #GRIPPER 
-GRIPPER_HEIGHT = 0.065
+GRIPPER_HEIGHT = 0.055
+#GRIPPER_HEIGHT = 0.065 # daniel: original value
 #GRIPPER_HEIGHT = 0.090
 MM_TO_M = 0.001
 

@@ -1,4 +1,7 @@
-
+"""Very similar to `quick_rollout_check.py`.
+Confirms my intuition that the pose really matters for the grasp type, but not
+so much for the success data type.
+"""
 import cv2
 
 import IPython

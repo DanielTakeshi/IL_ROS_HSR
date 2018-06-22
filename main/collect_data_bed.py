@@ -85,10 +85,8 @@ class BedMaker():
         self.sc = Success_Check(self.whole_body,self.tt,self.cam,self.omni_base)
 
         self.ss = Self_Supervised(self.cam) # ignore
-        #self.test_current_point()
         time.sleep(4)
-        #thread.start_new_thread(self.ql.run,())
-        print("after thread")
+        print("Finished creating BedMaker()!")
 
 
     def bed_make(self):

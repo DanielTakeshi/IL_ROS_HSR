@@ -43,9 +43,7 @@ environment!**
     - Turn off the joystick script.
     - In another tab, run `rosrun rviz rviz`.
     - Get the bed setup by putting the bed towards where the rviz markers are
-      located. Just a coarse match is expected and sufficient. 
-
-      To be clear:
+      located. Just a coarse match is expected and sufficient.  To be clear:
       - Match the following frames: `head up`, `head down`, `bottom up`, and
         `bottom down`.
       - The centers should be fixed, but the orientation can be a bit confusing
@@ -58,10 +56,16 @@ environment!**
         the robot so that the AR marker is visible. Use rviz for visualizing,
         but again, this requires the data collection script to be run for the AR
         maker/11 frame to appear.
-
     - The easiest way to do the last step above is by running `python
       main/collect_data_bed.py` --- which we have to do anyway for the data
       collection --- and adjusting at the beginning.
+
+Here's what my rviz setup looks like:
+
+![](imgs/rviz_1.png)
+![](imgs/rviz_2.png)
+
+Note that the bed is as close to the AR marker as possible.
 
 ## Data Collection
 
@@ -73,7 +77,8 @@ are no error messages.
     - For each setup, we sample a starting bed configuration with a red line and
       then have to *physically adjust the bed sheet to match that image*. This
       provides the variation in starting states. Again, only coarse matches are
-      needed.
+      needed. However, please keep the bed adjusted so that it is close to the
+      z-axis (colored blue) of the two bottom poses.
 
 2. After the sheet has been adjusted, the robot can move.
 
@@ -89,33 +94,78 @@ are no error messages.
 
     - Load the image as usual by clicking "Load". 
     - Below the "Load" button, drag and drop either "Success" or "Failure"
-      depending on the PREVIOUS image (I *think* that's the code logic, **TODO**
-      need to check).
-    - Click "confirm class". This is especially important! What matters is the
+      depending on what we think happened.
+    - Click "Confirm Class". This is especially important! What matters is the
       class that you see in the list that appears.
     - Draw a bounding box. I don't think it matters if we know the robot
-      transitions.  **TODO: check**
+      transitions, but if the robot has to re-grasp, then definitely put the
+      correct pose.
     - Send the command, close the window.
 
 4. Data Storage
 
     - After the HSR has transitioned to the start, it will save the data under
       the specified directory, as `rollout_X.p` where `X` is the index. Check
-      the print logs for the location (if it doesn't match what you want, check
-      the configuration files again).
-    - The `rollout_X.p` is a list of length 5 assuming the robot just executed
-      one grasp at the bottom then one grasp at the top. It contains:
-        - A list of 3-D points; I think these are poses but not sure.
-        - A dictionary of: `c_img`, `d_img`, `class`, `pose`, `side`, and
-          `type`. So it tells us information about this particular grasp.
-        - Another dictionary with similar keys, this time for success or
-          failure of a grasp.
-        - And then two more for the top version of these.
+      the print logs for the location.
+    - The `rollout_X.p` is a list of length K, where K>=5.  Use
+      `scripts/quick_rollout_check.py` to investigate quickly.  It contains:
+        - A list of two 3-D points, representing the "down corner" and "up
+          corner" respectively, which are used for the initial state sampling.
+        - And then a bunch of dictionaries, all with these keys:
+            - `c_img`: camera image. Note that if a grasp just failed, then
+              the subsequent image that the success network would see is the
+              same exact image as the grasping network would see. This makes
+              sense: at attempt `t` just after we think a grasp failure
+              happened, the image `I` is what the success net would see, so it
+              must classify it as a failure. Then in the next dictionary, `I`
+              stays the same since we have figure out where to grasp next.
+            - `d_img`: depth image. Don't worry about this too much.
+            - `class`: either 0 (success/good) or 1 (failure/bad), though can be
+              confusing with temporal drift. At grasp attempt `t`, say it
+              failed. Then the next dict for the success net sees a failure
+              (class=1) but that is immediately carried over to the next dict
+              for the *grasp* net at attempt `t+1`, so it also sees class=1 even
+              though that grasp may actually be successful; if it is, the *next*
+              success net's dict finally has class=0 and then grasp attempt
+              `t+2` sees class=0 even though *that* may fail ...  ugh.
+            - `pose`: a 2D point from where we marked it in the interface.
+              You'll see it in the Tkinter pop-up menu. It's the *center* of the
+              bounding box drawn.
+            - `side`: 'BOTTOM' or 'TOP' (the HSR starts in the bottom position)
+            - `type`: 'grasp' or 'success'
+        - These repeat for each grasp and success check that we have, and repeat
+          for the top. Example: The first dictionary is of type 'grasp' and
+          represents the data that the grasping network would see, and has
+          'pose' as the center of the bounding box we drew. The second
+          dictionary is of type 'success' for a success check, and which also
+          lets us draw a bounding box. Two cases:
+            - *First grasp succeeded?* The next dictionary has `c_img`
+              corresponding to the top of the bed, with type 'grasp', and has a
+              different `pose` corresponding to the next bounding box we drew.
+              So the bounding box we draw for the success network, assuming
+              the previous grasp succeeded, is (effectively) ignored.
+            - *First grasp failed?* The next dictionary has the same
+              `c_img` as discussed above, with type 'grasp'. It also has the
+              same `pose` since we should have drawn it just now. (Though, I
+              suppose, the pose is also effectively ignored, except during the
+              interface, we need to be careful about where we draw the pose in
+              this case because it immediately impacts the next grasp attempt.)
+          The cycle repeats. So either way the two types alternate.
+      Hence, the shortest length of `rollout_X.p` is 5, because the bottom and
+      top each require two dictionaries (one each for grasping and then the
+      success). Of course, it will be longer whenever we have to re-grasp.
+
+Here's an example of the pop-up menu. In the "Bounding Boxes" the class that
+gets recorded is shown there. If it's not correct, you probably didn't click
+"Confirm Class." Once you see something like this, you can "Send Command" and
+close it.
+
+![](imgs/failure_1.png)
 
 5. Other stuff
 
-    - TODO: DART? Faster ways to collect data?
-    - How to deal with the transition back to the start?
+    - **TODO: DART?**
+    - **TODO: faster ways to collect data?**
 
 
 ## Neural Network Training

@@ -156,9 +156,8 @@ are no error messages.
       success). Of course, it will be longer whenever we have to re-grasp.
 
 Here's an example of the pop-up menu. In the "Bounding Boxes" the class that
-gets recorded is shown there. If it's not correct, you probably didn't click
-"Confirm Class." Once you see something like this, you can "Send Command" and
-close it.
+gets recorded is shown there. Once you see something like this, you can "Send
+Command" and close it.
 
 ![](imgs/failure_1.png)
 

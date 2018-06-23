@@ -127,11 +127,12 @@ class Crane_Gripper(object):
         count = 0
         
         td_points = self.pcm.projectPixelTo3dRay((position[0],position[1]))
-        print "DE PROJECTED POINTS ",td_points
+        print "\nDE PROJECTED POINTS ",td_points
         norm_pose = np.array(td_points)
         norm_pose = norm_pose/norm_pose[2]
         norm_pose = norm_pose*(cfg.MM_TO_M*position[2])
         print "NORMALIZED POINTS ",norm_pose
+        print("\n")
         
         #pose = np.array([td_points[0],td_points[1],0.001*num_pose[2]])
         a = tf.transformations.quaternion_from_euler(ai=-2.355,aj=-3.14,ak=0.0)

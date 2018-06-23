@@ -86,7 +86,23 @@ class BedMaker():
 
         self.ss = Self_Supervised(self.cam) # ignore
         time.sleep(4)
-        print("Finished creating BedMaker()!")
+        print("Finished creating BedMaker()! Now adjust as follows:")
+
+        self.sampling_type = ''
+        if np.random.rand() < 0.5:
+            if np.random.rand() < 0.5:
+                print("Make the bed sheet CURVED, with LOTS OF WHITE VISIBLE")
+                self.sampling_type = 'curved-white'
+            else:
+                print("Make the bed sheet CURVED, with not much white visible")
+                self.sampling_type = 'curved-nowhite'
+        else:
+            if np.random.rand() < 0.5:
+                print("Make the bed sheet (ROUGHLY) STRAIGHT, with LOTS OF WHITE VISIBLE")
+                self.sampling_type = 'straight-white'
+            else:
+                print("Make the bed sheet (ROUGHLY) STRAIGHT, with not much white visible")
+                self.sampling_type = 'straight-nowhite'
 
 
     def bed_make(self):
@@ -98,8 +114,8 @@ class BedMaker():
         
         # I think, creates red line in GUI where we adjust the bed to match it.
         if cfg.INS_SAMPLE:
-            u_c,d_c = self.ins.sample_initial_state()
-            self.rollout_data.append([u_c,d_c])
+            u_c, d_c = self.ins.sample_initial_state()
+            self.rollout_data.append( [u_c, d_c, self.sampling_type] )
         
         while True:
             c_img = self.cam.read_color_data()

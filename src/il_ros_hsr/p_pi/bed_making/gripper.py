@@ -101,11 +101,12 @@ class Bed_Gripper(object):
             num_pose = pose[1]
             label = pose[0]
             td_points = self.pcm.projectPixelTo3dRay((num_pose[0],num_pose[1]))
-            print "DE PROJECTED POINTS ",td_points
+            print("\nIn `bed_making.gripper.broadcast_poses()`")
+            print("  DE PROJECTED POINTS {}".format(td_points))
             norm_pose = np.array(td_points)
             norm_pose = norm_pose/norm_pose[2]
             norm_pose = norm_pose*(cfg.MM_TO_M*num_pose[2])
-            print "NORMALIZED POINTS ",norm_pose
+            print("  NORMALIZED POINTS {}\n".format(norm_pose))
             #pose = np.array([td_points[0],td_points[1],0.001*num_pose[2]])
             a = tf.transformations.quaternion_from_euler(ai=-2.355,aj=-3.14,ak=0.0)
             b = tf.transformations.quaternion_from_euler(ai=0.0,aj=0.0,ak=1.57)

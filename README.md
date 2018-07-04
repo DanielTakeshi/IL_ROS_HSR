@@ -120,11 +120,11 @@ are no error messages.
               must classify it as a failure. Then in the next dictionary, `I`
               stays the same since we have figure out where to grasp next.
             - `d_img`: depth image. Don't worry about this too much.
-            - `class`: either 0 (success/good) or 1 (failure/bad), only use
-              these for the 'success' type.
+            - `class`: either 0 (success/good) or 1 (failure/bad), use these for 
+              the 'success' type.
             - `pose`: a 2D point from where we marked it in the interface.
-              You'll see it in the Tkinter pop-up menu. Only use these for the
-              'success' types.
+              You'll see it in the Tkinter pop-up menu. Use these for the
+              'grasp' types.
             - `type`: 'grasp' or 'success'
             - `side`: 'BOTTOM' or 'TOP' (the HSR starts in the bottom position)
         - These repeat for each grasp and success check, and for both sides.

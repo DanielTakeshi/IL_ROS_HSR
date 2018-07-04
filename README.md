@@ -120,36 +120,29 @@ are no error messages.
               must classify it as a failure. Then in the next dictionary, `I`
               stays the same since we have figure out where to grasp next.
             - `d_img`: depth image. Don't worry about this too much.
-            - `class`: either 0 (success/good) or 1 (failure/bad), though can be
-              confusing with temporal drift. At grasp attempt `t`, say it
-              failed. Then the next dict for the success net sees a failure
-              (class=1) but that is immediately carried over to the next dict
-              for the *grasp* net at attempt `t+1`, so it also sees class=1 even
-              though that grasp may actually be successful; if it is, the *next*
-              success net's dict finally has class=0 and then grasp attempt
-              `t+2` sees class=0 even though *that* may fail ...  ugh.
+            - `class`: either 0 (success/good) or 1 (failure/bad), only use
+              these for the 'success' type.
             - `pose`: a 2D point from where we marked it in the interface.
-              You'll see it in the Tkinter pop-up menu. It's the *center* of the
-              bounding box drawn.
-            - `side`: 'BOTTOM' or 'TOP' (the HSR starts in the bottom position)
+              You'll see it in the Tkinter pop-up menu. Only use these for the
+              'success' types.
             - `type`: 'grasp' or 'success'
-        - These repeat for each grasp and success check that we have, and repeat
-          for the top. Example: The first dictionary is of type 'grasp' and
-          represents the data that the grasping network would see, and has
-          'pose' as the center of the bounding box we drew. The second
-          dictionary is of type 'success' for a success check, and which also
-          lets us draw a bounding box. Two cases:
+            - `side`: 'BOTTOM' or 'TOP' (the HSR starts in the bottom position)
+        - These repeat for each grasp and success check, and for both sides.
+          The first dictionary is of type 'grasp' and represents the data that
+          the grasping network would see, and has 'pose' as the center of the
+          bounding box we drew. The second dictionary is of type 'success' for a
+          success check, and which also lets us draw a bounding box. Two cases:
             - *First grasp succeeded?* The next dictionary has `c_img`
               corresponding to the top of the bed, with type 'grasp', and has a
               different `pose` corresponding to the next bounding box we drew.
               So the bounding box we draw for the success network, assuming
-              the previous grasp succeeded, is (effectively) ignored.
-            - *First grasp failed?* The next dictionary has the same
-              `c_img` as discussed above, with type 'grasp'. It also has the
-              same `pose` since we should have drawn it just now. (Though, I
-              suppose, the pose is also effectively ignored, except during the
-              interface, we need to be careful about where we draw the pose in
-              this case because it immediately impacts the next grasp attempt.)
+              the previous grasp succeeded, is ignored.
+            - *First grasp failed?* The next dictionary has the same `c_img` as
+              discussed above, with type 'grasp'. It also has the same `pose`
+              since we should have drawn it just now. (The pose is also
+              effectively ignored, except during the interface, we need to be
+              careful about where we draw the pose in this case because it
+              immediately impacts the next grasp attempt.)
           The cycle repeats. So either way the two types alternate.
       Hence, the shortest length of `rollout_X.p` is 5, because the bottom and
       top each require two dictionaries (one each for grasping and then the
@@ -169,7 +162,11 @@ Command" and close it.
 
 ## Neural Network Training
 
-1. Collect the data in an appropriate manner.
+1. Collect and understand the data. 
+
+    - The easiest way to understand the data is by running: `python scripts/check_raw_data.py` as
+      that will give us statistics as well as save images that we can use for later.
+
 2. Run `python train_bed_grasp.py` and `python train_bed_success.py` in the
 `fast_grasp_detect` repository.
 

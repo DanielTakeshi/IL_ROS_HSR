@@ -166,9 +166,22 @@ Command" and close it.
 
     - The easiest way to understand the data is by running: `python scripts/check_raw_data.py` as
       that will give us statistics as well as save images that we can use for later.
+    - Also do `python scripts/data_augmentation_example.py` to check data augmentation, for both 
+      the depth and the RGB images (check the code to change settings).
 
-2. Run `python train_bed_grasp.py` and `python train_bed_success.py` in the
-`fast_grasp_detect` repository.
+2. Investigate what kind of training works best for the grasp data. For this, perform cross
+validation on the grasping data. (And maybe the success data, but for now just do grasping.)
+
+    - Check the configuration file for grasping. Make sure:
+        - `self.PERFORM_CV = True`
+        - `self.CV_HELD_OUT_INDEX` is set to a number between 0 and 9, inclusive.
+        - `self.ROLLOUT_PATH` refers to where all the 50 (or so) rollouts are stored.
+        - `self.CV_GROUPS` splits the rollouts randomly and evenly into groups.
+    - Run `python train_bed_grasp.py`.
+
+3. Now train for real. As before, we run `python train_bed_grasp.py` and `python
+train_bed_success.py` in the `fast_grasp_detect` repository. But this time make sure
+`self.PERFORM_CV = False` so that all the CV stuff is ignored.
 
 
 ## Evaluation

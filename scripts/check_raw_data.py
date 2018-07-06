@@ -8,18 +8,34 @@ import cv2, os, pickle, sys
 import numpy as np
 np.set_printoptions(suppress=True, linewidth=200)
 
-ROLLOUTS = '/nfs/diskstation/seita/bed-make/rollouts/'
-IMAGE_PATH = '/nfs/diskstation/seita/bed-make/images/'
+# My Cal data, (3->53)
+#ROLLOUTS = '/nfs/diskstation/seita/bed-make/rollouts/'
+#IMAGE_PATH = '/nfs/diskstation/seita/bed-make/images_danielcal_data/'
+
+# Michael's blue data (not sure if original, rollouts 0-20 are weird?), (0->54) or (0->10) for held-out.
+#ROLLOUTS = '/nfs/diskstation/seita/laskey-data/bed_rcnn/rollouts/'
+#IMAGE_PATH = '/nfs/diskstation/seita/bed-make/images_blue_data/'
+#ROLLOUTS = '/nfs/diskstation/seita/laskey-data/bed_rcnn/held_out_bc/'
+#IMAGE_PATH = '/nfs/diskstation/seita/bed-make/images_held_out_bc/'
+
+# Michael's blue data with DART applied, (0->57) or a different range for held-out.
+ROLLOUTS = '/nfs/diskstation/seita/laskey-data/bed_rcnn/rollouts_dart/'
+IMAGE_PATH = '/nfs/diskstation/seita/bed-make/images_blue_dart/'
+#ROLLOUTS = '/nfs/diskstation/seita/laskey-data/bed_rcnn/held_out_dart/'
+#IMAGE_PATH = '/nfs/diskstation/seita/bed-make/images_held_out_dart/'
 
 g_total = 0
 s_count_failure = 0
 s_count_success = 0
 rlengths = []
 
-for rnum in range(3, 53):
+for rnum in range(0, 60):
     print("\n=====================================================================")
     print("rollout {}".format(rnum))
     path = os.path.join(ROLLOUTS, 'rollout_{}/rollout.p'.format(rnum))
+    if not os.path.exists(path):
+        print("{} does not exist, skipping...".format(path))
+        continue
     data = pickle.load(open(path,'rb'))
     count = 0
     rlengths.append(len(data)-1)
@@ -62,7 +78,7 @@ for rnum in range(3, 53):
 
     print("=====================================================================")
 
-print("\nSome stats:")
+print("\nSome stats (rollout length doesn't include the initial sampling point list:")
 print("rollout lengths: {:.1f} +/- {:.1f} (sum: {})".format(np.mean(rlengths),np.std(rlengths),np.sum(rlengths)))
 print("g_total:         {}".format(g_total)) # total images for grasping network
 print("s_count_failure: {}".format(s_count_failure))

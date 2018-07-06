@@ -12,7 +12,7 @@ from fast_grasp_detect.data_aug.depth_preprocess import datum_to_net_dim
 
 ROLLOUTS = '/nfs/diskstation/seita/bed-make/rollouts/'
 IMAGE_PATH = '/nfs/diskstation/seita/bed-make/images/'
-USE_DEPTH = True # Run with both settings
+USE_DEPTH = False # Run with both settings
 
 
 def break_up_rollouts(rollout):

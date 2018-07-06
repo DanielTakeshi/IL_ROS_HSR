@@ -177,7 +177,32 @@ validation on the grasping data. (And maybe the success data, but for now just d
         - `self.CV_HELD_OUT_INDEX` is set to a number between 0 and 9, inclusive.
         - `self.ROLLOUT_PATH` refers to where all the 50 (or so) rollouts are stored.
         - `self.CV_GROUPS` splits the rollouts randomly and evenly into groups.
-    - Run `python train_bed_grasp.py`.
+    - Run `python train_bed_grasp.py`. It should load in the network and the data, and will save in
+      `grasp_output/`, with the following information by default:
+       ```
+       seita@autolab-titan-box:/nfs/diskstation/seita/bed-make$ ls -lh grasp_output/*
+       -rw-rw-r-- 1 nobody nogroup 336M Jul  5 17:25 grasp_output/07_05_17_24_56_CS_0_save.ckpt-500.data-00000-of-00001
+       -rw-rw-r-- 1 nobody nogroup 2.3K Jul  5 17:25 grasp_output/07_05_17_24_56_CS_0_save.ckpt-500.index
+       -rw-rw-r-- 1 nobody nogroup 692K Jul  5 17:25 grasp_output/07_05_17_24_56_CS_0_save.ckpt-500.meta
+       -rw-rw-r-- 1 nobody nogroup 336M Jul  5 17:26 grasp_output/07_05_17_26_09_CS_0_save.ckpt-1000.data-00000-of-00001
+       -rw-rw-r-- 1 nobody nogroup 2.3K Jul  5 17:26 grasp_output/07_05_17_26_09_CS_0_save.ckpt-1000.index
+       -rw-rw-r-- 1 nobody nogroup 692K Jul  5 17:26 grasp_output/07_05_17_26_09_CS_0_save.ckpt-1000.meta
+       -rw-rw-r-- 1 nobody nogroup  324 Jul  5 17:26 grasp_output/checkpoint
+       
+       grasp_output/2018_07_05_17_23:
+       total 4.0K
+       -rw-rw-r-- 1 nobody nogroup 2.0K Jul  5 17:23 config.txt
+       
+       grasp_output/stats:
+       total 4.0K
+       -rw-rw-r-- 1 nobody nogroup 720 Jul  5 17:26 grasp_net.p
+       ```
+        - `config.txt` file is saved in a file reflecting the time the code was run, and has all
+          the configurations, so we always know what we ran. :)
+        - `stats/grasp_net.p` is a dict where 'test' and 'train' are the test and train losses,
+          respectively, saved at some fixed epochs.
+        - The other stuff, of course, is from `tf.Saver`.
+    - Do something similar to the above for the "success" data.
 
 3. Now train for real. As before, we run `python train_bed_grasp.py` and `python
 train_bed_success.py` in the `fast_grasp_detect` repository. But this time make sure

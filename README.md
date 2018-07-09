@@ -6,9 +6,8 @@ HSR
 Daniel Seita's fork of this repository for finishing up the bed-making project,
 but it's also flexible enough to deal with other projects.
 
-Currently, it is working to do some of the bed making rollouts, but need to
-double check that all the paths are referring to my stuff instead of Michael's
-package.
+It should be up to date with the old bed-making code, and have stuff correctly integrated for future
+experiments.
 
 # Bed-Making Instructions
 

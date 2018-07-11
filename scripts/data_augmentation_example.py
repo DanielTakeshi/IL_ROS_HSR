@@ -19,6 +19,8 @@ def break_up_rollouts(rollout):
     `rollout`: odd-length list, starting point, then alternates between grasps and successes.
     `grasp_rollout`: list of lists, each of which are a `grasp_point`. All the list items are length
         one, so it's pointless to have this but perhaps there's backwards compatibility stuff.
+
+    TODO: change it to the same method in the bed-making grasping config. I changed it.
     """
     grasp_point = []
     grasp_rollout = []
@@ -64,7 +66,7 @@ for rnum in range(3,53):
             data_rgb = augment_data(data)
             datum_to_net_dim(data)
             data_depth = augment_data(data, depth_data=True)
-            assert len(data_rgb) == 10 and len(data_depth) == 6 and \
+            assert len(data_rgb) == 10 and len(data_depth) == 10 and \
                     type(data_rgb) is list and type(data_depth) is list
 
             # RGB

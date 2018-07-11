@@ -11,9 +11,9 @@ import numpy as np
 np.set_printoptions(suppress=True, linewidth=200)
 from fast_grasp_detect.data_aug.depth_preprocess import datum_to_net_dim
 
-# My Cal data, (3->53). There's no held-out data.
-#ROLLOUTS = '/nfs/diskstation/seita/bed-make/rollouts/'
-#IMG_PATH = '/nfs/diskstation/seita/bed-make/images_danielcal_data/'
+# My Cal data, (3->53). There's no held-out data. From using the 'slow' data collection script.
+ROLLOUTS = '/nfs/diskstation/seita/bed-make/rollouts/'
+IMG_PATH = '/nfs/diskstation/seita/bed-make/images_danielcal_data/'
 
 # Michael's blue data (not sure if original, 0-20 are weird?), (0->54) or (0->10) for held-out.
 #ROLLOUTS = '/nfs/diskstation/seita/laskey-data/bed_rcnn/rollouts/'
@@ -30,14 +30,15 @@ from fast_grasp_detect.data_aug.depth_preprocess import datum_to_net_dim
 # Michael's NYTimes data. Note, I copied it so it's on _my_ data file.  He changed data so 
 # we don't have annoying first element, but I think he has multiple TOP/BOTTOM cases?
 
-# TODO: I need to investigate in more detail, he has some multiple grasp attempts but
-# they are listed as successes? He also put the grasp stuff first, then the success stuf
-# after, but that I am less concerned about as that's just re-shuffling data.
+# TODO: I need to investigate in more detail, he has some multiple grasp attempts but they are
+# listed as successes? He also put the grasp stuff first, then the success stuf after, but that I am
+# less concerned about as that's just re-shuffling data. UPDATE: he told me it was due to his faster
+# data collection, but now I need to check if the depth images make sense for rollouts 38+ ...
 
 #ROLLOUTS = '/nfs/diskstation/seita/bed-make/rollouts_nytimes/'
 #IMG_PATH = '/nfs/diskstation/seita/bed-make/images_nytimes/'
-ROLLOUTS = '/nfs/diskstation/seita/bed-make/held_out_nytimes/'
-IMG_PATH = '/nfs/diskstation/seita/bed-make/images_held_out_nytimes/'
+#ROLLOUTS = '/nfs/diskstation/seita/bed-make/held_out_nytimes/'
+#IMG_PATH = '/nfs/diskstation/seita/bed-make/images_held_out_nytimes/'
 
 g_total = 0
 s_count_failure = 0
@@ -68,14 +69,20 @@ for rnum in range(0, 60):
         # All this does is modify the datum['d_img'] key; it leaves datum['c_img'] alone.
         datum_to_net_dim(datum)
 
-        # Grasping
+        # Grasping. For these, overlay the pose to the image (red circle, black border).
         if datum['type'] == 'grasp':
-            pose = datum['pose']
-            c_img = datum['c_img']
             c_path = os.path.join(IMG_PATH, 'rollout_{}_grasp_{}_rgb.png'.format(rnum,count))
             d_path = os.path.join(IMG_PATH, 'rollout_{}_grasp_{}_depth.png'.format(rnum,count))
-            cv2.imwrite(c_path, datum['c_img'])
-            cv2.imwrite(d_path, datum['d_img'])
+            c_img = (datum['c_img']).copy()
+            d_img = (datum['d_img']).copy()
+            pose = datum['pose']
+            pose_int = (int(pose[0]), int(pose[1]))
+            cv2.circle(img=c_img, center=pose_int, radius=7, color=(0,0,255), thickness=-1)
+            cv2.circle(img=d_img, center=pose_int, radius=7, color=(0,0,255), thickness=-1)
+            cv2.circle(img=c_img, center=pose_int, radius=9, color=(0,0,0), thickness=2)
+            cv2.circle(img=d_img, center=pose_int, radius=9, color=(0,0,0), thickness=2)
+            cv2.imwrite(c_path, c_img)
+            cv2.imwrite(d_path, d_img)
             g_total += 1
 
         # Success (0=success, 1=failure).

@@ -11,8 +11,7 @@ from fast_grasp_detect.data_aug.data_augment import augment_data
 from fast_grasp_detect.data_aug.depth_preprocess import datum_to_net_dim
 
 ROLLOUTS = '/nfs/diskstation/seita/bed-make/rollouts/'
-IMAGE_PATH = '/nfs/diskstation/seita/bed-make/images/'
-USE_DEPTH = False # Run with both settings
+IMG_PATH = '/nfs/diskstation/seita/bed-make/images_danielcal_data/'
 
 
 def break_up_rollouts(rollout):
@@ -48,11 +47,13 @@ def compute_label(datum):
 
 for rnum in range(3,53):
     ROLLOUT_NUM = rnum
-
     path = os.path.join(ROLLOUTS, 'rollout_{}/rollout.p'.format(ROLLOUT_NUM))
+    if not os.path.exists(path):
+        print("{} does not exist, skipping...".format(path))
+        continue
     rollout = pickle.load(open(path,'rb'))
     grasp_rollout = break_up_rollouts(rollout)
-    print("loaded {}, len(grasp_rollout): {}".format(path, len(grasp_rollout)))
+    print("\n ****  loaded {}, len(grasp_rollout): {}  ****".format(path, len(grasp_rollout)))
     count = 0
 
     for grasp_point in grasp_rollout:
@@ -60,19 +61,28 @@ for rnum in range(3,53):
 
         for data in grasp_point:
             # Adjust whether we want c_img or d_img. If d_img need to make it 3-channel.
-            if USE_DEPTH:
-                datum_to_net_dim(data)
-                data_a = augment_data(data, depth_data=True)
-            else:
-                data_a = augment_data(data)
+            data_rgb = augment_data(data)
+            datum_to_net_dim(data)
+            data_depth = augment_data(data, depth_data=True)
+            assert len(data_rgb) == 10 and len(data_depth) == 6 and \
+                    type(data_rgb) is list and type(data_depth) is list
 
-            for d_idx,datum_a in enumerate(data_a):
-                # If this were NN code, I'd run `datum_a['c_img']` through the YOLO network
+            # RGB
+            # (If this were NN code, I'd run `datum_a['c_img']` through the YOLO network)
+            # Save systematically along with original rollouts from other script
+            for d_idx,datum_a in enumerate(data_rgb):
                 label = compute_label(datum_a)
-
-                # Save systematically along with original rollouts from other script
-                img_suffix = 'rollout_{}_grasp_{}_dataaug_{}_depth_{}.png'.format(ROLLOUT_NUM, count, d_idx, USE_DEPTH)
-                img_path = os.path.join(IMAGE_PATH, img_suffix)
+                img_suffix = 'rollout_{}_grasp_{}_dataaug_{}_RGB.png'.format(ROLLOUT_NUM, count, d_idx)
+                img_path = os.path.join(IMG_PATH, img_suffix)
                 cv2.imwrite(img_path, datum_a['c_img'])
-                print("aug data idx {}, label {}, keys {}, saved {}".format(d_idx, label, datum_a.keys(), img_suffix))
+                print("aug data idx {}, label {}, keys {}, saved {}".format(
+                        d_idx, label, datum_a.keys(), img_suffix))
+            # Depth.
+            for d_idx,datum_a in enumerate(data_depth):
+                label = compute_label(datum_a)
+                img_suffix = 'rollout_{}_grasp_{}_dataaug_{}_DEPTH.png'.format(ROLLOUT_NUM, count, d_idx)
+                img_path = os.path.join(IMG_PATH, img_suffix)
+                cv2.imwrite(img_path, datum_a['c_img']) # 'c_img'; there's no 'd_img' key for aug.
+                print("aug data idx {}, label {}, keys {}, saved {}".format(
+                        d_idx, label, datum_a.keys(), img_suffix))
         count += 1

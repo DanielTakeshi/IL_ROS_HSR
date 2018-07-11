@@ -5,3 +5,5 @@
   code this together.
 - `data_augmentation_example.py`: for inspecting data augmentation. Works for both RGB and depth
   images.
+- `label_bed_fast.py`: for labeling the data if it was collected using the 'faster' way as shown by
+  Michael, where he simulates the data.

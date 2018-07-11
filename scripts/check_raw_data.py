@@ -12,8 +12,8 @@ np.set_printoptions(suppress=True, linewidth=200)
 from fast_grasp_detect.data_aug.depth_preprocess import datum_to_net_dim
 
 # My Cal data, (3->53). There's no held-out data. From using the 'slow' data collection script.
-ROLLOUTS = '/nfs/diskstation/seita/bed-make/rollouts/'
-IMG_PATH = '/nfs/diskstation/seita/bed-make/images_danielcal_data/'
+#ROLLOUTS = '/nfs/diskstation/seita/bed-make/rollouts/'
+#IMG_PATH = '/nfs/diskstation/seita/bed-make/images_danielcal_data/'
 
 # Michael's blue data (not sure if original, 0-20 are weird?), (0->54) or (0->10) for held-out.
 #ROLLOUTS = '/nfs/diskstation/seita/laskey-data/bed_rcnn/rollouts/'
@@ -30,15 +30,20 @@ IMG_PATH = '/nfs/diskstation/seita/bed-make/images_danielcal_data/'
 # Michael's NYTimes data. Note, I copied it so it's on _my_ data file.  He changed data so 
 # we don't have annoying first element, but I think he has multiple TOP/BOTTOM cases?
 
-# TODO: I need to investigate in more detail, he has some multiple grasp attempts but they are
-# listed as successes? He also put the grasp stuff first, then the success stuf after, but that I am
-# less concerned about as that's just re-shuffling data. UPDATE: he told me it was due to his faster
-# data collection, but now I need to check if the depth images make sense for rollouts 38+ ...
+# I need to investigate in more detail, he has some multiple grasp attempts but they are listed as
+# successes? He also put the grasp stuff first, then the success stuff after, but that I am less
+# concerned about as that's just re-shuffling data. UPDATE: got it, it's b/c of another script.
+# TODO: now I need to check if the depth images make sense for rollouts 38+ ... and note that for
+# Michael's faster data, he saves them by saving all the grasps first, THEN all the successes, hence
+# why the order is different form mine, where I save the grasp, then success, then grasp, then
+# success, etc., in order of when they were seen in the data. BTW, the good news is that with the
+# NYTimes data, the initial list element (the one which is supposed to show the initial bed config)
+# is not there, so the list lengths are EVEN numbers.
 
 #ROLLOUTS = '/nfs/diskstation/seita/bed-make/rollouts_nytimes/'
 #IMG_PATH = '/nfs/diskstation/seita/bed-make/images_nytimes/'
-#ROLLOUTS = '/nfs/diskstation/seita/bed-make/held_out_nytimes/'
-#IMG_PATH = '/nfs/diskstation/seita/bed-make/images_held_out_nytimes/'
+ROLLOUTS = '/nfs/diskstation/seita/bed-make/held_out_nytimes/'
+IMG_PATH = '/nfs/diskstation/seita/bed-make/images_held_out_nytimes/'
 
 g_total = 0
 s_count_failure = 0

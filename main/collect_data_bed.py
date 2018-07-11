@@ -12,40 +12,30 @@ from numpy.random import normal
 import time
 #import listener
 import thread
-
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Joy
-
 from il_ros_hsr.core.sensors import  RGBD, Gripper_Torque, Joint_Positions
 from il_ros_hsr.core.joystick import  JoyStick
-
 import matplotlib.pyplot as plt
-
 import numpy as np
 import numpy.linalg as LA
 from tf import TransformListener
 import tf
 import rospy
-
 from il_ros_hsr.core.grasp_planner import GraspPlanner
-
 from il_ros_hsr.p_pi.bed_making.com import Bed_COM as COM
 sys.path.append('/home/autolab/Workspaces/seita_working/fast_grasp_detect/')
-
 from fast_grasp_detect.labelers.online_labeler import QueryLabeler
 #from online_labeler import QueryLabeler
 from image_geometry import PinholeCameraModel as PCM
-
 from il_ros_hsr.p_pi.bed_making.gripper import Bed_Gripper
 from il_ros_hsr.p_pi.bed_making.table_top import TableTop
 from il_ros_hsr.core.web_labeler import Web_Labeler
 from il_ros_hsr.core.python_labeler import Python_Labeler
-
 from il_ros_hsr.p_pi.bed_making.check_success import Success_Check
 from il_ros_hsr.p_pi.bed_making.get_success import get_success
 from il_ros_hsr.p_pi.bed_making.self_supervised import Self_Supervised
 import il_ros_hsr.p_pi.bed_making.config_bed as cfg
-
 from il_ros_hsr.core.rgbd_to_map import RGBD2Map
 from il_ros_hsr.p_pi.bed_making.initial_state_sampler import InitialSampler
 
@@ -111,34 +101,34 @@ class BedMaker():
         """
         self.rollout_data = []
         self.get_new_grasp = True
-        
+
         # I think, creates red line in GUI where we adjust the bed to match it.
         if cfg.INS_SAMPLE:
             u_c, d_c = self.ins.sample_initial_state()
             self.rollout_data.append( [u_c, d_c, self.sampling_type] )
-        
+
         while True:
             c_img = self.cam.read_color_data()
             d_img = self.cam.read_depth_data()
-        
+
             if(not c_img.all() == None and not d_img.all() == None):
                 if self.get_new_grasp:
                     self.position_head()
-        
+
                     # Human supervisor labels. data = dictionary of relevant info
                     data = self.wl.label_image(c_img)
                     c_img = self.cam.read_color_data()
                     d_img = self.cam.read_depth_data()
                     self.add_data_point(c_img,d_img,data,self.side,'grasp')
-                    
+
                     # Broadcasts grasp pose
                     self.gripper.find_pick_region_labeler(data,c_img,d_img,self.grasp_count)
-                    
+
                     # Ignore
                     if cfg.SS_LEARN:
                         grasp_points = self.ss.learn(self.whole_body,self.grasp_count)
                         self.add_ss_data(grasp_points,data,self.side,'grasp')
-        
+
                 # Execute the grasp and check for success.
                 pick_found,bed_pick = self.check_card_found()
                 if self.side == "BOTTOM":
@@ -146,8 +136,8 @@ class BedMaker():
                 else:
                     self.gripper.execute_grasp(bed_pick,self.whole_body,'head_up')
                 self.check_success_state()
-             
-               
+
+
     def check_success_state(self):
         """
         Checks whether a single grasp in a bed-making trajectory succeeded.
@@ -156,7 +146,7 @@ class BedMaker():
         """
         if self.side == "BOTTOM":
             success, data = self.sc.check_bottom_success(self.wl)
-        else: 
+        else:
             success, data = self.sc.check_top_success(self.wl)
         c_img = self.cam.read_color_data()
         d_img = self.cam.read_depth_data()
@@ -185,7 +175,7 @@ class BedMaker():
             if cfg.SS_LEARN:
                 grasp_points = self.ss.learn(self.whole_body,self.grasp_count)
                 self.add_ss_data(grasp_points,data,self.side,'success')
-   
+
 
     def update_side(self):
         """TODO: extend to multiple side switches?"""

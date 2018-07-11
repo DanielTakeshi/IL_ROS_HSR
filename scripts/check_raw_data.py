@@ -40,10 +40,10 @@ from fast_grasp_detect.data_aug.depth_preprocess import datum_to_net_dim
 # NYTimes data, the initial list element (the one which is supposed to show the initial bed config)
 # is not there, so the list lengths are EVEN numbers.
 
-#ROLLOUTS = '/nfs/diskstation/seita/bed-make/rollouts_nytimes/'
-#IMG_PATH = '/nfs/diskstation/seita/bed-make/images_nytimes/'
-ROLLOUTS = '/nfs/diskstation/seita/bed-make/held_out_nytimes/'
-IMG_PATH = '/nfs/diskstation/seita/bed-make/images_held_out_nytimes/'
+ROLLOUTS = '/nfs/diskstation/seita/bed-make/rollouts_nytimes/'
+IMG_PATH = '/nfs/diskstation/seita/bed-make/images_nytimes/'
+#ROLLOUTS = '/nfs/diskstation/seita/bed-make/held_out_nytimes/'
+#IMG_PATH = '/nfs/diskstation/seita/bed-make/images_held_out_nytimes/'
 
 g_total = 0
 s_count_failure = 0
@@ -58,8 +58,11 @@ for rnum in range(0, 60):
         print("{} does not exist, skipping...".format(path))
         continue
     data = pickle.load(open(path,'rb'))
-    count = 0
     rlengths.append(len(data)-1)
+
+    # These record, for grasp and successes, the index into _this_ rollout.
+    g_in_rollout = 0
+    s_in_rollout = 0
 
     for (d_idx,datum) in enumerate(data):
         # Ignore the first thing which is the 'starting' points.
@@ -76,8 +79,8 @@ for rnum in range(0, 60):
 
         # Grasping. For these, overlay the pose to the image (red circle, black border).
         if datum['type'] == 'grasp':
-            c_path = os.path.join(IMG_PATH, 'rollout_{}_grasp_{}_rgb.png'.format(rnum,count))
-            d_path = os.path.join(IMG_PATH, 'rollout_{}_grasp_{}_depth.png'.format(rnum,count))
+            c_path = os.path.join(IMG_PATH, 'rollout_{}_grasp_{}_rgb.png'.format(rnum,g_in_rollout))
+            d_path = os.path.join(IMG_PATH, 'rollout_{}_grasp_{}_depth.png'.format(rnum,g_in_rollout))
             c_img = (datum['c_img']).copy()
             d_img = (datum['d_img']).copy()
             pose = datum['pose']
@@ -88,6 +91,7 @@ for rnum in range(0, 60):
             cv2.circle(img=d_img, center=pose_int, radius=9, color=(0,0,0), thickness=2)
             cv2.imwrite(c_path, c_img)
             cv2.imwrite(d_path, d_img)
+            g_in_rollout += 1
             g_total += 1
 
         # Success (0=success, 1=failure).
@@ -96,24 +100,22 @@ for rnum in range(0, 60):
             if result == 0:
                 s_count_success += 1
                 c_path = os.path.join(IMG_PATH,
-                        'rollout_{}_success_{}_class0_rgb.png'.format(rnum,count)
+                        'rollout_{}_success_{}_class0_rgb.png'.format(rnum,s_in_rollout)
                 )
                 d_path = os.path.join(IMG_PATH,
-                        'rollout_{}_success_{}_class0_depth.png'.format(rnum,count)
+                        'rollout_{}_success_{}_class0_depth.png'.format(rnum,s_in_rollout)
                 )
             else:
                 s_count_failure += 1
                 c_path = os.path.join(IMG_PATH,
-                        'rollout_{}_success_{}_class1_rgb.png'.format(rnum,count)
+                        'rollout_{}_success_{}_class1_rgb.png'.format(rnum,s_in_rollout)
                 )
                 d_path = os.path.join(IMG_PATH,
-                        'rollout_{}_success_{}_class1_depth.png'.format(rnum,count)
+                        'rollout_{}_success_{}_class1_depth.png'.format(rnum,s_in_rollout)
                 )
             cv2.imwrite(c_path, datum['c_img'])
             cv2.imwrite(d_path, datum['d_img'])
-
-            # Put here so increments only after (grasp,success) type pair.
-            count += 1
+            s_in_rollout += 1
 
         else:
             raise ValueError(datum['type'])

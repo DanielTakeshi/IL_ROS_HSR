@@ -7,3 +7,5 @@
   images.
 - `label_bed_fast.py`: for labeling the data if it was collected using the 'faster' way as shown by
   Michael, where he simulates the data.
+- `plot_exploratory_training.py`: after trying a bunch of stuff, collect logs into plots to check
+  which hyperparameters and settings work the best.

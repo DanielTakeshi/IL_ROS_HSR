@@ -34,7 +34,7 @@ Here are full instructions for the bed-making project.
 11][3], and that the robot is in a good starting position by using the joystick,
 so that it can see the AR marker. **For these steps, be sure you are in HSRB
 mode (`export ROS_MASTER_URI ...`) and in the correct python virtual
-environment!**
+environment!** I use packages that you see in the `requirements.txt` on the GitHub repository.
 
     - Run `python scripts/joystick_X.py` first and then move the robot to the
       designated starting position. (It should be marked with tape ... put tape

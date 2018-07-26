@@ -16,3 +16,8 @@ outlined in this GitHub repository.
 - `plot_exploratory_training.py`: after trying a bunch of stuff, collect logs into plots to check
   which hyperparameters and settings work the best.
 - `nan_check.py`: to check if NaNs exist in the depth image data.
+- `overlay_predictions_target.py`: for visualizing the target and predicted grasp point on an image.
+  Try to stick to these labeling characterizations.
+- `analytic_viz.py`: check how analytic baselines work on images, e.g., using corner detection.
+  Ideally, **run this right after data collection**, to instantly see how analytic and heuristic
+  methods work and to see how much room we have for improvement.

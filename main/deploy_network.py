@@ -5,58 +5,42 @@ import hsrb_interface
 from geometry_msgs.msg import PoseStamped, Point, WrenchStamped
 import geometry_msgs
 import controller_manager_msgs.srv
-import cv2
 from cv_bridge import CvBridge, CvBridgeError
 import IPython
 from numpy.random import normal
-import time
-#import listener
-import thread
-
+import cv2, time, thread, rospy
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Joy
-
 from il_ros_hsr.core.sensors import  RGBD, Gripper_Torque, Joint_Positions
 from il_ros_hsr.core.joystick import  JoyStick
-
 import matplotlib.pyplot as plt
-
 import numpy as np
 import numpy.linalg as LA
 from tf import TransformListener
 import tf
-import rospy
-import time
-
 from il_ros_hsr.core.grasp_planner import GraspPlanner
-
 from il_ros_hsr.p_pi.bed_making.com import Bed_COM as COM
-import sys
 sys.path.append('/home/autolab/Workspaces/michael_working/yolo_tensorflow/')
-
 from online_labeler import QueryLabeler
 from image_geometry import PinholeCameraModel as PCM
-
 from il_ros_hsr.p_pi.bed_making.gripper import Bed_Gripper
 from il_ros_hsr.p_pi.bed_making.table_top import TableTop
 from il_ros_hsr.core.web_labeler import Web_Labeler
 from il_ros_hsr.core.python_labeler import Python_Labeler
-
-from il_ros_hsr.p_pi.bed_making.net_success import Success_Net
-from il_ros_hsr.p_pi.bed_making.self_supervised import Self_Supervised
 import il_ros_hsr.p_pi.bed_making.config_bed as cfg
-
-
 from il_ros_hsr.core.rgbd_to_map import RGBD2Map
-from fast_grasp_detect.detectors.grasp_detector import GDetector
 from il_ros_hsr.p_pi.bed_making.initial_state_sampler import InitialSampler
+
+# Grasping and success.
+from fast_grasp_detect.detectors.grasp_detector import GDetector
+from il_ros_hsr.p_pi.bed_making.net_success import Success_Net
 
 
 class BedMaker():
 
     def __init__(self):
         """For deploying the bed-making policy, not for data collection.
-        Uses the neural network, not the analytic baseline.
+        Uses the neural network, `GDetector`, not the analytic baseline.
         """
         self.robot = hsrb_interface.Robot()
         self.rgbd_map = RGBD2Map()
@@ -64,9 +48,6 @@ class BedMaker():
         self.whole_body = self.robot.get('whole_body')
         self.cam = RGBD()
         self.com = COM()
-
-        # Neural network policy for grasp detection
-        self.g_detector = GDetector(cfg.GRASP_NET_NAME)
 
         # Web interface for data labeling and inspection
         if cfg.USE_WEB_INTERFACE:
@@ -82,16 +63,18 @@ class BedMaker():
         self.side = 'BOTTOM'
         self.grasp_count = 0
 
-        # Bells and whistles; note the 'success network' for transitioning
+        # Policy for grasp detection, using Deep Imitation Learning.
+        self.g_detector = GDetector(cfg.GRASP_NET_NAME)
+        self.sn = Success_Net(self.whole_body, self.tt, self.cam, self.omni_base)
+
+        # Bells and whistles.
         self.br = tf.TransformBroadcaster()
         self.tl = TransformListener()
         self.gp = GraspPlanner()
         self.gripper = Bed_Gripper(self.gp,self.cam,self.com.Options,self.robot.get('gripper'))
-        self.sn = Success_Net(self.whole_body,self.tt,self.cam,self.omni_base)
 
         c_img = self.cam.read_color_data()
-        self.sn.sdect.predict(c_img)
-        #self.test_current_point()
+        self.sn.sdect.predict(c_img) # ???
         time.sleep(4)
         #thread.start_new_thread(self.ql.run,())
         print("after thread")
@@ -103,11 +86,6 @@ class BedMaker():
         """
         self.rollout_stats = []
         self.get_new_grasp = True
-
-        # I think, creates red line in GUI where we adjust the bed to match it.
-        if cfg.INS_SAMPLE:
-            u_c,d_c = self.ins.sample_initial_state()
-            self.rollout_stats.append([u_c,d_c])
         self.new_grasp = True
 
         while True:
@@ -117,7 +95,7 @@ class BedMaker():
             if (not c_img == None and not d_img == None):
                 if self.new_grasp:
                     self.position_head()
-                else: 
+                else:
                     self.new_grasp = True
                 time.sleep(3)
                 c_img = self.cam.read_color_data()
@@ -129,7 +107,7 @@ class BedMaker():
                 egraspt = time.time()
                 print("Grasp predict time: " + str(egraspt - sgraspt))
                 self.record_stats(c_img,d_img,data,self.side,'grasp')
-                
+
                 # Broadcast grasp pose, execute the grasp, check for success.
                 self.gripper.find_pick_region_net(data,c_img,d_img,self.grasp_count)
                 pick_found,bed_pick = self.check_card_found()
@@ -138,8 +116,8 @@ class BedMaker():
                 else:
                     self.gripper.execute_grasp(bed_pick,self.whole_body,'head_up')
                 self.check_success_state(c_img,d_img)
-                           
-               
+
+
     def check_success_state(self,c_img,d_img):
         """
         Checks whether a single grasp in a bed-making trajectory succeeded.
@@ -148,7 +126,7 @@ class BedMaker():
         """
         if self.side == "BOTTOM":
             success, data, c_img = self.sn.check_bottom_success(self.wl)
-        else: 
+        else:
             success, data, c_img = self.sn.check_top_success(self.wl)
         self.record_stats(c_img,d_img,data,self.side,'success')
         print "WAS SUCCESFUL: "
@@ -161,15 +139,15 @@ class BedMaker():
             else:
                 self.transition_to_start()
             self.update_side()
-        else: 
+        else:
             self.new_grasp = False
         self.grasp_count += 1
 
         # Limit amount of grasp attempts to cfg.GRASP_OUT (was 8 by default).
-        if self.grasp_count > cfg.GRASP_OUT: 
+        if self.grasp_count > cfg.GRASP_OUT:
             self.transition_to_start()
-           
-   
+
+
     def update_side(self):
         """TODO: extend to multiple side switches?"""
         if self.side == "BOTTOM":
@@ -200,7 +178,7 @@ class BedMaker():
         grasp_point['d_img'] = d_img
         if typ == "grasp":
             grasp_point['net_pose'] = data
-        else: 
+        else:
             grasp_point['net_trans'] = data
         grasp_point['side'] = side
         grasp_point['type'] = typ
@@ -228,7 +206,7 @@ class BedMaker():
             self.tt.move_to_pose(self.omni_base,'right_up')
             self.tt.move_to_pose(self.omni_base,'right_down')
             self.tt.move_to_pose(self.omni_base,'lower_mid')
-    
+
 
     def check_bottom_success(self):
         """TODO we call the success network method ... this never called?"""
@@ -248,16 +226,9 @@ class BedMaker():
                     print 'got here'
                     f_p = self.tl.lookupTransform('map',transform, rospy.Time(0))
                     cards.append(transform)
-        except: 
+        except:
             rospy.logerr('bed pick not found yet')
         return True, cards
-
-
-    def find_mean_depth(self,d_img):
-        """TODO never called?"""
-        indx = np.nonzero(d_img)
-        mean = np.mean(d_img[indx])
-        return
 
 
 if __name__ == "__main__":

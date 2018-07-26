@@ -66,7 +66,7 @@ Here's what my rviz setup looks like:
 
 Note that the bed is as close to the AR marker as possible.
 
-## Data Collection
+## Data Collection (Slow)
 
 1. As mentioned above, run `python main/collect_data_bed.py`. Make sure there
 are no error messages. 
@@ -153,10 +153,22 @@ Command" and close it.
 
 ![](imgs/failure_1.png)
 
-5. Other stuff
 
-    - **TODO: DART?**
-    - **TODO: faster ways to collect data?**
+## Other Stuff
+
+1. For faster data collection, use `python main/collect_data_bed_fast.py`.
+
+    - This involves us manually simulating what the sheet would look like. This way, 50 "rollouts"
+      can be collected in two hours.
+    - However, this involves some care to ensure that the human acts like the robot would ... and we
+      definitely need to double check the data by visualization, etc.
+    - It is saved in a similar format so that's good, except the ordering of the grasp or successes
+      might not be the same, but my code can handle both. Also, the rollouts may not necessarily
+      have logical connections to each other, but it's best to simulate them so that they are
+      temporally connected.
+
+2. For DART, we're not going to formally apply it as we can use our own noise manually applied. But
+our data might not even require that --- let's see.
 
 
 ## Neural Network Training
@@ -211,7 +223,8 @@ train_bed_success.py` in the `fast_grasp_detect` repository. But this time make 
 ## Evaluation
 
 1. Run `python deploy_network.py` for testing the method we propose with deep
-imitation learning (with DART ideally).
+imitation learning.
+
 2. Run `python deploy_analytic.py` for testing the baseline method.
 
 

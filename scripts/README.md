@@ -27,3 +27,6 @@ Ron's scripts for data extraction:
 
 - `extractData.py`
 - `getBlanketImages.py`
+
+To visualize these, use `check_ron_data.py`. To format these in a way that fits the training code
+with minimal changes, use `format_ron_data.py`.

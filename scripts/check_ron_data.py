@@ -56,6 +56,13 @@ def find_nearest(array, value):
     return idx
 
 
+def depth_scaled_to_255(img):
+    img = 255.0/np.max(img)*img
+    img = np.array(img,dtype=np.uint8)
+    img = cv2.equalizeHist(img)
+    return img
+
+
 for pkl_f in files:
     number = str(pkl_f.split('.')[0])
     file_path = os.path.join(ROLLOUTS,pkl_f)
@@ -112,6 +119,10 @@ for pkl_f in files:
     cv2.imwrite(c_path,     c_img)
     cv2.imwrite(d_path_1ch, d_img_1ch)
     cv2.imwrite(d_path_3ch, d_img_3ch)
+
+    # Can try doing something similar for the single-channel images, making it easier to see.
+    d_img_1ch_better = depth_scaled_to_255(d_img_1ch)
+    cv2.imwrite(d_path_1ch.replace('1ch.png','1ch_b.png'), d_img_1ch_better)
 
 
 # Finally, save some plots to investigate distribution of some data statistics.

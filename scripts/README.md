@@ -21,3 +21,9 @@ outlined in this GitHub repository.
 - `analytic_viz.py`: check how analytic baselines work on images, e.g., using corner detection.
   Ideally, **run this right after data collection**, to instantly see how analytic and heuristic
   methods work and to see how much room we have for improvement.
+
+
+Ron's scripts for data extraction:
+
+- `extractData.py`
+- `getBlanketImages.py`

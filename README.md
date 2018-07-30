@@ -1,63 +1,61 @@
 # IL_ROS_HSR
 
-A repo for performing imitation learning experiments on a ROS-compatible Toyota
-HSR
-
-Daniel Seita's fork of this repository for finishing up the bed-making project,
-but it's also flexible enough to deal with other projects.
-
-It should be up to date with the old bed-making code, and have stuff correctly integrated for future
-experiments.
+Daniel Seita code for finishing up the bed-making project, but it's also flexible enough to deal
+with other projects. It should be up to date with the old bed-making code, and have stuff correctly
+integrated for future experiments. It assumes we use the HSR.
 
 # Bed-Making Instructions
 
 Here are full instructions for the bed-making project.
 
 
-## Preliminaries and Setup
+## Installation
 
-1. Install this and the [fast_grasp_detect repository][2]:
+**TODO: get this on another machine to see machine-dependent vs non-machien dependent stuff**
 
-    - Use `python setup.py develop` in the two repositories.
-    - Install TensorFlow 1.4 or 1.5.
-    - Install the TMC code library, which includes `hsrb_interface`.
-    - TODO: need to get a requirements text somewhere.
-    - Adjust and double-check the [configuration file][1] and other paths, to
-      ensure that you're referring to correct workspaces. TODO: need to get this
-      in the configuration rather than `sys.path.append(...)` calls in the code.
-    - Also double check that the overall data directory (by default
-      `/media/autolab/1tb/[something...]`) is mounted and accessible for data
-      writing.
-    - Make sure the HSR is charged, but that the charging tube is disconnected.
+Install this and the [fast_grasp_detect repository][2]:
 
-2. Make sure an AR maker is taped on the ground, [and that it is AR maker
-11][3], and that the robot is in a good starting position by using the joystick,
-so that it can see the AR marker. **For these steps, be sure you are in HSRB
-mode (`export ROS_MASTER_URI ...`) and in the correct python virtual
+- Use `python setup.py develop` in the two repositories.
+- Install TensorFlow 1.4 or 1.5.
+- Install the TMC code library, which includes `hsrb_interface`.
+- I use the requirements.txt file shown here in my Python virtualenv.
+- Adjust and double-check the [configuration file][1] and other paths, to
+  ensure that you're referring to correct workspaces. TODO: need to get this
+  in the configuration rather than `sys.path.append(...)` calls in the code.
+- Also double check that the overall data directory (by default
+  `/media/autolab/1tb/[something...]`) is mounted and accessible for data
+  writing.
+- Make sure the HSR is charged, but that the charging tube is disconnected.
+
+## Preparation and Setup for Data Collection
+
+Make sure an AR maker is taped on the ground, [and that it is AR maker 11][3], and that the robot is
+in a good starting position by using the joystick, so that it can see the AR marker. **For these
+steps, be sure you are in HSRB mode (`export ROS_MASTER_URI ...`) and in the correct python virtual
 environment!** I use packages that you see in the `requirements.txt` on the GitHub repository.
 
-    - Run `python scripts/joystick_X.py` first and then move the robot to the
-      designated starting position. (It should be marked with tape ... put tape
-      on if it isn't!)
-    - Turn off the joystick script.
-    - In another tab, run `rosrun rviz rviz`.
-    - Get the bed setup by putting the bed towards where the rviz markers are
-      located. Just a coarse match is expected and sufficient.  To be clear:
-      - Match the following frames: `head up`, `head down`, `bottom up`, and
-        `bottom down`.
-      - The centers should be fixed, but the orientation can be a bit confusing
-        ... for now I'll keep it the way it is. At least the blue axis (z axis I
-        think) should point *downwards*. 
-      - In order to do this step, you need to run `python
-        main/collect_data_bed.py` first to get the frames to appear,
-        but hopefully after this, no changes to the bed positioning are needed.
-      - If you run this the first time, it is likely you will need to reposition
-        the robot so that the AR marker is visible. Use rviz for visualizing,
-        but again, this requires the data collection script to be run for the AR
-        maker/11 frame to appear.
-    - The easiest way to do the last step above is by running `python
-      main/collect_data_bed.py` --- which we have to do anyway for the data
-      collection --- and adjusting at the beginning.
+- Run `python scripts/joystick_X.py` first and then move the robot to the
+  designated starting position. (It should be marked with tape ... put tape
+  on if it isn't!)
+- Turn off the joystick script.
+- In another tab, run `rosrun rviz rviz`.
+- Get the bed setup by putting the bed towards where the rviz markers are
+  located. Just a coarse match is expected and sufficient.  To be clear:
+  - Match the following frames: `head up`, `head down`, `bottom up`, and
+    `bottom down`.
+  - The centers should be fixed, but the orientation can be a bit confusing
+    ... for now I'll keep it the way it is. At least the blue axis (z axis I
+    think) should point *downwards*. 
+  - In order to do this step, you need to run `python
+    main/collect_data_bed.py` first to get the frames to appear,
+    but hopefully after this, no changes to the bed positioning are needed.
+  - If you run this the first time, it is likely you will need to reposition
+    the robot so that the AR marker is visible. Use rviz for visualizing,
+    but again, this requires the data collection script to be run for the AR
+    maker/11 frame to appear.
+- The easiest way to do the last step above is by running `python
+  main/collect_data_bed.py` --- which we have to do anyway for the data
+  collection --- and adjusting at the beginning.
 
 Here's what my rviz setup looks like:
 
@@ -65,6 +63,18 @@ Here's what my rviz setup looks like:
 ![](imgs/rviz_2.png)
 
 Note that the bed is as close to the AR marker as possible.
+
+## Setting up the Bed
+
+TODO: need to describe how to set up the bed ... etc.
+
+
+Reminders:
+
+- Don't put the red marker on the opposite half of the bed from the HSR. It won't be able to reach
+  the other end.
+- The corner must be visible.
+
 
 ## Data Collection (Slow)
 
@@ -154,21 +164,22 @@ Command" and close it.
 ![](imgs/failure_1.png)
 
 
-## Other Stuff
+## Data Collection (Fast)
 
-1. For faster data collection, use `python main/collect_data_bed_fast.py`.
+For faster data collection, use `python main/collect_data_bed_fast.py`.
 
-    - This involves us manually simulating what the sheet would look like. This way, 50 "rollouts"
-      can be collected in two hours.
-    - However, this involves some care to ensure that the human acts like the robot would ... and we
-      definitely need to double check the data by visualization, etc.
-    - It is saved in a similar format so that's good, except the ordering of the grasp or successes
-      might not be the same, but my code can handle both. Also, the rollouts may not necessarily
-      have logical connections to each other, but it's best to simulate them so that they are
-      temporally connected.
+- This involves us manually simulating what the sheet would look like. This way, 50 "rollouts"
+  can be collected in two hours.
+- However, this involves some care to ensure that the human acts like the robot would ... and we
+  definitely need to double check the data by visualization, etc.
+- It is saved in a similar format so that's good, except the ordering of the grasp or successes
+  might not be the same, but my code can handle both. Also, the rollouts may not necessarily
+  have logical connections to each other, but it's best to simulate them so that they are
+  temporally connected.
 
-2. For DART, we're not going to formally apply it as we can use our own noise manually applied. But
-our data might not even require that --- let's see.
+
+
+
 
 
 ## Neural Network Training

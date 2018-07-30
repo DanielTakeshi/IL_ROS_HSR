@@ -173,6 +173,11 @@ our data might not even require that --- let's see.
 
 ## Neural Network Training
 
+0. Data dimension: by default we do NOT use the raw (480,640,3)-sized images, but we pass them
+through a pre-trained YOLO network to get (14,14,1024)-dimensional features, and THEN we do the rest
+of the stuff from there. In other words, when we call a training minibatch, we will get a batch of
+size (B,14,14,1024).
+
 1. Collect and understand the data. 
 
     - The easiest way to understand the data is by running: `python scripts/check_raw_data.py` as

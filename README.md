@@ -38,8 +38,10 @@ First, set up the bed frame (and fix one side of the sheet). Second, during data
 want to re-arrange the sheet on the bed in various configurations.
 
 You should try and get the bed setup to look [like what we have in this GIF][5], with the exception
-of perhaps the precise sheet (and with different robots if necessary). Notice the AR marker in the
-GIF.
+of perhaps the precise sheet (and with different robots if necessary). Also, don't put stuff on the
+bed for now, just keep it a simple sheet. 
+
+Notice the AR marker in the GIF --- we'll need this in the next section.
 
 
 ### The Bed Frame
@@ -58,7 +60,7 @@ it by 90 degrees, for instance, will change the other coordinate frames that we 
 
 In terms of dimensions:
 
-- The **bed frame** should be 26 x 36 inches in dimension.
+- The **bed frame** should be 26 x 36 inches in dimension. It's height is 18 inches.
 - The **bed sheet** should be (about) 36 x 42 inches. I've found that this makes it reliably avoid
   issues with the corners lying over the edge of the bed, which should make it fine for collecting
   training data. The Cal and Teal blankets are 40 x 42 inches, so when applying transfer learning
@@ -86,8 +88,8 @@ roughly approximate.
 we will rely on data augmentation techniques to "flip" the image so that we simulate being on the
 opposite side. There are some issues to consider with this:
 
-- Some lighting issues with this due to potential shadows, etc., but since it's depth data I don't
-  think it matters.
+- There are some lighting issues with this, especially if we were using RGB (e.g., location of the
+  light, windows, shadows, etc.), but since it's depth data I don't think it matters.
 - We have a slightly different camera angle view from the opposite end of the bed in practice, but
   it's still minor compared to the original view and with some tuning we can probably change the
   target pose by comparing images and seeing if the bed is consistently in a similar configuration.
@@ -136,18 +138,19 @@ locations*.
 ### The Bed Sheet
 
 In this section, we briefly review desiderata for how to set up the bed sheet assuming the frame and
-setup is fixed as described earlier. For the actual procedure of data collection, [please see the
-next section](#fast-data-collection) as there are a few extra considerations for when you collect
-the data *sequentially*. This section is more about the *initial* configuration.
+setup is fixed as described earlier. For the actual procedure of data collection, and how to ensure
+we get a diverse dataset [please see the next section](#fast-data-collection) as there are a few
+extra considerations for when you collect the data *sequentially*. This section is more about the
+stuff we should *avoid* in our *initial* sheet configuration.
 
 1. The corner has to be visible (obviously). This is a limitation of our setup but for now just
-arrange the sheet so the corners are visibnle.
+arrange the sheet so the corners are visible.
 
-2. Make sure the corner isn't too far off the edge of the bed. The following figure shows a
-borderline case where the corner is *juust* close enough to the bed frame that the HSR should be
-able to grip it. But if the corner were further away from the frame, the HSR couldn't grab it since
-it'd need to approach "sideways" and for now this is imposing some un-necessary difficulties for our
-setup.
+2. Make sure the corner is on top of the bed frame, or just slightly off by 1-2 inches. The
+following figure shows a borderline case where the corner is off the bed frame, but still *juust*
+close enough that the HSR should be able to grip it. If the corner were further away from the frame,
+the HSR couldn't grab it since it'd need to approach "sideways" and for now this is imposing some
+un-necessary difficulties for our setup.
 
 ![](imgs/init_sheet_01.JPG)
 
@@ -159,23 +162,68 @@ consistent with our data collection.)
 
 ![](imgs/init_sheet_02.JPG)
 
+Now let's see how to collect data.
 
 
 ## Fast Data Collection
 
-For faster data collection, use `python main/collect_data_bed_fast.py`.
+For faster data collection, use `python main/collect_data_bed_fast.py`. The high-level description
+is that the human manually arranges the sheets and then simulates what next sheets would look like
+given robot actions. We do *not* actually move the robot from the bottom to top or execute grasps
+with the robots. (For that, see [the slow data collection](#slow-data-collection).) 
 
-**MAIN TODO**
+This way, we can get a decent amount of data (say, 130 images for the grasping network and 130
+images for the success network) in 2-3 hours, rather than 2-3 days.  The main thing to be careful is
+that we get data that the robot is likely to encounter in practice. In addition, when training the
+success network, we need to have enough successes and failures to achieve reasonable class balance.
 
-- This involves us manually simulating what the sheet would look like. This way, we can get a decent
-  amount of data (say, 130 images for the grasping network and 130 images for the success network)
-  in 2-3 hours, rather than 2-3 days.
-- However, this involves some care to ensure that the human acts like the robot would ... and we
-  definitely need to double check the data by visualization, etc.
-- It is saved in a similar format so that's good, except the ordering of the grasp or successes
-  might not be the same, but my code can handle both. Also, the rollouts may not necessarily
-  have logical connections to each other, but it's best to simulate them so that they are
-  temporally connected.
+In our code, before starting each "round" of data collection, we should have random number
+generators tell us:
+
+- Whether we simulate a grasp on the same side of the robot, or the opposite side.
+- Whether the initial sheet should be flat, or wrinkled.
+- Whether the initial sheet should be straight, or curved.
+
+This gives us `2 x 2 x 2 = 8` different possible initial setups and considerations.
+
+(By straight or curved, we refer to the rough general shape of the edge of the sheet -- of course
+much of this is up to human interpretation and the point is not to be exact in definitions but to
+encourage us to get a diverse range of starting states instead of using the same stuff over and over
+again.)
+
+The reason for needing to simulate a grasp on the same side or opposite side is that the robot
+always starts from a fixed side of the robot, and must succeed at the grasp before moving on to the
+other side. There are only two "rounds" at this, one for the first side ("bottom") and then for the
+other side ("top"). But if we are collecting data quickly, we don't actually move the robot at all;
+we use its camera sensors to collect images, but the robot base and arm are fixed throughout. Thus,
+we need to simulate as if we were pulling the opposite side.
+
+For example, here's a possible starting configuration if we wanted a sheet that was **wrinked** but
+**straight**:
+
+![](imgs/bed_start.JPG)
+
+Now, if our RNG told us to start grasping as if we were on the bottom/starting side (same as the
+side the ARK marker is on) then we just proceed with grasping as usual.
+
+However, if we need to simulate if we're grasping from the top, then we need to pretend that the HSR
+already grabbed the sheet appropriately from the other side. To do this, we manually pull the other
+side of the sheet:
+
+![](imgs/bed_manually_simulate.JPG)
+
+Then *this* becomes our "starting configuration":
+
+![](imgs/bed_start_if_top.JPG)
+
+From then on, we proceed with grasping as usual. So, in short, the two different setups will result
+in two different starting configurations.
+
+
+
+**TODO**
+
+
 
 **After data is collected, do the following immediately**:
 

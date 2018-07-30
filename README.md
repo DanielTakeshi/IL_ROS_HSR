@@ -11,8 +11,8 @@ Here are full instructions for the bed-making project with the HSR.
 - [Setup for Data Collection](#setup-for-data-collection)
     - [The Bed Frame](#the-bed-frame)
     - [The Bed Sheet](#the-bed-sheet)
-- [Slow Data Collection](#slow-data-collection)
 - [Fast Data Collection](#fast-data-collection)
+- [Slow Data Collection](#slow-data-collection)
 - [Neural Network Training](#neural-network-training)
 - [Evaluation](#evaluation)
 
@@ -135,21 +135,41 @@ locations*.
 
 ### The Bed Sheet
 
-**TODO need init collection** 
+In this section, we briefly review desiderata for how to set up the bed sheet assuming the frame and
+setup is fixed as described earlier. For the actual procedure of data collection, [please see the
+next section](#fast-data-collection) as there are a few extra considerations for when you collect
+the data *sequentially*. This section is more about the *initial* configuration.
 
-Reminders:
+1. The corner has to be visible (obviously). This is a limitation of our setup but for now just
+arrange the sheet so the corners are visibnle.
 
-- Don't put the red marker on the opposite half of the bed from the HSR. It won't be able to reach
-  the other end.
-- The corner must be visible.
+2. Make sure the corner isn't too far off the edge of the bed. The following figure shows a
+borderline case where the corner is *juust* close enough to the bed frame that the HSR should be
+able to grip it. But if the corner were further away from the frame, the HSR couldn't grab it since
+it'd need to approach "sideways" and for now this is imposing some un-necessary difficulties for our
+setup.
+
+![](imgs/init_sheet_01.JPG)
+
+3. Don't put the red marker on the opposite half of the bed where the data collection is occurring.
+If the HSR is physically located on the left side of the bed in the below image, then its arm is
+literally too short for it to grab the corner on that side. Make sure corners are in the closest
+"half" to the robot. (The Fetch has a longer arm so it can get away with this, but let's please be
+consistent with our data collection.)
+
+![](imgs/init_sheet_02.JPG)
+
 
 
 ## Fast Data Collection
 
 For faster data collection, use `python main/collect_data_bed_fast.py`.
 
-- This involves us manually simulating what the sheet would look like. This way, 50 "rollouts"
-  can be collected in two hours.
+**MAIN TODO**
+
+- This involves us manually simulating what the sheet would look like. This way, we can get a decent
+  amount of data (say, 130 images for the grasping network and 130 images for the success network)
+  in 2-3 hours, rather than 2-3 days.
 - However, this involves some care to ensure that the human acts like the robot would ... and we
   definitely need to double check the data by visualization, etc.
 - It is saved in a similar format so that's good, except the ordering of the grasp or successes
@@ -157,107 +177,107 @@ For faster data collection, use `python main/collect_data_bed_fast.py`.
   have logical connections to each other, but it's best to simulate them so that they are
   temporally connected.
 
+**After data is collected, do the following immediately**:
 
-
+- Inspect it, along with data augmentation. Try scripts similar to `python
+  scripts/check_raw_data.py` or `python scripts/data_augmentation_example.py`, with appropriate file
+  paths and other settings adjusted. This will catch some obvious issues.
+- See how well an analytic baseline metric would do in detecting grasp points (or corners). For
+  instance, we can take the RGB images (since all RGB+depth are collected simultaneously) and do
+  contour detection on the blue bed frame and then pick the corner of that closest to the white
+  sheet. This gives us a baseline to further improve on with deep learning.
 
 
 ## Slow Data Collection
 
-1. As mentioned above, run `python main/collect_data_bed.py`. Make sure there
-are no error messages. 
+Note: this is outdated but useful as a reminder for how to use `main/collect_bed_data.py`.
 
-    - If there are no topics found initially, that likely means the AR marker is
-      not visible. Please check rviz.
-    - For each setup, we sample a starting bed configuration with a red line and
-      then have to *physically adjust the bed sheet to match that image*. This
-      provides the variation in starting states. Again, only coarse matches are
-      needed. However, please keep the bed adjusted so that it is close to the
-      z-axis (colored blue) of the two bottom poses.
+1. As mentioned above, run `python main/collect_data_bed.py`. Make sure there are no error messages. 
+
+    - If there are no topics found initially, that likely means the AR marker is not visible. Please
+      check rviz.
+    - For each setup, originally we sampled a starting bed configuration with a red line and then
+      had to *physically adjust the bed sheet to match that image*. This provides the variation in
+      starting states. However, the red lines turned out to be pretty poorly located, so I just went
+      with four conditions, a 2x2 combination of whether we wanted the white underside of the Cal
+      blanket visible, and whether we wanted the sheet curved or not.
 
 2. After the sheet has been adjusted, the robot can move.
 
-    - Press B on the joystick. Then the robot should move up to the bed, and
-      pause.
-    - An image loader/viewer pops up. Click "Load" (upper right corner) to load
-      the current camera image of the robot.
-    - Drag the bounding box where the robot should grasp. Click "send command"
-      and then close the window. *The grasp will not execute until the window is
-      closed*.
+    - Press B on the joystick. Then the robot should move up to the bed, and pause.
+    - An image loader/viewer pops up. Click "Load" (upper right corner) to load the current camera
+      image of the robot.
+    - Drag the bounding box where the robot should grasp. Click "send command" and then close the
+      window. *The grasp will not execute until the window is closed*.
 
 3. After the grasp, we need to check for transitioning vs re-grasping.
 
     - Load the image as usual by clicking "Load". 
-    - Below the "Load" button, drag and drop either "Success" or "Failure"
-      depending on what we think happened.
-    - Click "Confirm Class". This is especially important! What matters is the
-      class that you see in the list that appears.
-    - Draw a bounding box. I don't think it matters if we know the robot
-      transitions, but if the robot has to re-grasp, then definitely put the
-      correct pose.
+    - Below the "Load" button, drag and drop either "Success" or "Failure" depending on what we
+      think happened.
+    - Click "Confirm Class". This is especially important! What matters is the class that you see in
+      the list that appears.
+    - Draw a bounding box. I don't think it matters if we know the robot transitions, but if the
+      robot has to re-grasp, then definitely put the correct pose.
     - Send the command, close the window.
 
 4. Data Storage
 
-    - After the HSR has transitioned to the start, it will save the data under
-      the specified directory, as `rollout_X.p` where `X` is the index. Check
-      the print logs for the location.
-    - The `rollout_X.p` is a list of length K, where K>=5.  Use
-      `scripts/quick_rollout_check.py` to investigate quickly.  It contains:
-        - A list of two 3-D points, representing the "down corner" and "up
-          corner" respectively, which are used for the initial state sampling.
+    - After the HSR has transitioned to the start, it will save the data under the specified
+      directory, as `rollout_X.p` where `X` is the index. Check the print logs for the location.
+    - The `rollout_X.p` is a list of length K, where K>=5.  Use `scripts/quick_rollout_check.py` to
+      investigate quickly.  It contains:
+        - A list of two 3-D points, representing the "down corner" and "up corner" respectively,
+          which are used for the initial state sampling. (Note: let's just ignore this.)
         - And then a bunch of dictionaries, all with these keys:
-            - `c_img`: camera image. Note that if a grasp just failed, then
-              the subsequent image that the success network would see is the
-              same exact image as the grasping network would see. This makes
-              sense: at attempt `t` just after we think a grasp failure
-              happened, the image `I` is what the success net would see, so it
-              must classify it as a failure. Then in the next dictionary, `I`
-              stays the same since we have figure out where to grasp next.
+            - `c_img`: camera image. Note that if a grasp just failed, then the subsequent image
+              that the success network would see is the same exact image as the grasping network
+              would see. This makes sense: at attempt `t` just after we think a grasp failure
+              happened, the image `I` is what the success net would see, so it must classify it as a
+              failure. Then in the next dictionary, `I` stays the same since we have figure out
+              where to grasp next.
             - `d_img`: depth image. Don't worry about this too much.
-            - `class`: either 0 (success/good) or 1 (failure/bad), use these for 
-              the 'success' type.
-            - `pose`: a 2D point from where we marked it in the interface.
-              You'll see it in the Tkinter pop-up menu. Use these for the
-              'grasp' types.
+            - `class`: either 0 (success/good) or 1 (failure/bad), use these for the 'success' type.
+            - `pose`: a 2D point from where we marked it in the interface.  You'll see it in the
+              Tkinter pop-up menu. Use these for the 'grasp' types.
             - `type`: 'grasp' or 'success'
             - `side`: 'BOTTOM' or 'TOP' (the HSR starts in the bottom position)
-        - These repeat for each grasp and success check, and for both sides.
-          The first dictionary is of type 'grasp' and represents the data that
-          the grasping network would see, and has 'pose' as the center of the
-          bounding box we drew. The second dictionary is of type 'success' for a
-          success check, and which also lets us draw a bounding box. Two cases:
-            - *First grasp succeeded?* The next dictionary has `c_img`
-              corresponding to the top of the bed, with type 'grasp', and has a
-              different `pose` corresponding to the next bounding box we drew.
-              So the bounding box we draw for the success network, assuming
+        - These repeat for each grasp and success check, and for both sides.  The first dictionary
+          is of type 'grasp' and represents the data that the grasping network would see, and has
+          'pose' as the center of the bounding box we drew. The second dictionary is of type
+          'success' for a success check, and which also lets us draw a bounding box. Two cases:
+            - *First grasp succeeded?* The next dictionary has `c_img` corresponding to the top of
+              the bed, with type 'grasp', and has a different `pose` corresponding to the next
+              bounding box we drew.  So the bounding box we draw for the success network, assuming
               the previous grasp succeeded, is ignored.
-            - *First grasp failed?* The next dictionary has the same `c_img` as
-              discussed above, with type 'grasp'. It also has the same `pose`
-              since we should have drawn it just now. (The pose is also
-              effectively ignored, except during the interface, we need to be
-              careful about where we draw the pose in this case because it
-              immediately impacts the next grasp attempt.)
+            - *First grasp failed?* The next dictionary has the same `c_img` as discussed above,
+              with type 'grasp'. It also has the same `pose` since we should have drawn it just now.
+              (The pose is also effectively ignored, except during the interface, we need to be
+              careful about where we draw the pose in this case because it immediately impacts the
+              next grasp attempt.)
           The cycle repeats. So either way the two types alternate.
-      Hence, the shortest length of `rollout_X.p` is 5, because the bottom and
-      top each require two dictionaries (one each for grasping and then the
-      success). Of course, it will be longer whenever we have to re-grasp.
+      Hence, the shortest length of `rollout_X.p` is 5, because the bottom and top each require two
+      dictionaries (one each for grasping and then the success). Of course, it will be longer
+      whenever we have to re-grasp.
 
-Here's an example of the pop-up menu. In the "Bounding Boxes" the class that
-gets recorded is shown there. Once you see something like this, you can "Send
-Command" and close it.
+Here's an example of the pop-up menu. In the "Bounding Boxes" the class that gets recorded is shown
+there. Once you see something like this, you can "Send Command" and close it.
 
 ![](imgs/failure_1.png)
 
-
+After collecting data, **immediately check the analytic version** of our problems, to get a good
+baseline for accuracy (either grasping or, less likely, successes).
 
 
 
 ## Neural Network Training
 
+(The training comes from the `fast_grasp_detect` repository.)
+
 0. Data dimension: by default we do NOT use the raw (480,640,3)-sized images, but we pass them
 through a pre-trained YOLO network to get (14,14,1024)-dimensional features, and THEN we do the rest
 of the stuff from there. In other words, when we call a training minibatch, we will get a batch of
-size (B,14,14,1024).
+size (B,14,14,1024). **TODO: support for training end-to-end is in progress.**
 
 1. Collect and understand the data. 
 
@@ -308,10 +328,15 @@ train_bed_success.py` in the `fast_grasp_detect` repository. But this time make 
 
 ## Evaluation
 
-1. Run `python deploy_network.py` for testing the method we propose with deep
-imitation learning.
+1. Run `python deploy_network.py` for testing the method we propose with deep imitation learning.
 
 2. Run `python deploy_analytic.py` for testing the baseline method.
+
+3. Plot, analyze, and visualize with our many scripts in `scripts/`.
+
+Reminders:
+
+1. Error bars, error bars, error bars.
 
 
 [1]:https://github.com/DanielTakeshi/IL_ROS_HSR/blob/master/src/il_ros_hsr/p_pi/bed_making/config_bed.py

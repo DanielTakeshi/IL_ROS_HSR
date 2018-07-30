@@ -19,19 +19,16 @@ Here are full instructions for the bed-making project with the HSR.
 
 ## Installation
 
-**TODO: get this on another machine to see machine-dependent vs non-machien dependent stuff**
-
 Install this and the [fast_grasp_detect repository][2]:
 
 - I use the [requirements.txt file shown here][6] in my Python 2.7 virtualenv, but it's probably
   easy to just `pip install` things as you go. *From now on, I assume you are in the Python
   virtualenv*.
 - Use `python setup.py develop` in the two repositories.
-- Install TensorFlow 1.4 or 1.5. **(TODO: not sure if this is the right one)**
+- Install TensorFlow 1.8.
 - Install the TMC code library, which includes `hsrb_interface`.
 - Adjust and double-check the [configuration file][1] and other paths, to ensure that you're
-  referring to correct workspaces. TODO: need to get this in the configuration rather than
-  `sys.path.append(...)` calls in the code.
+  referring to correct workspaces.
 - Also double check that the overall data directory you're writing to is mounted and accessible.
 - Make sure the HSR is charged, but that the charging tube is disconnected.
 

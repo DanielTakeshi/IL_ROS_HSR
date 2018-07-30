@@ -29,8 +29,8 @@ Install this and the [fast_grasp_detect repository][2]:
 
 ## Preparation and Setup for Data Collection
 
-Make sure an AR maker is taped on the ground, [and that it is AR maker 11][3], and that the robot is
-in a good starting position by using the joystick, so that it can see the AR marker. **For these
+Make sure an AR marker is taped on the ground, [and that it is AR marker 11][3], and that the robot
+is in a good starting position by using the joystick, so that it can see the AR marker. **For these
 steps, be sure you are in HSRB mode (`export ROS_MASTER_URI ...`) and in the correct python virtual
 environment!** I use packages that you see in the `requirements.txt` on the GitHub repository.
 
@@ -64,9 +64,35 @@ Here's what my rviz setup looks like:
 
 Note that the bed is as close to the AR marker as possible.
 
+
+
+You should try and get the bed setup to look [like what we have in this GIF][5], with the exception
+that we're using a different sheet (and you'll be using a different robot). Note that the AR marker
+will be there.
+
+
+
 ## Setting up the Bed
 
-TODO: need to describe how to set up the bed ... etc.
+To set up a bed, get the initial frame with a dark blue sheet fixed on it, and find a clear, open
+space. Having a fixed background (e.g., blue in this case) is useful for quickly evaluating
+performance since we can measure the colors there using OpenCV. For space, the robot just needs to
+go around one side of the bed, as shown in the images below. In addition, there also needs to be
+space for an [AR 11 Marker][3], which is specific to the HSR. The AR marker must also be oriented
+correctly; rotating it by 90 degrees, for instance, will change the other coordinate frames that we
+rely on for bed-making.
+
+![](imgs/init_setup_01.JPG)
+
+![](imgs/init_setup_02.JPG)
+
+In terms of dimensions:
+
+- The **bed frame** should be 26 x 36 inches in dimension.
+- The **bed sheet** should be (about) 40 x 42 inches.
+
+Align the 42 inch side of the bed with the 26 inch side of the bed frame.
+
 
 
 Reminders:
@@ -248,3 +274,4 @@ imitation learning.
 [2]:https://github.com/DanielTakeshi/fast_grasp_detect
 [3]:https://docs.hsr.io/manual_en/development/ar_marker.html
 [4]:https://github.com/DanielTakeshi/fast_grasp_detect/commit/424463e12996b037c3f3539e58d1b5572f4ca835
+[5]:http://bair.berkeley.edu/static/blog/dart/bed_making_gif.gif

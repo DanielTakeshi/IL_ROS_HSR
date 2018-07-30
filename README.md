@@ -1,12 +1,10 @@
 # IL_ROS_HSR
 
-Daniel Seita code for finishing up the bed-making project, but it's also flexible enough to deal
-with other projects. It should be up to date with the old bed-making code, and have stuff correctly
-integrated for future experiments. It assumes we use the HSR.
+Code for finishing up the bed-making project. It's based on Michael Laskey's old code.
 
 # Bed-Making Instructions
 
-Here are full instructions for the bed-making project.
+Here are full instructions for the bed-making project with the HSR.
 
 
 ## Installation
@@ -15,72 +13,37 @@ Here are full instructions for the bed-making project.
 
 Install this and the [fast_grasp_detect repository][2]:
 
+- I use the [requirements.txt file shown here][6] in my Python 2.7 virtualenv, but it's probably
+  easy to just `pip install` things as you go. *From now on, I assume you are in the Python
+  virtualenv*.
 - Use `python setup.py develop` in the two repositories.
-- Install TensorFlow 1.4 or 1.5.
+- Install TensorFlow 1.4 or 1.5. **(TODO: not sure if this is the right one)**
 - Install the TMC code library, which includes `hsrb_interface`.
-- I use the requirements.txt file shown here in my Python virtualenv.
-- Adjust and double-check the [configuration file][1] and other paths, to
-  ensure that you're referring to correct workspaces. TODO: need to get this
-  in the configuration rather than `sys.path.append(...)` calls in the code.
-- Also double check that the overall data directory (by default
-  `/media/autolab/1tb/[something...]`) is mounted and accessible for data
-  writing.
+- Adjust and double-check the [configuration file][1] and other paths, to ensure that you're
+  referring to correct workspaces. TODO: need to get this in the configuration rather than
+  `sys.path.append(...)` calls in the code.
+- Also double check that the overall data directory you're writing to is mounted and accessible.
 - Make sure the HSR is charged, but that the charging tube is disconnected.
 
-## Preparation and Setup for Data Collection
+## Setup for Data Collection
 
-Make sure an AR marker is taped on the ground, [and that it is AR marker 11][3], and that the robot
-is in a good starting position by using the joystick, so that it can see the AR marker. **For these
-steps, be sure you are in HSRB mode (`export ROS_MASTER_URI ...`) and in the correct python virtual
-environment!** I use packages that you see in the `requirements.txt` on the GitHub repository.
-
-- Run `python scripts/joystick_X.py` first and then move the robot to the
-  designated starting position. (It should be marked with tape ... put tape
-  on if it isn't!)
-- Turn off the joystick script.
-- In another tab, run `rosrun rviz rviz`.
-- Get the bed setup by putting the bed towards where the rviz markers are
-  located. Just a coarse match is expected and sufficient.  To be clear:
-  - Match the following frames: `head up`, `head down`, `bottom up`, and
-    `bottom down`.
-  - The centers should be fixed, but the orientation can be a bit confusing
-    ... for now I'll keep it the way it is. At least the blue axis (z axis I
-    think) should point *downwards*. 
-  - In order to do this step, you need to run `python
-    main/collect_data_bed.py` first to get the frames to appear,
-    but hopefully after this, no changes to the bed positioning are needed.
-  - If you run this the first time, it is likely you will need to reposition
-    the robot so that the AR marker is visible. Use rviz for visualizing,
-    but again, this requires the data collection script to be run for the AR
-    maker/11 frame to appear.
-- The easiest way to do the last step above is by running `python
-  main/collect_data_bed.py` --- which we have to do anyway for the data
-  collection --- and adjusting at the beginning.
-
-Here's what my rviz setup looks like:
-
-![](imgs/rviz_1.png)
-![](imgs/rviz_2.png)
-
-Note that the bed is as close to the AR marker as possible.
-
-
+First, set up the bed frame (and fix one side of the sheet). Second, during data collection, we'll
+want to re-arrange the sheet on the bed in various configurations.
 
 You should try and get the bed setup to look [like what we have in this GIF][5], with the exception
-that we're using a different sheet (and you'll be using a different robot). Note that the AR marker
-will be there.
+of perhaps the precise sheet (and with different robots if necessary). Notice the AR marker in the
+GIF.
 
 
-
-## Setting up the Bed
+### The Bed Frame
 
 To set up a bed, get the initial frame with a dark blue sheet fixed on it, and find a clear, open
 space. Having a fixed background (e.g., blue in this case) is useful for quickly evaluating
 performance since we can measure the colors there using OpenCV. For space, the robot just needs to
 go around one side of the bed, as shown in the images below. In addition, there also needs to be
-space for an [AR 11 Marker][3], which is specific to the HSR. The AR marker must also be oriented
-correctly; rotating it by 90 degrees, for instance, will change the other coordinate frames that we
-rely on for bed-making.
+space for an [AR 11 Marker][3], which is specific to the HSR (see below for instructions on how to
+arrange the bed relative to the HSR). The AR marker must also be oriented correctly; rotating it by
+90 degrees, for instance, will change the other coordinate frames that we rely on for bed-making.
 
 ![](imgs/init_setup_01.JPG)
 
@@ -91,15 +54,53 @@ In terms of dimensions:
 - The **bed frame** should be 26 x 36 inches in dimension.
 - The **bed sheet** should be (about) 40 x 42 inches.
 
-Align the 42 inch side of the bed with the 26 inch side of the bed frame.
+Align the 42 inch side of the bed with the 36 inch side of the bed frame, as expected.
+
+**TODO describe how much of the sheet should go across the edge, tie the sheet to the back end,
+etc.**
+
+How do we know where to put the bed? We taped AR marker 11. The next step is to move the HSR by
+using our built-in joystick, so that it can see the AR marker in its cameras. **For these steps, be
+sure you are in HSRB mode (`export ROS_MASTER_URI ...`) and in the correct python virtual
+environment as discussed earlier!** 
+
+- Run `python scripts/joystick_X.py` first and then move the robot to the designated starting
+  position. (It should be marked with tape ... put tape on if it isn't!)
+- Kill the joystick script.
+- In another tab, run `rosrun rviz rviz`.
+- Get the bed setup by putting the bed towards where the rviz markers are located. Just a coarse
+  match is expected and sufficient.  To be clear:
+    - Match the following frames: `head up`, `head down`, `bottom up`, and `bottom down`.
+    - The centers should be fixed, but the orientation can be a bit confusing ... for now I'll keep
+      it the way it is. At least the blue axis (z axis I think) should point *downwards*. 
+    - In order to do this step, you need to run `python main/collect_data_bed.py` first to get the
+      frames to appear, but hopefully after this, no changes to the bed positioning are needed.
+    - If you run this the first time, it is likely you will need to reposition the robot so that the
+      AR marker is visible. Use rviz for visualizing, but again, this requires the data collection
+      script to be run for the AR marker/11 frame to appear.
+- The easiest way to do the last step above is by running `python main/collect_data_bed.py` ---
+  which we have to do anyway for the data collection --- and adjusting at the beginning.
+
+Here's what my rviz setup looks like:
+
+![](imgs/rviz_1.png)
+
+![](imgs/rviz_2.png)
+
+Note that the bed is as close to the AR marker as possible.
 
 
+### The Bed Sheet
+
+**TODO need init collection** 
 
 Reminders:
 
 - Don't put the red marker on the opposite half of the bed from the HSR. It won't be able to reach
   the other end.
 - The corner must be visible.
+
+
 
 
 ## Data Collection (Slow)
@@ -275,3 +276,4 @@ imitation learning.
 [3]:https://docs.hsr.io/manual_en/development/ar_marker.html
 [4]:https://github.com/DanielTakeshi/fast_grasp_detect/commit/424463e12996b037c3f3539e58d1b5572f4ca835
 [5]:http://bair.berkeley.edu/static/blog/dart/bed_making_gif.gif
+[6]:https://github.com/DanielTakeshi/IL_ROS_HSR/blob/master/requirements.txt

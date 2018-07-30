@@ -82,7 +82,18 @@ roughly approximate.
 
 ![](imgs/init_setup_05.JPG)
 
-**(TODO need to describe collecting data on opposite side, can we detach the fabric?)**
+**Important note**: for now, we will keep the marker on the side closest to the AR marker, and then
+we will rely on data augmentation techniques to "flip" the image so that we simulate being on the
+opposite side. There are some issues to consider with this:
+
+- Some lighting issues with this due to potential shadows, etc., but since it's depth data I don't
+  think it matters.
+- We have a slightly different camera angle view from the opposite end of the bed in practice, but
+  it's still minor compared to the original view and with some tuning we can probably change the
+  target pose by comparing images and seeing if the bed is consistently in a similar configuration.
+- **Most important**: we need to "simulate" grasping on the opposite side of the bed, so that the
+  robot encounters states it is likely to encounter in practice. I'll explain more about this later
+  during data collection.
 
 Now we have the sheet on the bed, for initial data collection.  **How do we know where to precisely
 put the bed?** Previously, we taped AR marker 11 on the ground, so move the HSR by using our

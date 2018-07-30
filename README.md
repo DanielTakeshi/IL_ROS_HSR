@@ -7,6 +7,16 @@ Code for finishing up the bed-making project. It's based on Michael Laskey's old
 Here are full instructions for the bed-making project with the HSR.
 
 
+- [Installation](#installation)
+- [Setup for Data Collection](#setup-for-data-collection)
+    - [The Bed Frame](#the-bed-frame)
+    - [The Bed Sheet](#the-bed-sheet)
+- [Slow Data Collection](#slow-data-collection)
+- [Fast Data Collection](#fast-data-collection)
+- [Neural Network Training](#neural-network-training)
+- [Evaluation](#evaluation)
+
+
 ## Installation
 
 **TODO: get this on another machine to see machine-dependent vs non-machien dependent stuff**
@@ -37,13 +47,13 @@ GIF.
 
 ### The Bed Frame
 
-To set up a bed, get the initial frame with a dark blue sheet fixed on it, and find a clear, open
-space. Having a fixed background (e.g., blue in this case) is useful for quickly evaluating
-performance since we can measure the colors there using OpenCV. For space, the robot just needs to
-go around one side of the bed, as shown in the images below. In addition, there also needs to be
-space for an [AR 11 Marker][3], which is specific to the HSR (see below for instructions on how to
-arrange the bed relative to the HSR). The AR marker must also be oriented correctly; rotating it by
-90 degrees, for instance, will change the other coordinate frames that we rely on for bed-making.
+To set up a bed, get the initial frame with a dark blue sheet fixed on it so it stays still, and
+find a clear, open space. Having a fixed background (e.g., blue in this case) is useful for quickly
+evaluating performance since we can measure the colors there using OpenCV. For space, the robot just
+needs to go around one side of the bed, as shown in the images below. In addition, there also needs
+to be space for an [AR 11 Marker][3], which is specific to the HSR (see below for instructions on
+how to arrange the bed relative to the HSR). The AR marker must also be oriented correctly; rotating
+it by 90 degrees, for instance, will change the other coordinate frames that we rely on.
 
 ![](imgs/init_setup_01.JPG)
 
@@ -52,17 +62,36 @@ arrange the bed relative to the HSR). The AR marker must also be oriented correc
 In terms of dimensions:
 
 - The **bed frame** should be 26 x 36 inches in dimension.
-- The **bed sheet** should be (about) 40 x 42 inches.
+- The **bed sheet** should be (about) 36 x 42 inches. I've found that this makes it reliably avoid
+  issues with the corners lying over the edge of the bed, which should make it fine for collecting
+  training data. The Cal and Teal blankets are 40 x 42 inches, so when applying transfer learning
+  we'll probably want to increase the offset goal towards where the robot should pull the sheet and
+  ensure that the setup avoids "extreme" cases with corners lying outside the top of the bed frame.
 
 Align the 42 inch side of the bed with the 36 inch side of the bed frame, as expected.
 
-**TODO describe how much of the sheet should go across the edge, tie the sheet to the back end,
-etc.**
+For a fully flattened sheet, have 2-3 inches of extra space at the shorter end of the bed:
 
-How do we know where to put the bed? We taped AR marker 11. The next step is to move the HSR by
-using our built-in joystick, so that it can see the AR marker in its cameras. **For these steps, be
-sure you are in HSRB mode (`export ROS_MASTER_URI ...`) and in the correct python virtual
-environment as discussed earlier!** 
+![](imgs/init_setup_03.JPG)
+
+In addition, for the long side, have 5 inches or less extra space. If it's 6-7 inches or longer,
+then this risks having more corners that are not on top of the bed frame, making it hard (if not
+impossible) for the HSR to grasp at those points.
+
+![](imgs/init_setup_04.JPG)
+
+Apply pins in the back to make it sturdy. Double check that the previous measurements are still
+roughly approximate.
+
+![](imgs/init_setup_05.JPG)
+
+**(TODO need to describe collecting data on opposite side, can we detach the fabric?)**
+
+Now we have the sheet on the bed, for initial data collection.  **How do we know where to precisely
+put the bed?** Previously, we taped AR marker 11 on the ground, so move the HSR by using our
+built-in joystick, so that it can see the AR marker in its cameras.  **For these steps, be sure you
+are in HSRB mode (`export ROS_MASTER_URI ...`) and in the correct python virtual environment as
+discussed earlier!** 
 
 - Run `python scripts/joystick_X.py` first and then move the robot to the designated starting
   position. (It should be marked with tape ... put tape on if it isn't!)
@@ -87,7 +116,13 @@ Here's what my rviz setup looks like:
 
 ![](imgs/rviz_2.png)
 
-Note that the bed is as close to the AR marker as possible.
+Note I: the bed is as close to the AR marker as possible.
+
+Note II: in the older project where grasp points =/= corner points, the `head_down` and `head_up`
+frames were where we actually told the HSR gripper to go to after it gripped a sheet. Since we now
+have corners, the corners need to be dragged slightly further away from the actual corner of the bed
+frame. However, we'll leave `head_down` and `head_up` as frames that represent *bed frame
+locations*.
 
 
 ### The Bed Sheet
@@ -101,9 +136,24 @@ Reminders:
 - The corner must be visible.
 
 
+## Fast Data Collection
+
+For faster data collection, use `python main/collect_data_bed_fast.py`.
+
+- This involves us manually simulating what the sheet would look like. This way, 50 "rollouts"
+  can be collected in two hours.
+- However, this involves some care to ensure that the human acts like the robot would ... and we
+  definitely need to double check the data by visualization, etc.
+- It is saved in a similar format so that's good, except the ordering of the grasp or successes
+  might not be the same, but my code can handle both. Also, the rollouts may not necessarily
+  have logical connections to each other, but it's best to simulate them so that they are
+  temporally connected.
 
 
-## Data Collection (Slow)
+
+
+
+## Slow Data Collection
 
 1. As mentioned above, run `python main/collect_data_bed.py`. Make sure there
 are no error messages. 
@@ -189,21 +239,6 @@ gets recorded is shown there. Once you see something like this, you can "Send
 Command" and close it.
 
 ![](imgs/failure_1.png)
-
-
-## Data Collection (Fast)
-
-For faster data collection, use `python main/collect_data_bed_fast.py`.
-
-- This involves us manually simulating what the sheet would look like. This way, 50 "rollouts"
-  can be collected in two hours.
-- However, this involves some care to ensure that the human acts like the robot would ... and we
-  definitely need to double check the data by visualization, etc.
-- It is saved in a similar format so that's good, except the ordering of the grasp or successes
-  might not be the same, but my code can handle both. Also, the rollouts may not necessarily
-  have logical connections to each other, but it's best to simulate them so that they are
-  temporally connected.
-
 
 
 

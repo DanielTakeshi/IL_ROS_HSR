@@ -199,7 +199,7 @@ we use its camera sensors to collect images, but the robot base and arm are fixe
 we need to simulate as if we were pulling the opposite side.
 
 For example, here's a possible starting configuration if we wanted a sheet that was **wrinked** but
-**straight**:
+**straight** (these are actually borderline wrinkled/straight for my initial bed collection style):
 
 ![](imgs/bed_start.JPG)
 
@@ -217,7 +217,10 @@ Then *this* becomes our "starting configuration":
 ![](imgs/bed_start_if_top.JPG)
 
 From then on, we proceed with grasping as usual. So, in short, the two different setups will result
-in two different starting configurations.
+in two different starting configurations. But it's important that in the second case, we act as if
+we were the robot on the opposite side, so grip the corner and then move in a straight line to the
+corner of the bed frame (with a slight offset of about 2 inches since the sheet is wider than the
+bed frame).
 
 
 

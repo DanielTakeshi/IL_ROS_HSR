@@ -12,6 +12,9 @@ Here are full instructions for the bed-making project with the HSR.
     - [The Bed Frame](#the-bed-frame)
     - [The Bed Sheet](#the-bed-sheet)
 - [Fast Data Collection](#fast-data-collection)
+    - [Starting Configuration](#starting-configuration)
+    - [Collecting Data](#collecting-data)
+    - [Quick Inspection](#quick-inspection)
 - [Slow Data Collection](#slow-data-collection)
 - [Neural Network Training](#neural-network-training)
 - [Evaluation](#evaluation)
@@ -177,6 +180,8 @@ images for the success network) in 2-3 hours, rather than 2-3 days.  The main th
 that we get data that the robot is likely to encounter in practice. In addition, when training the
 success network, we need to have enough successes and failures to achieve reasonable class balance.
 
+### Starting Configuration
+
 In our code, before starting each "round" of data collection, we should have random number
 generators tell us:
 
@@ -192,14 +197,15 @@ encourage us to get a diverse range of starting states instead of using the same
 again.)
 
 The reason for needing to simulate a grasp on the same side or opposite side is that the robot
-always starts from a fixed side of the robot, and must succeed at the grasp before moving on to the
-other side. There are only two "rounds" at this, one for the first side ("bottom") and then for the
-other side ("top"). But if we are collecting data quickly, we don't actually move the robot at all;
-we use its camera sensors to collect images, but the robot base and arm are fixed throughout. Thus,
-we need to simulate as if we were pulling the opposite side.
+always starts from a fixed side of the bed, and must succeed at that side before moving on to the
+other. There are only two "rounds" at this, one for the first side ("bottom") and then for the other
+side ("top"). But if we are collecting data quickly, we don't actually move the robot at all; we use
+its camera sensors to collect images, but the robot base and arm are fixed throughout. Thus, we need
+to simulate as if we were pulling the opposite side.
 
 For example, here's a possible starting configuration if we wanted a sheet that was **wrinked** but
-**straight** (these are actually borderline wrinkled/straight for my initial bed collection style):
+**straight**. (These are actually borderline wrinkled/straight for my initial bed collection style,
+and this picture was taken with an iPhone, and not with the HSR's sensors...)
 
 ![](imgs/bed_start.JPG)
 
@@ -216,17 +222,23 @@ Then *this* becomes our "starting configuration":
 
 ![](imgs/bed_start_if_top.JPG)
 
+And in our training data, we perform flips about the vertical axis so that the robot "thinks" it's
+seen cases of itself on the opposite side of the bed.
+
 From then on, we proceed with grasping as usual. So, in short, the two different setups will result
 in two different starting configurations. But it's important that in the second case, we act as if
 we were the robot on the opposite side, so grip the corner and then move in a straight line to the
 corner of the bed frame (with a slight offset of about 2 inches since the sheet is wider than the
-bed frame).
+bed frame). The above is typical of what the robot would see in the top side (except with a
+horizontal flip) because the grip usually causes the corner to move further "inwards" into the bed.
 
 
+### Collecting Data
 
 **TODO**
 
 
+### Quick Inspection
 
 **After data is collected, do the following immediately**:
 

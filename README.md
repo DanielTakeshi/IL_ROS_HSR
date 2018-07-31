@@ -87,7 +87,7 @@ roughly approximate.
 
 ![](imgs/init_setup_05.JPG)
 
-**Important note**: for now, we will keep the marker on the side closest to the AR marker, and then
+**Important note**: for now, we will keep the robot on the side closest to the AR marker, and then
 we will rely on data augmentation techniques to "flip" the image so that we simulate being on the
 opposite side. There are some issues to consider with this:
 

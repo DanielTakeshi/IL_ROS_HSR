@@ -106,6 +106,9 @@ built-in joystick, so that it can see the AR marker in its cameras.  **For these
 are in HSRB mode (`export ROS_MASTER_URI ...`) and in the correct python virtual environment as
 discussed earlier!** 
 
+(And I assume, for the Fetch, you'll have to do something else to ensure the bed is aligned somehow
+with whatever coordinate frames you're using for references.)
+
 - Run `python scripts/joystick_X.py` first and then move the robot to the designated starting
   position. (It should be marked with tape ... put tape on if it isn't!)
 - Kill the joystick script.

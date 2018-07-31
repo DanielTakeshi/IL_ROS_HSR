@@ -37,14 +37,24 @@ class Analytic_Supp:
         return largest, cv2.contourArea(largest)
 
 
-    def get_side(self, img, fname=None):
-        """Counts whether majority of pixels of a color are on left or right.
+    def get_side(self, img, color='blue', fname=None, textcolor=(0,0,0)):
+        """Counts whether majority of pixels of a color are on left or right side, assuming
+        `img` is a 'typical' BGR 3-channel image.
 
-        By default we use blue but we can generalize to other colors.
+        By default we use blue but we can generalize to other colors. This will also save
+        images for debugging purposes if `fname` is not None. Doesn't tell us what to do,
+        etc., it just tells us which side has more of the color, and we go from there.
 
         Returns: 1 for left (i.e., more of target color there), -1 for right.
         """
-        bools = np.apply_along_axis(self.is_blue, 2, img)
+        if color is None or color == 'blue':
+            bools = np.apply_along_axis(self.is_blue, 2, img)
+        elif color == 'white':
+            bools = np.apply_along_axis(self.is_white, 2, img)
+        else:
+            raise ValueError(color)
+
+        # Where 'bools' is true (i.e., matching color), return 1. Else, return 0.
         mask = np.where(bools, 1, 0)
         mid = len(img[0])/2
         left_c = np.sum(mask[:,:mid])
@@ -58,8 +68,8 @@ class Analytic_Supp:
                         org=(0,440),
                         fontFace=cv2.FONT_HERSHEY_SIMPLEX,
                         fontScale=1,
-                        color=(0,0,0),
-                        thickness=3)
+                        color=textcolor,
+                        thickness=2)
             fname = fname.replace('.png', '_side.png')
             cv2.imwrite(fname, c_img)
 

@@ -187,14 +187,15 @@ generators tell us:
 
 - Whether we simulate a grasp on the same side of the robot, or the opposite side.
 - Whether the initial sheet should be flat, or wrinkled.
-- Whether the initial sheet should be straight, or curved.
+- Whether the red corner is close or far from the target.
 
-This gives us `2 x 2 x 2 = 8` different possible initial setups and considerations.
+This gives us `2^3 = 8` different possible initial setups and considerations.
 
-(By straight or curved, we refer to the rough general shape of the edge of the sheet -- of course
+(By flat or wrinkled, we refer to the rough general shape of the edge of the sheet -- of course
 much of this is up to human interpretation and the point is not to be exact in definitions but to
 encourage us to get a diverse range of starting states instead of using the same stuff over and over
-again.)
+again.  *Feel free to also add additional flags if they would help create a more diverse, general
+dataset*.)
 
 The reason for needing to simulate a grasp on the same side or opposite side is that the robot
 always starts from a fixed side of the bed, and must succeed at that side before moving on to the
@@ -203,9 +204,9 @@ side ("top"). But if we are collecting data quickly, we don't actually move the 
 its camera sensors to collect images, but the robot base and arm are fixed throughout. Thus, we need
 to simulate as if we were pulling the opposite side.
 
-For example, here's a possible starting configuration if we wanted a sheet that was **wrinked** but
-**straight**. (These are actually borderline wrinkled/straight for my initial bed collection style,
-and this picture was taken with an iPhone, and not with the HSR's sensors...)
+For example, here's a possible starting configuration if we wanted a sheet that was **wrinked**.
+(These are actually borderline wrinkled for my initial bed collection style, and this picture was
+taken with an iPhone, and not with the HSR's sensors...)
 
 ![](imgs/bed_start.JPG)
 
@@ -213,8 +214,9 @@ Now, if our RNG told us to start grasping as if we were on the bottom/starting s
 side the ARK marker is on) then we just proceed with grasping as usual.
 
 However, if we need to simulate if we're grasping from the top, then we need to pretend that the HSR
-already grabbed the sheet appropriately from the other side. To do this, we manually pull the other
-side of the sheet:
+already grabbed the sheet appropriately from the other side. *This to ensure that the data we
+collect is representative of the data that we have during during test-time.* To do this, we manually
+pull the other side of the sheet:
 
 ![](imgs/bed_manually_simulate.JPG)
 
@@ -232,10 +234,37 @@ corner of the bed frame (with a slight offset of about 2 inches since the sheet 
 bed frame). The above is typical of what the robot would see in the top side (except with a
 horizontal flip) because the grip usually causes the corner to move further "inwards" into the bed.
 
+All of this, of course, assumes we don't have a detachable red corner. If we did, it would probably
+make more sense to collect maybe 20-ish images from the bottom side, then move the robot to the top,
+collect 20-ish starting images there, etc. (but for the top side, we'd still need to manually
+simulate a bottom grasp).
+
 
 ### Collecting Data
 
-**TODO**
+Given a starting configuration described earlier, we now perform a set of gras
+
+TODO
+
+Stages:
+
+![](imgs/stage_01.JPG)
+
+![](imgs/stage_02.JPG)
+
+![](imgs/stage_03.JPG)
+
+More examples of success/failures:
+
+![](imgs/net_success.JPG)
+
+![](imgs/net_failure.JPG)
+
+(Note: only  matters the corner closest to the bottom, so the bottom one here. Top is irrelevant.)
+
+After this we are finished with this "rollout" and we should save it and then reset the starting
+configuration.
+
 
 
 ### Quick Inspection

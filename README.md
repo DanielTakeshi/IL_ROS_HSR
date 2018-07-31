@@ -157,6 +157,8 @@ un-necessary difficulties for our setup.
 
 ![](imgs/init_sheet_01.JPG)
 
+(Apologies for all the white dust-like particles you see ... our vacuum cleaner isn't working.)
+
 3. Don't put the red marker on the opposite half of the bed where the data collection is occurring.
 If the HSR is physically located on the left side of the bed in the below image, then its arm is
 literally too short for it to grab the corner on that side. Make sure corners are in the closest
@@ -170,10 +172,12 @@ Now let's see how to collect data.
 
 ## Fast Data Collection
 
-For faster data collection, use `python main/collect_data_bed_fast.py`. The high-level description
-is that the human manually arranges the sheets and then simulates what next sheets would look like
-given robot actions. We do *not* actually move the robot from the bottom to top or execute grasps
-with the robots. (For that, see [the slow data collection](#slow-data-collection).) 
+For faster data collection, use a script like `python main/collect_data_bed_fast.py`. **(July 30,
+2019, note: I have not updated it to include all the new 'randomness' that I talk about in the next
+sub-section, as our HSR is currently not operational.)** The high-level description is that the
+human manually arranges the sheets and then simulates what next sheets would look like given robot
+actions. We do *not* actually move the robot from the bottom to top or execute grasps with the
+robots. For that, see [the slow data collection](#slow-data-collection).
 
 This way, we can get a decent amount of data (say, 130 images for the grasping network and 130
 images for the success network) in 2-3 hours, rather than 2-3 days.  The main thing to be careful is
@@ -191,11 +195,11 @@ generators tell us:
 
 This gives us `2^3 = 8` different possible initial setups and considerations.
 
-(By flat or wrinkled, we refer to the rough general shape of the edge of the sheet -- of course
-much of this is up to human interpretation and the point is not to be exact in definitions but to
-encourage us to get a diverse range of starting states instead of using the same stuff over and over
-again.  *Feel free to also add additional flags if they would help create a more diverse, general
-dataset*.)
+(By flat or wrinkled, we refer to the rough general shape of the edge of the sheet -- of course much
+of this is up to human interpretation and the point is not to be exact in definitions but to
+encourage us to get a diverse range of starting states instead of using the same starting state and
+making our task look trivial/artificial. *Feel free to also add additional flags if they would help
+create a more diverse, general dataset*.)
 
 The reason for needing to simulate a grasp on the same side or opposite side is that the robot
 always starts from a fixed side of the bed, and must succeed at that side before moving on to the
@@ -205,8 +209,7 @@ its camera sensors to collect images, but the robot base and arm are fixed throu
 to simulate as if we were pulling the opposite side.
 
 For example, here's a possible starting configuration if we wanted a sheet that was **wrinked**.
-(These are actually borderline wrinkled for my initial bed collection style, and this picture was
-taken with an iPhone, and not with the HSR's sensors...)
+(These are actually borderline wrinkled for my initial bed collection style.)
 
 ![](imgs/bed_start.JPG)
 
@@ -242,25 +245,52 @@ simulate a bottom grasp).
 
 ### Collecting Data
 
-Given a starting configuration described earlier, we now perform a set of gras
+Given a starting configuration described earlier, we now perform a set of grasps. We propose that
+each "rollout" involves two grasps+pull attempts by the human. The first one results in a failure.
+The second one results in a success.
 
-TODO
-
-Stages:
+Let's look at another example. Say our RNG told us to (a) pull as if we were on the same side as the
+robot, (b) that the sheet was flat, and (c) that the corner was closer to the opposite end of the
+bed than the target. Then we might get this as our starting image (where for (c) we are at a
+borderline case):
 
 ![](imgs/stage_01.JPG)
 
+This image would be provided to the grasp network, along with the automatically-provided label.
+
+The human manually moves the bed, acting as if it were pulling with a parallel-jaw grasp, and to a
+target location at the corner but offset by 2-3 inches. However, *we want our first grasp+pull to be
+a failure*, so the human drops the sheet prematurely, resulting in a configuration such as:
+
 ![](imgs/stage_02.JPG)
+
+The above image is part of the success network data, with the label "failure." It is *also* an image
+that the grasp network sees, since we have to re-grasp it.
+
+The human then does a second grasp+pull, result in a success:
 
 ![](imgs/stage_03.JPG)
 
-More examples of success/failures:
+And the above image is part of the success network data, with the label "success."
+
+So from the above rollout:
+
+- We get two images for each of the grasp and success networks. One image is shared for both
+  networks.
+- The success network sees one positive and one failure case, helping with class balance.
+
+**We need to be consistent with how we label success/failures. I propose successes as when the sheet
+means we can't see the corner**. Here's an example of some borderline cases. I would label this as a
+success:
 
 ![](imgs/net_success.JPG)
 
+and this as a failure.
+
 ![](imgs/net_failure.JPG)
 
-(Note: only  matters the corner closest to the bottom, so the bottom one here. Top is irrelevant.)
+**It only matters the corner closest to the bottom. Forget the top, it's irrelevant for the success
+network**, and as explained above we sometimes simulate as if we did the top first.
 
 After this we are finished with this "rollout" and we should save it and then reset the starting
 configuration.

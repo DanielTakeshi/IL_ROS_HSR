@@ -194,9 +194,12 @@ generators tell us:
 
 - Whether we simulate a grasp on the same side of the robot, or the opposite side.
 - Whether the initial sheet should be flat, or wrinkled.
-- Whether the red corner is close or far from the target.
+- How far away from the target we should set the red corner. For this, I pick a percentage between 0
+  and 70 percent and try to roughly get the corner set that way. (You don't want it too close to the
+  goal at the beginning since we'll be grasping and "deliberately failing early" so we cover those
+  data points.)
 
-This gives us `2^3 = 8` different possible initial setups and considerations.
+This gives us different possible initial setups and considerations.
 
 (By flat or wrinkled, we refer to the rough general shape of the edge of the sheet -- of course much
 of this is up to human interpretation and the point is not to be exact in definitions but to

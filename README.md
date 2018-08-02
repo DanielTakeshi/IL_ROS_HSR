@@ -185,7 +185,10 @@ And another view:
 
 ![](imgs/fetch_setup_02.JPG)
 
-The Fetch here has pan at 0.0 degrees and tilt at 45 degrees.
+The Fetch here has pan at 0.0 degrees and tilt at 45 degrees, and the height is at its shortest
+value, roughly 40-42 inches from the base. The HSR's default height is about 2 inches shorter, but
+hopefully this difference is not too substantial (or we can increase the HSR's height by two inches
+as well).
 
 It's probably best if we collaborate on this. The point here is not to always get the same position
 but to ensure they are "reasonably close" since (for example) depth images will be sensitive to the

@@ -40,10 +40,15 @@ from fast_grasp_detect.data_aug.depth_preprocess import datum_to_net_dim
 # NYTimes data, the initial list element (the one which is supposed to show the initial bed config)
 # is not there, so the list lengths are EVEN numbers.
 
-ROLLOUTS = '/nfs/diskstation/seita/bed-make/rollouts_nytimes/'
-IMG_PATH = '/nfs/diskstation/seita/bed-make/images_nytimes/'
+#ROLLOUTS = '/nfs/diskstation/seita/bed-make/rollouts_nytimes/'
+#IMG_PATH = '/nfs/diskstation/seita/bed-make/images_nytimes/'
 #ROLLOUTS = '/nfs/diskstation/seita/bed-make/held_out_nytimes/'
 #IMG_PATH = '/nfs/diskstation/seita/bed-make/images_held_out_nytimes/'
+
+ROLLOUTS = '/nfs/diskstation/seita/bed-make/rollouts_white_v01/'
+IMG_PATH = '/nfs/diskstation/seita/bed-make/images_white_v01/'
+
+
 
 g_total = 0
 s_count_failure = 0
@@ -71,8 +76,12 @@ for rnum in range(0, 60):
         print("\ncurrently on item {} in this rollout, out of {}:".format(d_idx,len(data)))
         print('type:   {}'.format(datum['type']))
         print('side:   {}'.format(datum['side']))
-        print('class:  {}'.format(datum['class']))
-        print('pose:   {}'.format(datum['pose']))
+        if datum['type'] == 'grasp':
+            print('pose:   {}'.format(datum['pose']))
+        elif datum['type'] == 'success':
+            print('class:  {}'.format(datum['class']))
+        else:
+            raise ValueError(datum['type'])
 
         # All this does is modify the datum['d_img'] key; it leaves datum['c_img'] alone.
         datum_to_net_dim(datum)
@@ -85,10 +94,10 @@ for rnum in range(0, 60):
             d_img = (datum['d_img']).copy()
             pose = datum['pose']
             pose_int = (int(pose[0]), int(pose[1]))
-            cv2.circle(img=c_img, center=pose_int, radius=7, color=(0,0,255), thickness=-1)
-            cv2.circle(img=d_img, center=pose_int, radius=7, color=(0,0,255), thickness=-1)
-            cv2.circle(img=c_img, center=pose_int, radius=9, color=(0,0,0), thickness=2)
-            cv2.circle(img=d_img, center=pose_int, radius=9, color=(0,0,0), thickness=2)
+            cv2.circle(img=c_img, center=pose_int, radius=4, color=(0,0,255), thickness=-1)
+            cv2.circle(img=d_img, center=pose_int, radius=4, color=(0,0,255), thickness=-1)
+            cv2.circle(img=c_img, center=pose_int, radius=5, color=(0,0,0), thickness=2)
+            cv2.circle(img=d_img, center=pose_int, radius=5, color=(0,0,0), thickness=2)
             cv2.imwrite(c_path, c_img)
             cv2.imwrite(d_path, d_img)
             g_in_rollout += 1

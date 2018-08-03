@@ -64,15 +64,18 @@ for pf in pfiles:
         # Unfortunately we'll assume that we have two grasps. For now we know this is the case, but
         # we can also load the rollout (as we do) and further inspect within that just to confirm.
         for g_in_rollout in range(2):
-            c_path = os.path.join(OUTPUT_PATH, 'rollout_{}_grasp_{}_rgb.png'.format(rnum,g_in_rollout))
-            d_path = os.path.join(OUTPUT_PATH, 'rollout_{}_grasp_{}_depth.png'.format(rnum,g_in_rollout))
-
             # Get these from our training run.
             pred = y_pred[idx]
             targ = y_targ[idx]
             cimg = c_imgs[idx].copy()
             dimg = d_imgs[idx].copy()
             idx += 1
+
+            l2 = np.sqrt( (pred[0]-targ[0])**2 + (pred[1]-targ[1])**2)
+            c_suffix = 'rollout_{}_grasp_{}_rgb_L2_{:.0f}.png'.format(rnum,g_in_rollout,l2)
+            d_suffix = 'rollout_{}_grasp_{}_depth_L2_{:.0f}.png'.format(rnum,g_in_rollout,l2)
+            c_path = os.path.join(OUTPUT_PATH, c_suffix)
+            d_path = os.path.join(OUTPUT_PATH, d_suffix)
 
             # Alternatively could get from rollout paths. Good to double check. Unfortunately again
             # this assumes I did grasp then success then grasp then success ... yeah.

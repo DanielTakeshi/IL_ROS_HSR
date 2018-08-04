@@ -11,8 +11,14 @@ From there, we have the information we need to do analysis and figures.
 CAUTION! This assumes I did it using my fast data collection where there's
 exactly two grasps (and two successes) per rollouts file. This will need to
 be adjusted if that is not the case ...
+
+Update: actually, in addition to this, let's create a heat map. We can also
+plot where our data is collected, to see where the bias is located.
 """
-import cv2, os, pickle, sys
+import cv2, os, pickle, sys, matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+plt.style.use('seaborn-darkgrid')
 import numpy as np
 np.set_printoptions(suppress=True, linewidth=200)
 from fast_grasp_detect.data_aug.depth_preprocess import datum_to_net_dim
@@ -25,6 +31,11 @@ pfiles = sorted([x for x in os.listdir(RESULTS_PATH) if '_raw_imgs.p' in x])
 
 INNER = 3
 OUTER = 4
+all_targs = []
+all_preds = []
+all_L2s   = []
+all_x     = []
+all_y     = []
 
 
 for pf in pfiles:
@@ -77,6 +88,13 @@ for pf in pfiles:
             c_path = os.path.join(OUTPUT_PATH, c_suffix)
             d_path = os.path.join(OUTPUT_PATH, d_suffix)
 
+            # For visualization later; good idea, Ron, Ajay, Honda :-).
+            all_targs.append(targ)
+            all_preds.append(pred)
+            all_L2s.append(l2)
+            all_x.append(targ[0])
+            all_y.append(targ[1])
+
             # Alternatively could get from rollout paths. Good to double check. Unfortunately again
             # this assumes I did grasp then success then grasp then success ... yeah.
             pose = data[g_in_rollout*2]['pose']
@@ -103,4 +121,69 @@ for pf in pfiles:
             cv2.imwrite(d_path, dimg)
     
     print("=====================================================================")
-print("\nDone, look at {}".format(OUTPUT_PATH))
+print("\nDone with creating overlays, look at {}".format(OUTPUT_PATH))
+
+
+# ------------------------------------------------------------------------------
+# Next part: plots!
+# ------------------------------------------------------------------------------
+all_targs = np.array(all_targs)
+all_preds = np.array(all_preds)
+all_L2s = np.array(all_L2s)
+print("\nall_targs.shape: {}".format(all_targs.shape))
+print("all_preds.shape: {}".format(all_preds.shape))
+print("all_L2s.shape:   {}\n".format(all_L2s.shape))
+
+# Create scatter plots and heat maps.
+nrows = 2
+ncols = 2
+fig, ax = plt.subplots(nrows, ncols, figsize=(16,12))
+tsize = 20
+tick_size = 18
+xlim = [0, 640]
+ylim = [480, 0]
+alpha = 0.5
+
+# ------------------------------------------------------------------------------
+# Heat-map of the L2 losses. I was going to use the contour code but that
+# requires a value exists for every (x,y) pixel pair from our discretization.
+# To get background image in matplotlib:
+# https://stackoverflow.com/questions/42481203/heatmap-on-top-of-image
+# This might be helpful:
+# https://stackoverflow.com/questions/48472227/how-can-one-create-a-heatmap-from-a-2d-scatterplot-data-in-python
+# TODO: double check these values are what I want ... also, colorbars?
+# ------------------------------------------------------------------------------
+I = cv2.imread("scripts/imgs/image_example.png")
+
+# Create a scatter plot of where the targets are located.
+ax[0,0].imshow(I, alpha=alpha)
+ax[0,0].scatter(all_targs[:,0], all_targs[:,1], color='black')
+ax[0,0].set_title("Ground Truth", fontsize=tsize)
+
+# Along with predictions.
+ax[0,1].imshow(I, alpha=alpha)
+ax[0,1].scatter(all_preds[:,0], all_preds[:,1], color='black')
+ax[0,1].set_title("Grasp Network Predictions", fontsize=tsize)
+
+# Heat map now.
+ax[1,0].imshow(I, alpha=alpha)
+cf = ax[1,0].tricontourf(all_x, all_y, all_L2s, cmap='RdBu')
+fig.colorbar(cf, ax=ax[1,0])
+ax[1,0].set_title("L2 Losses (Heat Map)", fontsize=tsize)
+
+# Original image.
+ax[1,1].imshow(I)
+ax[1,1].set_title("Original Image", fontsize=tsize)
+
+# Bells and whistles
+for i in range(nrows):
+    for j in range(ncols):
+        ax[i,j].set_xlim(xlim)
+        ax[i,j].set_ylim(ylim)
+        ax[i,j].tick_params(axis='x', labelsize=tick_size)
+        ax[i,j].tick_params(axis='y', labelsize=tick_size)
+
+plt.tight_layout()
+figname = "check_predictions_scatter_map.png"
+plt.savefig(figname)
+print("Look at this figure: {}".format(figname))

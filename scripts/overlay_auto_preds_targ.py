@@ -25,8 +25,13 @@ from fast_grasp_detect.data_aug.depth_preprocess import datum_to_net_dim
 
 # ADJUST
 ROLLOUT_HEAD = '/nfs/diskstation/seita/bed-make/rollouts_white_v01'
-RESULTS_PATH = '/nfs/diskstation/seita/bed-make/grasp_output_for_plots/white_v01'
-OUTPUT_PATH  = '/nfs/diskstation/seita/bed-make/figures/white_v01'
+rgb_baseline = True
+if rgb_baseline:
+    RESULTS_PATH = '/nfs/diskstation/seita/bed-make/grasp_output_for_plots/white_fix26_80r_rgb'
+    OUTPUT_PATH  = '/nfs/diskstation/seita/bed-make/figures/white_v01_rgb'
+else:
+    RESULTS_PATH = '/nfs/diskstation/seita/bed-make/grasp_output_for_plots/white_v01_fix26_80r'
+    OUTPUT_PATH  = '/nfs/diskstation/seita/bed-make/figures/white_v01'
 pfiles = sorted([x for x in os.listdir(RESULTS_PATH) if '_raw_imgs.p' in x])
 
 INNER = 3
@@ -167,9 +172,11 @@ ax[0,1].set_title("Grasp Network Predictions", fontsize=tsize)
 
 # Heat map now.
 ax[1,0].imshow(I, alpha=alpha)
-cf = ax[1,0].tricontourf(all_x, all_y, all_L2s, cmap='RdBu')
+cf = ax[1,0].tricontourf(all_x, all_y, all_L2s, cmap='YlOrRd')
 fig.colorbar(cf, ax=ax[1,0])
-ax[1,0].set_title("L2 Losses (Heat Map)", fontsize=tsize)
+mean = np.mean(all_L2s)
+std = np.std(all_L2s)
+ax[1,0].set_title("L2 Losses (Heat Map). {:.1f} +/- {:.1f}".format(mean, std), fontsize=tsize)
 
 # Original image.
 ax[1,1].imshow(I)

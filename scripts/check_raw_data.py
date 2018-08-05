@@ -55,7 +55,7 @@ s_count_failure = 0
 s_count_success = 0
 rlengths = []
 
-for rnum in range(0, 60):
+for rnum in range(0, 100):
     print("\n=====================================================================")
     print("rollout {}".format(rnum))
     path = os.path.join(ROLLOUTS, 'rollout_{}/rollout.p'.format(rnum))

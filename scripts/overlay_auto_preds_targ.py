@@ -16,6 +16,7 @@ Update: actually, in addition to this, let's create a heat map. We can also
 plot where our data is collected, to see where the bias is located.
 """
 import cv2, os, pickle, sys, matplotlib
+import os.path as osp
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 plt.style.use('seaborn-darkgrid')
@@ -23,24 +24,38 @@ import numpy as np
 np.set_printoptions(suppress=True, linewidth=200)
 from fast_grasp_detect.data_aug.depth_preprocess import datum_to_net_dim
 
-# ADJUST
-ROLLOUT_HEAD = '/nfs/diskstation/seita/bed-make/rollouts_white_v01'
-rgb_baseline = True
-if rgb_baseline:
-    RESULTS_PATH = '/nfs/diskstation/seita/bed-make/grasp_output_for_plots/white_fix26_80r_rgb'
-    OUTPUT_PATH  = '/nfs/diskstation/seita/bed-make/figures/white_v01_rgb'
-else:
-    RESULTS_PATH = '/nfs/diskstation/seita/bed-make/grasp_output_for_plots/white_v01_fix26_80r'
-    OUTPUT_PATH  = '/nfs/diskstation/seita/bed-make/figures/white_v01'
-pfiles = sorted([x for x in os.listdir(RESULTS_PATH) if '_raw_imgs.p' in x])
-
+# ------------------------------------------------------------------------------
+# ADJUST, e.g. the color map heat range should be empirically adjusted.
+# ------------------------------------------------------------------------------
 INNER = 3
 OUTER = 4
-all_targs = []
-all_preds = []
-all_L2s   = []
-all_x     = []
-all_y     = []
+VMIN = 0
+VMAX = 280
+rgb_baseline = True
+n_rollouts = 100
+HEAD = '/nfs/diskstation/seita/bed-make/'
+ROLLOUT_HEAD = osp.join(HEAD,'rollouts_white_v01')
+
+if rgb_baseline:
+    # We should be doing _very_ well here. Do this as a sanity check.
+    if n_rollouts == 50:
+        RESULTS_PATH = osp.join(HEAD,'grasp_output_for_plots/white_v01_fix26_050r_rgb')
+        OUTPUT_PATH  = osp.join(HEAD,'figures/white_v01_050r_rgb')
+    elif n_rollouts == 100:
+        RESULTS_PATH = osp.join(HEAD,'grasp_output_for_plots/white_v01_fix26_100r_rgb')
+        OUTPUT_PATH  = osp.join(HEAD,'figures/white_v01_100r_rgb')
+else:
+    # Let's try and get validation errors down to the low 40s in L2 pixels.
+    if n_rollouts == 50:
+        RESULTS_PATH = osp.join(HEAD,'grasp_output_for_plots/white_v01_fix26_050r_depth')
+        OUTPUT_PATH  = osp.join(HEAD,'figures/white_v01_050r_depth')
+    elif n_rollouts == 100:
+        RESULTS_PATH = osp.join(HEAD,'grasp_output_for_plots/white_v01_fix26_100r_depth')
+        OUTPUT_PATH  = osp.join(HEAD,'figures/white_v01_100r_depth')
+
+pfiles = sorted([x for x in os.listdir(RESULTS_PATH) if '_raw_imgs.p' in x])
+all_targs, all_preds, all_L2s, all_x, all_y = [], [], [], [], []
+# ------------------------------------------------------------------------------
 
 
 for pf in pfiles:
@@ -132,6 +147,7 @@ print("\nDone with creating overlays, look at {}".format(OUTPUT_PATH))
 # ------------------------------------------------------------------------------
 # Next part: plots!
 # ------------------------------------------------------------------------------
+num_pts = len(all_L2s)
 all_targs = np.array(all_targs)
 all_preds = np.array(all_preds)
 all_L2s = np.array(all_L2s)
@@ -156,31 +172,30 @@ alpha = 0.5
 # https://stackoverflow.com/questions/42481203/heatmap-on-top-of-image
 # This might be helpful:
 # https://stackoverflow.com/questions/48472227/how-can-one-create-a-heatmap-from-a-2d-scatterplot-data-in-python
-# TODO: double check these values are what I want ... also, colorbars?
 # ------------------------------------------------------------------------------
 I = cv2.imread("scripts/imgs/image_example.png")
 
 # Create a scatter plot of where the targets are located.
 ax[0,0].imshow(I, alpha=alpha)
 ax[0,0].scatter(all_targs[:,0], all_targs[:,1], color='black')
-ax[0,0].set_title("Ground Truth", fontsize=tsize)
+ax[0,0].set_title("Ground Truth ({} Points)".format(num_pts), fontsize=tsize)
 
 # Along with predictions.
 ax[0,1].imshow(I, alpha=alpha)
 ax[0,1].scatter(all_preds[:,0], all_preds[:,1], color='black')
-ax[0,1].set_title("Grasp Network Predictions", fontsize=tsize)
+ax[0,1].set_title("Grasp Network Predictions (10-Fold CV)", fontsize=tsize)
 
 # Heat map now.
 ax[1,0].imshow(I, alpha=alpha)
-cf = ax[1,0].tricontourf(all_x, all_y, all_L2s, cmap='YlOrRd')
+cf = ax[1,0].tricontourf(all_x, all_y, all_L2s, cmap='YlOrRd', vmin=VMIN, vmax=VMAX)
 fig.colorbar(cf, ax=ax[1,0])
 mean = np.mean(all_L2s)
 std = np.std(all_L2s)
-ax[1,0].set_title("L2 Losses (Heat Map). {:.1f} +/- {:.1f}".format(mean, std), fontsize=tsize)
+ax[1,0].set_title("L2 Losses (Heat Map) in Pixels: {:.1f} +/- {:.1f}".format(mean, std), fontsize=tsize)
 
 # Original image.
 ax[1,1].imshow(I)
-ax[1,1].set_title("Original Image", fontsize=tsize)
+ax[1,1].set_title("Example of an Original Image", fontsize=tsize)
 
 # Bells and whistles
 for i in range(nrows):

@@ -31,7 +31,7 @@ INNER = 3
 OUTER = 4
 VMIN = 0
 VMAX = 280
-rgb_baseline = True
+rgb_baseline = False
 n_rollouts = 100
 HEAD = '/nfs/diskstation/seita/bed-make/'
 ROLLOUT_HEAD = osp.join(HEAD,'rollouts_white_v01')
@@ -54,7 +54,8 @@ else:
         OUTPUT_PATH  = osp.join(HEAD,'figures/white_v01_100r_depth')
 
 pfiles = sorted([x for x in os.listdir(RESULTS_PATH) if '_raw_imgs.p' in x])
-all_targs, all_preds, all_L2s, all_x, all_y = [], [], [], [], []
+all_targs, all_preds, all_L2s, all_x, all_y, all_names, all_top, all_bottom = \
+        [], [], [], [], [], [], [], []
 # ------------------------------------------------------------------------------
 
 
@@ -86,34 +87,42 @@ for pf in pfiles:
         data = pickle.load(open(path,'rb'))
         print("loaded: {}".format(path))
         print("rollout {}, len(data): {}".format(rnum, len(data)))
+
+        # Unfortunately we'll assume that we have two grasps. For now we know this is the case, but
+        # we can also load the rollout (as we do) and further inspect within that just to confirm.
         assert len(data) == 4
         assert data[0]['type'] == 'grasp'
         assert data[1]['type'] == 'success'
         assert data[2]['type'] == 'grasp'
         assert data[3]['type'] == 'success'
 
-        # Unfortunately we'll assume that we have two grasps. For now we know this is the case, but
-        # we can also load the rollout (as we do) and further inspect within that just to confirm.
         for g_in_rollout in range(2):
-            # Get these from our training run.
+            # Get these from our training run, stored from best iteration on validation set.
             pred = y_pred[idx]
             targ = y_targ[idx]
             cimg = c_imgs[idx].copy()
             dimg = d_imgs[idx].copy()
             idx += 1
-
             l2 = np.sqrt( (pred[0]-targ[0])**2 + (pred[1]-targ[1])**2)
             c_suffix = 'rollout_{}_grasp_{}_rgb_L2_{:.0f}.png'.format(rnum,g_in_rollout,l2)
             d_suffix = 'rollout_{}_grasp_{}_depth_L2_{:.0f}.png'.format(rnum,g_in_rollout,l2)
             c_path = os.path.join(OUTPUT_PATH, c_suffix)
             d_path = os.path.join(OUTPUT_PATH, d_suffix)
 
-            # For visualization later; good idea, Ron, Ajay, Honda :-).
+            # For visualization and inspection later; good idea, Ron, Ajay, Honda :-).
+            side = data[g_in_rollout*2]['side']
+            if side == 'BOTTOM':
+                all_bottom.append(l2)
+            elif side == 'TOP':
+                all_top.append(l2)
+            else:
+                raise ValueError(side)
             all_targs.append(targ)
             all_preds.append(pred)
-            all_L2s.append(l2)
             all_x.append(targ[0])
             all_y.append(targ[1])
+            all_L2s.append(l2)
+            all_names.append(d_path)
 
             # Alternatively could get from rollout paths. Good to double check. Unfortunately again
             # this assumes I did grasp then success then grasp then success ... yeah.
@@ -145,7 +154,7 @@ print("\nDone with creating overlays, look at {}".format(OUTPUT_PATH))
 
 
 # ------------------------------------------------------------------------------
-# Next part: plots!
+# Next part: plots and data analysis.
 # ------------------------------------------------------------------------------
 num_pts = len(all_L2s)
 all_targs = np.array(all_targs)
@@ -153,7 +162,22 @@ all_preds = np.array(all_preds)
 all_L2s = np.array(all_L2s)
 print("\nall_targs.shape: {}".format(all_targs.shape))
 print("all_preds.shape: {}".format(all_preds.shape))
-print("all_L2s.shape:   {}\n".format(all_L2s.shape))
+print("all_L2s.shape:   {}".format(all_L2s.shape))
+print("all_L2s (pixels): {:.1f} +/- {:.1f}".format(np.mean(all_L2s), np.std(all_L2s)))
+print("TOP L2s (pixels): {:.1f} +/- {:.1f};  max {:.1f}, quantity {}".format(
+        np.mean(all_top), np.std(all_top), np.max(all_top), len(all_top)))
+print("BOT L2s (pixels): {:.1f} +/- {:.1f};  max {:.1f}, quantity {}".format(
+        np.mean(all_bottom), np.std(all_bottom), np.max(all_bottom), len(all_bottom)))
+
+# Print names of the images with highest L2 errors for inspection later.
+print("\nHere are file names with highest L2 errors.")
+indices = np.argsort(all_L2s)[::-1]
+edge = 10
+for i in range(edge):
+    print("{}".format(all_names[indices[i]]))
+print("...")
+for i in range(num_pts-edge, num_pts):
+    print("{}".format(all_names[indices[i]]))
 
 # Create scatter plots and heat maps.
 nrows = 2

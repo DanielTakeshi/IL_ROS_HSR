@@ -25,7 +25,9 @@ Understanding grasping network performance:
 
 - `overlay_predictions_target.py`: for visualizing the target and predicted grasp point on an image.
   Try to stick to these labeling characterizations. I also have one for Ron's data.
-- `scripts/overlay_auto_preds_targ.py`: do this automatically, rather than copy/paste.
+- `scripts/overlay_auto_preds_targ.py`: do this automatically, rather than copy/paste. **This also
+  reports lots of other interesting statistics, and creates heat maps. Should see if there's ways we
+  can make this better and easier to use.**
 
 Understanding training:
 

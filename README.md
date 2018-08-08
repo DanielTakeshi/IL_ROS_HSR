@@ -18,6 +18,9 @@ Here are full instructions for the bed-making project with the HSR.
     - [Quick Inspection](#quick-inspection)
 - [Slow Data Collection](#slow-data-collection)
 - [Neural Network Training](#neural-network-training)
+    - [Data Format](#data-format)
+    - [Training](#training)
+    - [Inspection and Analysis](#inspection-and-analysis)
 - [Evaluation](#evaluation)
 
 
@@ -424,19 +427,110 @@ baseline for accuracy (either grasping or, less likely, successes).
 
 (The training comes from the `fast_grasp_detect` repository.)
 
-0. Data dimension: by default we do NOT use the raw (480,640,3)-sized images, but we pass them
-through a pre-trained YOLO network to get (14,14,1024)-dimensional features, and THEN we do the rest
-of the stuff from there. In other words, when we call a training minibatch, we will get a batch of
-size (B,14,14,1024). **TODO: support for training end-to-end is in progress.**
 
-1. Collect and understand the data. 
+### Data Format
+
+Data is stored on `/nfs/diskstation/seita/bed-make/` and is arranged as follows, where `X` is any
+placeholder:
+
+- `rollouts_X`: data for training.
+- `held_out_X`: any data where it is easier to use one fixed held-out set rather than do 10-fold
+  cross validation. If we indicate to use CV, then this is ignored and CV is derived from
+  `rollouts_X`. If we do NOT use CV, then the `rollouts_X` is training data, `held_out_X` is the
+  testing (or validation) data.
+- `images_X`: output of debugging scripts which help inspect the data.
+- `figures/X`: output of debugging scripts which help see predictions vs actual values. (In its own
+  directory since we'll be seeing a lot of this.)
+
+**Ideally, here's the training process**:
+
+- Find good hyperparameters for training based on a single data in `rollouts_X` for cross
+  validation, and repeatedly inspect data (see notes later) to figure out weakest points of network,
+  collect data into `rollouts_X` and repeat the process.
+- Then train on all the data in `rollouts_X` with held-out set in `held_out_X` (e.g., from a
+  different sheet/blanket) to see performance.
+- To mix/match different training data types, you can copy all rollouts into a new directory,
+  `rollouts_mixed` for instance.
+- For deployment, we take one of the neural net checkpoint files that was stored earlier.
+
+And for training:
+
+- `grasp`: store training info for grasping network.
+- `transition`: store training info for success network.
+
+See [Training](#training) for how the files are stored, and then [Inspection and
+Analysis](#inspection-and-analysis) for quick processing and analysis.
+
+**Other pointers**:
+
+0. For faster data collection, it makes sense to 'cache' the `rollouts_X` files on our solid state
+drive. Copy them to some directory on SSD and then use `--cache_data` when running. **MAKE SURE YOU
+SET `self.CACHE_PATH` IN THE CONFIGURATION FILE**. This will _only_ alter the initial data loading.
+
+1. Data dimension: we do not use the raw (480,640,3)-sized images, but resize them to (448, 448, 3).
+Then we can do one of the following:
+
+    - Smaller network trained end-to-end
+    - YOLO-based network, pre-initialized, then trained end-to-end
+    - YOLO-based network, pre-initialized, but FIX first 26 layers to get (14,14,1024)-dimensional
+      features, always. So test-time images are processed through the same stuff, no backpropagation
+      applied to the first 26 layers. To save time, we process all images (including validation)
+      through the first 26 layers so we never go through those.
+
+2. Collect and understand the data. 
 
     - The easiest way to understand the data is by running: `python scripts/check_raw_data.py` as
       that will give us statistics as well as save images that we can use for later.
     - Also do `python scripts/data_augmentation_example.py` to check data augmentation, for both 
       the depth and the RGB images (check the code to change settings).
 
-2. Investigate what kind of training works best for the grasp data. For this, perform cross
+Be sure to adjust paths for the above scripts, which use the slow `/nfs/diskstation` storage.
+
+
+### Training
+
+Update one of the two configuration files, depending on which one was used. Double check everything.
+Also double check the bash scripts and command line arguments. We save the network's results in
+`/nfs/diskstation/seita/bed-make/X` where `X` can be either `grasp` or `transition` depending on
+which network we trained. These have similar directory structures, so WLOG assume we're in
+`/.../grasp/`. Then we have:
+
+```
+grasp/
+    grasp_fixed26_img_depth_opt_adam_lr_0.0001_l2_0.0001_kp_1.0/
+        # assuming no cross-validation, checkpoint files from tf.Saver go here, indexed by time
+        stats.p
+        config.txt
+    grasp_small_img_depth_opt_adam_lr_0.0001_l2_0.0001_kp_1.0/
+        # assuming we use cross validation, we have stats indexed by index, don't use tf.Saver
+        # these also have `stats_k_raw_imgs.p` for the raw images which we can visualize later
+        stats_0.p
+        ...
+        stats_9.p
+        config.txt
+    ...
+```
+
+so each time we do a training run, we automatically create a file name (exact naming convention will
+vary depending on what hyperparameters we decide are relevant). The idea is that later, when we do
+plotting and data analysis, all we need to do is copy+ paste these long file names into our scripts
+(all of which are in `IL_ROS_HSR`, by the way). Then, within each of *those*, we have either all the
+stats files that result from cross validation, OR we have the checkpoints stored from these (along
+with stats files). The point is that if we do cross validation, we don't need to save the
+checkpoints.
+
+We'll also have `config.txt` which should contain all details from the python configuration files.
+That way, we should never be confused about what we are running. Hopefully ...
+
+
+
+### Inspection and Analysis
+
+
+
+TODO OUTDATED
+
+3. Investigate what kind of training works best for the grasp data. For this, perform cross
 validation on the grasping data. (And maybe the success data, but for now just do grasping.)
 
     - Check the configuration file for grasping. Make sure:
@@ -470,10 +564,6 @@ validation on the grasping data. (And maybe the success data, but for now just d
           respectively, saved at some fixed epochs.
         - The other stuff, of course, is from `tf.Saver`.
     - Do something similar to the above for the "success" data.
-
-3. Now train for real. As before, we run `python train_bed_grasp.py` and `python
-train_bed_success.py` in the `fast_grasp_detect` repository. But this time make sure
-`self.PERFORM_CV = False` so that all the CV stuff is ignored.
 
 
 ## Evaluation

@@ -24,7 +24,7 @@ import cv2
 from cv_bridge import CvBridge, CvBridgeError
 import numpy as np
 
-from data_aug.draw_cross_hair import DrawPrediction
+from fast_grasp_detect.data_aug.draw_cross_hair import DrawPrediction
 
 from sensor_msgs.msg import Image, CameraInfo, JointState
 from image_geometry import PinholeCameraModel as PCM

@@ -47,7 +47,7 @@ import os
 import glob
 from il_ros_hsr.core.rgbd_to_map import RGBD2Map
 
-from data_aug.draw_cross_hair import DrawPrediction
+from fast_grasp_detect.data_aug.draw_cross_hair import DrawPrediction
 
 
 

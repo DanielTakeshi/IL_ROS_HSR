@@ -1,15 +1,12 @@
 import sys
-sys.path.append('/opt/tmc/ros/indigo/lib/python2.7/dist-packages')
+#sys.path.append('/opt/tmc/ros/indigo/lib/python2.7/dist-packages')
 import IPython
 from numpy.random import multivariate_normal
-#import listener
 import rospy
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Joy
 import cPickle as pickle
-
 import hsrb_interface
-
 import numpy as np
 import numpy.linalg as LA
 from tf import TransformListener

@@ -24,8 +24,7 @@ import il_ros_hsr.p_pi.bed_making.config_bed as cfg
 
 from fast_grasp_detect.detectors.grasp_detector import GDetector
 from fast_grasp_detect.detectors.tran_detector import SDetector
-
-from data_aug.draw_cross_hair import DrawPrediction
+from fast_grasp_detect.data_aug.draw_cross_hair import DrawPrediction
 
 dp = DrawPrediction()
 

@@ -28,7 +28,7 @@ import cPickle as pickle
 
 from il_ros_hsr.core.rgbd_to_map import RGBD2Map
 
-from data_aug.draw_cross_hair import DrawPrediction
+from fast_grasp_detect.data_aug.draw_cross_hair import DrawPrediction
 
 dp = DrawPrediction()
 #latest, 46-49 from rollout_dart

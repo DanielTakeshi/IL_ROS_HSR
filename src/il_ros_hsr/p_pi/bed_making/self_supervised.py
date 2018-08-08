@@ -35,7 +35,7 @@ from il_ros_hsr.core.sensors import Gripper_Torque
 import il_ros_hsr.p_pi.bed_making.config_bed as cfg
 import thread
 
-from data_aug.draw_cross_hair import DrawPrediction
+from fast_grasp_detect.data_aug.draw_cross_hair import DrawPrediction
 
 import numpy.linalg as LA
 

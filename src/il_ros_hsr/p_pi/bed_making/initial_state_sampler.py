@@ -39,8 +39,7 @@ from il_ros_hsr.core.sensors import  RGBD, Gripper_Torque, Joint_Positions
 from il_ros_hsr.core.rgbd_to_map import RGBD2Map
 
 from table_top import TableTop
-from data_aug.draw_cross_hair import DrawPrediction
-# from data_aug.draw_cross_hair import DrawPrediction
+from fast_grasp_detect.data_aug.draw_cross_hair import DrawPrediction
 
 import numpy.linalg as LA
 import numpy as np

@@ -2,7 +2,7 @@ import cv2, IPython, sys
 import numpy as np
 import cPickle as pickle
 from il_ros_hsr.p_pi.bed_making.analytic_supp import Analytic_Supp
-from fast_grasp_detect.visualizers.draw_cross_hair import DrawPrediction
+from fast_grasp_detect.data_aug.draw_cross_hair import DrawPrediction
 
 
 class Analytic_Grasp:

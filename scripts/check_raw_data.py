@@ -48,8 +48,7 @@ from fast_grasp_detect.data_aug.depth_preprocess import datum_to_net_dim
 ROLLOUTS = '/nfs/diskstation/seita/bed-make/rollouts_white_v01/'
 IMG_PATH = '/nfs/diskstation/seita/bed-make/images_white_v01/'
 
-
-
+resize = True
 g_total = 0
 s_count_failure = 0
 s_count_success = 0
@@ -86,6 +85,11 @@ for rnum in range(0, 120):
         # All this does is modify the datum['d_img'] key; it leaves datum['c_img'] alone.
         datum_to_net_dim(datum)
 
+        # Resizing might be better to make input images smaller? (227,227,3) is AlexNet input.
+        if resize:
+            datum['c_img'] = cv2.resize(datum['c_img'], (227,227))
+            datum['d_img'] = cv2.resize(datum['d_img'], (227,227))
+
         # Grasping. For these, overlay the pose to the image (red circle, black border).
         if datum['type'] == 'grasp':
             c_path = os.path.join(IMG_PATH, 'rollout_{}_grasp_{}_rgb.png'.format(rnum,g_in_rollout))
@@ -94,10 +98,11 @@ for rnum in range(0, 120):
             d_img = (datum['d_img']).copy()
             pose = datum['pose']
             pose_int = (int(pose[0]), int(pose[1]))
-            cv2.circle(img=c_img, center=pose_int, radius=4, color=(0,0,255), thickness=-1)
-            cv2.circle(img=d_img, center=pose_int, radius=4, color=(0,0,255), thickness=-1)
-            cv2.circle(img=c_img, center=pose_int, radius=5, color=(0,0,0), thickness=2)
-            cv2.circle(img=d_img, center=pose_int, radius=5, color=(0,0,0), thickness=2)
+            if not resize:
+                cv2.circle(img=c_img, center=pose_int, radius=4, color=(0,0,255), thickness=-1)
+                cv2.circle(img=d_img, center=pose_int, radius=4, color=(0,0,255), thickness=-1)
+                cv2.circle(img=c_img, center=pose_int, radius=5, color=(0,0,0), thickness=2)
+                cv2.circle(img=d_img, center=pose_int, radius=5, color=(0,0,0), thickness=2)
             cv2.imwrite(c_path, c_img)
             cv2.imwrite(d_path, d_img)
             g_in_rollout += 1

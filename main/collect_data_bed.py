@@ -1,5 +1,6 @@
 import sys
-sys.path.append('/opt/tmc/ros/indigo/lib/python2.7/dist-packages')
+import cv2, time, thread, rospy, glob
+#sys.path.append('/opt/tmc/ros/indigo/lib/python2.7/dist-packages')
 from hsrb_interface import geometry
 import hsrb_interface
 from geometry_msgs.msg import PoseStamped, Point, WrenchStamped
@@ -8,7 +9,6 @@ import controller_manager_msgs.srv
 from cv_bridge import CvBridge, CvBridgeError
 import IPython
 from numpy.random import normal
-import cv2, time, thread, rospy, glob
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Joy
 from il_ros_hsr.core.sensors import  RGBD, Gripper_Torque, Joint_Positions
@@ -20,7 +20,7 @@ from tf import TransformListener
 import tf
 from il_ros_hsr.core.grasp_planner import GraspPlanner
 from il_ros_hsr.p_pi.bed_making.com import Bed_COM as COM
-sys.path.append('/home/autolab/Workspaces/seita_working/fast_grasp_detect/')
+#sys.path.append('/home/autolab/Workspaces/seita_working/fast_grasp_detect/')
 from fast_grasp_detect.labelers.online_labeler import QueryLabeler
 #from online_labeler import QueryLabeler
 from image_geometry import PinholeCameraModel as PCM

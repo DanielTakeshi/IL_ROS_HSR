@@ -36,7 +36,7 @@ class TableTop():
         self.tl = TransformListener()
         self.br = TransformBroadcaster()
 
-    def loop_broadcast(self, pos, rot, name, ref='base_link'):
+    def loop_broadcast(self, pos, rot, name, ref):
         while True:
             self.br.sendTransform(pos, rot, rospy.Time.now(), name, ref)
 
@@ -45,7 +45,8 @@ class TableTop():
         pos = (0.0, 0.58, 0.0)
         rot = tf.transformations.quaternion_from_euler(ai=0.0, aj=np.pi, ak=0.0)
         name = 'T_ar'
-        thread.start_new_thread(self.loop_broadcast, (pos, rot, name))
+        ref = 'map'
+        thread.start_new_thread(self.loop_broadcast, (pos, rot, name, ref))
 
     def simulate_head_down(self):
         # Pretend we know the head down as well, where we have a target.
@@ -96,8 +97,9 @@ class TableTop():
         # be going for some reason ...).
 
         #whole_body.move_end_effector_pose(geometry.pose(), direction)
-        # It should move 2 cm in the negative y direction
-        whole_body.move_end_effector_pose(geometry.pose(y=-0.02), cards[0])
+        # We want to move in the _positive_ y direction.
+        #whole_body.move_end_effector_pose(geometry.pose(y=0.20), cards[0])
+        whole_body.move_end_effector_pose(geometry.pose(), direction)
 
         # Back to normal, open gripper
         com.grip_open(gripper)
@@ -130,9 +132,9 @@ if __name__ == "__main__":
 
     # Fake bed.
     tt = TableTop()
-    tt.simulate_ar()
+    tt.simulate_ar() # Make the AR but have this be wrt map frame.
     time.sleep(1)
-    tt.simulate_head_down()
+    tt.simulate_head_down() # Should be target location of where to grasp on the bed.
     time.sleep(1)
     tt.simulate_grasp(count=1)
     time.sleep(1)
@@ -156,5 +158,13 @@ if __name__ == "__main__":
         # also note, gripper = Bed_Gripper(...) has its own gripper argument from robot.get('gripper')
 
         tt.execute_grasp(bed_pick, whole_body, 'T_head_down', com, gripper.gripper, tension)
+
+        # Move to go (i.e., turn into 'default' stance) while also moving back
+        # to the starting map. Michael used a different frame (not 'map') which
+        # is a better idea anyway.
+        whole_body.move_to_go()
+        omni_base.move(geometry.pose(), 500.0, ref_frame_id='map')
+        whole_body.move_to_joint_positions({'head_tilt_joint':-0.8})
+        whole_body.move_to_joint_positions({'head_pan_joint': 1.5})
 
     rospy.spin()

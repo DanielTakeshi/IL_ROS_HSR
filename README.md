@@ -431,7 +431,7 @@ baseline for accuracy (either grasping or, less likely, successes).
 ### Data Format
 
 Data is stored on `/nfs/diskstation/seita/bed-make/` and is arranged as follows, where `X` is any
-placeholder:
+placeholder, and usually is really `X_v01` for version 1, then we have version 2, etc:
 
 - `rollouts_X`: data for training.
 - `held_out_X`: any data where it is easier to use one fixed held-out set rather than do 10-fold
@@ -464,8 +464,9 @@ Analysis](#inspection-and-analysis) for quick processing and analysis.
 **Other pointers**:
 
 0. For faster data collection, it makes sense to 'cache' the `rollouts_X` files on our solid state
-drive. Copy them to some directory on SSD and then use `--cache_data` when running. **MAKE SURE YOU
-SET `self.CACHE_PATH` IN THE CONFIGURATION FILE**. This will _only_ alter the initial data loading.
+drive. Copy them to some directory on SSD and then use `--cache_data` when running. *MAKE SURE YOU
+SET `self.CACHE_PATH` IN THE CONFIGURATION FILE*. This will _only_ alter the initial data loading.
+(Update: unfortunately, I've found that this doesn't bring as much of an improvement as I'd like.)
 
 1. Data dimension: we do not use the raw (480,640,3)-sized images, but resize them to (448, 448, 3).
 Then we can do one of the following:
@@ -479,13 +480,15 @@ Then we can do one of the following:
 
 2. Collect and understand the data. 
 
-    - The easiest way to understand the data is by running: `python scripts/check_raw_data.py` as
-      that will give us statistics as well as save images that we can use for later.
+    - The easiest way to understand the data from my scripts is by running: `python
+      scripts/check_raw_data.py` as that will give us statistics as well as save images that we can
+      use for later.
     - Also do `python scripts/data_augmentation_example.py` to check data augmentation, for both 
       the depth and the RGB images (check the code to change settings).
 
-Be sure to adjust paths for the above scripts, which use the slow `/nfs/diskstation` storage.
+3. Here are the versions of each dataset:
 
+    - `white_v01`: my first attempt, collected via Fetch, at the rough location Michael was using.
 
 ### Training
 

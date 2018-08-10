@@ -53,6 +53,11 @@ else:
         RESULTS_PATH = osp.join(HEAD,'grasp_output_for_plots/white_v01_fix26_100r_depth')
         OUTPUT_PATH  = osp.join(HEAD,'figures/white_v01_100r_depth')
 
+# TODO better pipeline ... yeah I know.
+RESULTS_PATH = osp.join(HEAD,'grasp_output_for_plots/grasp_net_fixed26_img_depth_opt_adam_lr_0.0001_l2_0.0001_kp_1.0')
+OUTPUT_PATH  = osp.join(HEAD,'figures/white_v01_100r_depth')
+
+
 pfiles = sorted([x for x in os.listdir(RESULTS_PATH) if '_raw_imgs.p' in x])
 all_targs, all_preds, all_L2s, all_x, all_y, all_names, all_top, all_bottom = \
         [], [], [], [], [], [], [], []

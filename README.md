@@ -500,27 +500,29 @@ grasp/
     grasp_fixed26_img_depth_opt_adam_lr_0.0001_l2_0.0001_kp_1.0/
         # assuming no cross-validation, checkpoint files from tf.Saver go here, indexed by time
         stats.p
-        config.txt
+        config_{...}.txt
     grasp_small_img_depth_opt_adam_lr_0.0001_l2_0.0001_kp_1.0/
         # assuming we use cross validation, we have stats indexed by index, don't use tf.Saver
         # these also have `stats_k_raw_imgs.p` for the raw images which we can visualize later
+        config_2018_08_08_13_31.txt
+        ...
+        config_2018_08_08_19_00.txt
         stats_0.p
+        stats_0_raw_imgs.p
         ...
         stats_9.p
-        config.txt
+        stats_9_raw_imgs.p
     ...
 ```
 
 so each time we do a training run, we automatically create a file name (exact naming convention will
 vary depending on what hyperparameters we decide are relevant). The idea is that later, when we do
-plotting and data analysis, all we need to do is copy+ paste these long file names into our scripts
+plotting and data analysis, all we need to do is copy+paste these long file names into our scripts
 (all of which are in `IL_ROS_HSR`, by the way). Then, within each of *those*, we have either all the
 stats files that result from cross validation, OR we have the checkpoints stored from these (along
 with stats files). The point is that if we do cross validation, we don't need to save the
-checkpoints.
-
-We'll also have `config.txt` which should contain all details from the python configuration files.
-That way, we should never be confused about what we are running. Hopefully ...
+checkpoints.  We'll also have configuration files, so we're never confused about what we're running.
+these are indexed by time.
 
 
 

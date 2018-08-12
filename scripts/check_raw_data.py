@@ -48,7 +48,7 @@ from fast_grasp_detect.data_aug.depth_preprocess import datum_to_net_dim
 ROLLOUTS = '/nfs/diskstation/seita/bed-make/rollouts_white_v01/'
 IMG_PATH = '/nfs/diskstation/seita/bed-make/images_white_v01/'
 
-resize = True
+resize = False
 g_total = 0
 s_count_failure = 0
 s_count_success = 0
@@ -98,11 +98,11 @@ for rnum in range(0, 120):
             d_img = (datum['d_img']).copy()
             pose = datum['pose']
             pose_int = (int(pose[0]), int(pose[1]))
-            if not resize:
-                cv2.circle(img=c_img, center=pose_int, radius=4, color=(0,0,255), thickness=-1)
-                cv2.circle(img=d_img, center=pose_int, radius=4, color=(0,0,255), thickness=-1)
-                cv2.circle(img=c_img, center=pose_int, radius=5, color=(0,0,0), thickness=2)
-                cv2.circle(img=d_img, center=pose_int, radius=5, color=(0,0,0), thickness=2)
+            #if not resize:
+            #    cv2.circle(img=c_img, center=pose_int, radius=4, color=(0,0,255), thickness=-1)
+            #    cv2.circle(img=d_img, center=pose_int, radius=4, color=(0,0,255), thickness=-1)
+            #    cv2.circle(img=c_img, center=pose_int, radius=5, color=(0,0,0), thickness=2)
+            #    cv2.circle(img=d_img, center=pose_int, radius=5, color=(0,0,0), thickness=2)
             cv2.imwrite(c_path, c_img)
             cv2.imwrite(d_path, d_img)
             g_in_rollout += 1

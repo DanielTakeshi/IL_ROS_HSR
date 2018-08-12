@@ -36,6 +36,7 @@ lw = 3
 ms = 8
 BLACK = (0,0,0)
 RED = (0,0,255)
+total = 0
 
 
 for ff in files:
@@ -73,3 +74,6 @@ for ff in files:
 
     cv2.imwrite(c_path, c_img)
     cv2.imwrite(d_path, d_img)
+    total += 1
+
+print("total images: {}".format(total))

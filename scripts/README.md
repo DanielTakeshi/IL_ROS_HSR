@@ -42,3 +42,5 @@ Ron's scripts for data extraction (I have a few for visualizing his as well):
 To visualize these, use `check_ron_data.py`. To format these in a way that fits the training code
 with minimal changes, use `format_ron_data.py`. Use `plot_training_ron.py` to investigate the
 results from training on Ron's data using cross validation.
+
+UPDATE: might use the script I have to convert raw data to list ...

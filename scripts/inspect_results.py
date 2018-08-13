@@ -5,7 +5,7 @@ E.g. after running:
     ./main/grasp.sh | tee logs/grasp.log
 
 for either cross validation or not, I should be able to automate things. These should create output
-that lie under a directory, like: `grasp/ABC/[results...]`. For this script, `ABC` is what we want.
+that lie under a directory, like: `grasp/ABC/[results...]`. And don't forget figures too.
 """
 import argparse, cv2, os, pickle, sys, matplotlib, utils
 import os.path as osp
@@ -18,26 +18,25 @@ from fast_grasp_detect.data_aug.depth_preprocess import datum_to_net_dim
 from collections import defaultdict
 
 # ------------------------------------------------------------------------------
-# ADJUST
+# ADJUST. HH is the directory named like: 'grasp_1_img_depth_opt_adam_lr_0.0001_{etc...}'
 # ------------------------------------------------------------------------------
-HEAD='/nfs/diskstation/seita/bed-make/'
-ROLLOUT_HEAD=osp.join(HEAD,'rollouts_white_v01')
+HEAD = '/nfs/diskstation/seita/bed-make/'
+DATA_NAME = 'rollouts_white_v01'
+HH = 'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_cv_True'
+ROLLOUT_HEAD = osp.join(HEAD, DATA_NAME)
 
-HH='grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_cv_True'
-#HH='grasp_3_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_cv_True'
-
+# Sanity checks.
 rgb_baseline = utils.rgb_baseline_check(HH)
 net_type = utils.net_check(HH)
 
 # Make directory. In separate `figures/`, we put the same directory name for results.
-RESULTS_PATH = osp.join(HEAD, net_type, HH)
-OUTPUT_PATH  = osp.join(HEAD, 'figures', HH)
+RESULTS_PATH = osp.join(HEAD, net_type, DATA_NAME, HH)
+OUTPUT_PATH  = osp.join(HEAD, 'figures', DATA_NAME, HH)
 if not osp.exists(OUTPUT_PATH):
     os.makedirs(OUTPUT_PATH)
 
-# For overlaying predictions/targets. Still might want cross hair?
-INNER = 3
-OUTER = 4
+# Sizes for overlaying predictions/targets. Maybe cross hair is better?
+INNER, OUTER = 3, 4
 
 # For the plot(s). There are a few plot-specific parameters, though.
 tsize = 20

@@ -463,10 +463,11 @@ Analysis](#inspection-and-analysis) for quick processing and analysis.
 
 **Other pointers**:
 
-0. For faster data collection, it makes sense to 'cache' the `rollouts_X` files on our solid state
-drive. Copy them to some directory on SSD and then use `--cache_data` when running. *MAKE SURE YOU
-SET `self.CACHE_PATH` IN THE CONFIGURATION FILE*. This will _only_ alter the initial data loading.
-(Update: unfortunately, I've found that this doesn't bring as much of an improvement as I'd like.)
+0. For faster and cleaner data loading for training, it makes sense to 'cache' the `rollouts_X`
+files. This means running the `convert_to_list_cache.py` script. This will download and shuffle data
+from rollouts file, then save them in pickle files (on `/nfs/diskstation`). It does everything up to
+but not including data augmentation.  Run `--use_cache` on the command line, and *make sure you set
+`self.CACHE_PATH` in the configuration file*.
 
 1. Data dimension: we do not use the raw (480,640,3)-sized images, but resize them to (448, 448, 3).
 Then we can do one of the following:
@@ -496,26 +497,27 @@ Update one of the two configuration files, depending on which one was used. Doub
 Also double check the bash scripts and command line arguments. We save the network's results in
 `/nfs/diskstation/seita/bed-make/X` where `X` can be either `grasp` or `transition` depending on
 which network we trained. These have similar directory structures, so WLOG assume we're in
-`/.../grasp/`. Then we have:
+`/.../grasp/[data_name]/`. Then we have:
 
 ```
 grasp/
-    grasp_fixed26_img_depth_opt_adam_lr_0.0001_l2_0.0001_kp_1.0/
-        # assuming no cross-validation, checkpoint files from tf.Saver go here, indexed by time
-        stats.p
-        config_{...}.txt
-    grasp_small_img_depth_opt_adam_lr_0.0001_l2_0.0001_kp_1.0/
-        # assuming we use cross validation, we have stats indexed by index, don't use tf.Saver
-        # these also have `stats_k_raw_imgs.p` for the raw images which we can visualize later
-        config_2018_08_08_13_31.txt
+    r_white_v01/
+        grasp_fixed26_img_depth_opt_adam_lr_0.0001_l2_0.0001_kp_1.0/
+            # assuming no cross-validation, checkpoint files from tf.Saver go here, indexed by time
+            stats.p
+            config_{...}.txt
+        grasp_small_img_depth_opt_adam_lr_0.0001_l2_0.0001_kp_1.0/
+            # assuming we use cross validation, we have stats indexed by index, don't use tf.Saver
+            # these also have `stats_k_raw_imgs.p` for the raw images which we can visualize later
+            config_2018_08_08_13_31.txt
+            ...
+            config_2018_08_08_19_00.txt
+            stats_0.p
+            stats_0_raw_imgs.p
+            ...
+            stats_9.p
+            stats_9_raw_imgs.p
         ...
-        config_2018_08_08_19_00.txt
-        stats_0.p
-        stats_0_raw_imgs.p
-        ...
-        stats_9.p
-        stats_9_raw_imgs.p
-    ...
 ```
 
 so each time we do a training run, we automatically create a file name (exact naming convention will
@@ -531,44 +533,8 @@ these are indexed by time.
 
 ### Inspection and Analysis
 
+To inspect the training results, run `python scripts/inspect_results.py`.
 
-
-TODO OUTDATED
-
-3. Investigate what kind of training works best for the grasp data. For this, perform cross
-validation on the grasping data. (And maybe the success data, but for now just do grasping.)
-
-    - Check the configuration file for grasping. Make sure:
-        - `self.PERFORM_CV = True`
-        - `self.CV_HELD_OUT_INDEX` is set to a number between 0 and 9, inclusive.
-        - `self.ROLLOUT_PATH` refers to where all the 50 (or so) rollouts are stored.
-        - `self.CV_GROUPS` splits the rollouts randomly and evenly into groups.
-    - Run `python train_bed_grasp.py`. It should load in the network and the data, and will save in
-      `grasp_output/`, with the following information by default:
-       ```
-       seita@autolab-titan-box:/nfs/diskstation/seita/bed-make$ ls -lh grasp_output/*
-       -rw-rw-r-- 1 nobody nogroup 336M Jul  5 17:25 grasp_output/07_05_17_24_56_CS_0_save.ckpt-500.data-00000-of-00001
-       -rw-rw-r-- 1 nobody nogroup 2.3K Jul  5 17:25 grasp_output/07_05_17_24_56_CS_0_save.ckpt-500.index
-       -rw-rw-r-- 1 nobody nogroup 692K Jul  5 17:25 grasp_output/07_05_17_24_56_CS_0_save.ckpt-500.meta
-       -rw-rw-r-- 1 nobody nogroup 336M Jul  5 17:26 grasp_output/07_05_17_26_09_CS_0_save.ckpt-1000.data-00000-of-00001
-       -rw-rw-r-- 1 nobody nogroup 2.3K Jul  5 17:26 grasp_output/07_05_17_26_09_CS_0_save.ckpt-1000.index
-       -rw-rw-r-- 1 nobody nogroup 692K Jul  5 17:26 grasp_output/07_05_17_26_09_CS_0_save.ckpt-1000.meta
-       -rw-rw-r-- 1 nobody nogroup  324 Jul  5 17:26 grasp_output/checkpoint
-       
-       grasp_output/2018_07_05_17_23:
-       total 4.0K
-       -rw-rw-r-- 1 nobody nogroup 2.0K Jul  5 17:23 config.txt
-       
-       grasp_output/stats:
-       total 4.0K
-       -rw-rw-r-- 1 nobody nogroup 720 Jul  5 17:26 grasp_net.p
-       ```
-        - `config.txt` file is saved in a file reflecting the time the code was run, and has all
-          the configurations, so we always know what we ran. :)
-        - `stats/grasp_net.p` is a dict where 'test' and 'train' are the test and train losses,
-          respectively, saved at some fixed epochs.
-        - The other stuff, of course, is from `tf.Saver`.
-    - Do something similar to the above for the "success" data.
 
 
 ## Evaluation

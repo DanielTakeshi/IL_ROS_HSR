@@ -1,7 +1,6 @@
-"""Use this script to convert raw rollout data to numpy arrays.
+"""Use this script to process as much of the GRASPING data (not success) as possible.
 
 Hopefully this will lead to faster data loading, which is becoming a huge limiting factor.
-
 To be clear, we start with a `rollouts_X/` directory, from me or the other guys, and here we can
 convert that to, say, `cache_X` which has arrays which we can load. We perform all steps up to but
 not including data augmentation here, since that probably raises more hassles with splitting testing
@@ -9,8 +8,26 @@ vs training; testing data doesn't use data augmentation. We also deal with cross
 Ideally, save 10 lists (if doing 10-fold) where each has a set of dictionaries.
 
 And also we don't need to do any shuffling here, since the data manager will do that later.
+EDIT: NO THIS IS NOT RIGHT, WE DO NEED TO SHUFFLE, THAT MUST BE DONE BEFORE CROSS-VALID SPLITS!!
+But I do that anyway, I shuffle to get the CV splits where each index is one element ... whew!
 
-Update: hmm ... right now we only use the grasping network's stuff.
+After running this, I might have:
+
+seita@autolab-titan-box:/nfs/diskstation/seita/bed-make$ ls -lh cache_white_v01/
+total 1.1G
+-rw-rw-r-- 1 nobody nogroup 120M Aug 12 15:39 grasp_list_of_dicts_nodaug_cv_0_len_21.pkl
+-rw-rw-r-- 1 nobody nogroup 122M Aug 12 15:39 grasp_list_of_dicts_nodaug_cv_1_len_21.pkl
+-rw-rw-r-- 1 nobody nogroup 121M Aug 12 15:39 grasp_list_of_dicts_nodaug_cv_2_len_21.pkl
+-rw-rw-r-- 1 nobody nogroup 119M Aug 12 15:39 grasp_list_of_dicts_nodaug_cv_3_len_21.pkl
+-rw-rw-r-- 1 nobody nogroup 124M Aug 12 15:39 grasp_list_of_dicts_nodaug_cv_4_len_21.pkl
+-rw-rw-r-- 1 nobody nogroup 121M Aug 12 15:39 grasp_list_of_dicts_nodaug_cv_5_len_21.pkl
+-rw-rw-r-- 1 nobody nogroup 121M Aug 12 15:39 grasp_list_of_dicts_nodaug_cv_6_len_21.pkl
+-rw-rw-r-- 1 nobody nogroup 120M Aug 12 15:39 grasp_list_of_dicts_nodaug_cv_7_len_21.pkl
+-rw-rw-r-- 1 nobody nogroup 119M Aug 12 15:39 grasp_list_of_dicts_nodaug_cv_8_len_21.pkl
+-rw-rw-r-- 1 nobody nogroup 120M Aug 12 15:39 grasp_list_of_dicts_nodaug_cv_9_len_21.pkl
+
+so, a list of dicts, each dict of which has cimg, dimg, and label (all we need), no data
+augmentation, and we just load this into our code. _Should_ be easy ...
 """
 import cv2, os, pickle, sys
 import numpy as np
@@ -103,7 +120,7 @@ else:
     raise NotImplementedError()
 
 
-# The indices which represent the CV split.
+# The indices which represent the CV split. THIS IS WHERE THE SHUFFLING HAPPENS!
 N = len(data_points)
 print("\nNow doing cross validation on {} points ...".format(N))
 folds = [list(x) for x in np.array_split(np.random.permutation(N), NUM_CV) ]

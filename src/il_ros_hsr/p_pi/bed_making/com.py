@@ -1,11 +1,6 @@
-import sys, os, time, cv2, argparse
-import tty, termios
+import sys, os, time, cv2, argparse, IPython, rospy, tty, termios
 import numpy as np
-import IPython
-import rospy
 from il_ros_hsr.core.common import Common
-import cv2
-
 from geometry_msgs.msg import Twist
 import cPickle as pickle
 
@@ -35,10 +30,19 @@ class Bed_COM(Common):
  
     @overrides(Common)
     def go_to_initial_state(self,whole_body):
+        """Daniel: modified this to get it in a better spot to match Fetch.
+
+        This is for the view-mode of being closer.
+        """
         whole_body.move_to_go()
-        whole_body.move_to_joint_positions({'head_pan_joint': 1.5})
-        whole_body.move_to_joint_positions({'head_tilt_joint':-0.8})
+        if cfg.VIEW_MODE == 'closer':
+            whole_body.move_to_joint_positions({'arm_flex_joint':  -np.pi/16.0})
+        whole_body.move_to_joint_positions({'head_pan_joint':  np.pi/2.0})
+        whole_body.move_to_joint_positions({'head_tilt_joint':  -np.pi/4.0})
+        if cfg.VIEW_MODE == 'closer':
+            whole_body.move_to_joint_positions({'arm_lift_joint':  0.120})
         
+    # haven't checked anything beyond this point ...
 
     def format_data(self,color_img,depth_img):
         c_img = color_img[self.Options.OFFSET_X:self.Options.OFFSET_X+self.Options.WIDTH,self.Options.OFFSET_Y:self.Options.OFFSET_Y+self.Options.HEIGHT,:]

@@ -1,5 +1,19 @@
-import os
+import os, sys
 import numpy as np
+
+
+# View mode: STANDARD (the way I was doing earlier), CLOSE (the way they want).
+VIEW_MODE = 'standard'
+assert VIEW_MODE in ['standard', 'close']
+
+
+
+
+
+# OLDER STUFF I'LL RESOLVE LATER
+
+
+CLASSES = ['success_bed','failure_bed']
 
 # path and dataset parameter
 ROOT_DIR = '/media/autolab/1tb/daniel-bed-make/'
@@ -37,13 +51,6 @@ PRE_TRAINED_DIR = '/home/autolab/Workspaces/michael_working/yolo_tensorflow/data
 WEIGHTS_FILE = None
 # WEIGHTS_FILE = os.path.join(DATA_PATH, 'weights', 'YOLO_small.ckpt')
 
-CLASSES = ['success_bed','failure_bed']
-# #CLASSES = ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
-#            'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
-#            'motorbike', 'person', 'pottedplant', 'sheep', 'sofa',
-# 			'train', 'tvmonitor']
-
-
 # (Daniel note: michael had to switch these around when we were testing)
 if USE_DART:
 	# GRASP_NET_NAME = '11_08_15_47_03_CS_0_save.ckpt-500'
@@ -60,12 +67,6 @@ else:
 #GRASP_NET_NAME = "09_08_11_14_12_CS_1_save.ckpt-6000"
 
 MSR_LOSS = True
-USE_WEB_INTERFACE = False
-
-#SS LEARN
-SS_LEARN = False
-NUM_SS_DATA = 3
-SS_TIME = 1.2
 
 RIGHT_SIDE = True
 

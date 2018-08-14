@@ -24,8 +24,11 @@ from numpy.random import normal
 class BedMaker():
 
     def __init__(self):
-        """For data collection of bed-making, not the deployment.
+        """For data collection of bed-making, NOT the deployment.
+
         Assumes we roll out the robot's policy via code (not via human touch).
+        This is the 'slower' way where we have the python interface that the
+        human clicks on to indicate grasping points.
         """
         self.robot = robot = hsrb_interface.Robot()
         self.rgbd_map = RGBD2Map()
@@ -60,7 +63,10 @@ class BedMaker():
 
         time.sleep(4)
         print("Finished creating BedMaker()! Get the bed set up and run bed-making!")
-        # TODO: put some 'initial sampler' code here.
+        if cfg.INS_SAMPLE:
+            print("TODO: we don't have sampling code here.")
+
+        #rospy.spin()
 
 
     def bed_make(self):
@@ -71,10 +77,11 @@ class BedMaker():
         self.get_new_grasp = True
 
         # I think, creates red line in GUI where we adjust the bed to match it.
-        # But in general we better fix our sampler before doing this.
+        # But in general we better fix our sampler before doing this for real.
+        # Don't forget to press 'B' on the joystick to get past this screen.
         if cfg.INS_SAMPLE:
             u_c, d_c = self.ins.sample_initial_state()
-            #self.rollout_data.append( [u_c, d_c, self.sampling_type] )
+            self.rollout_data.append( [u_c, d_c] )
 
         while True:
             c_img = self.cam.read_color_data()
@@ -85,21 +92,20 @@ class BedMaker():
                     self.position_head()
 
                     # Human supervisor labels. data = dictionary of relevant info
-                    print("calling wl.label_image(c_img) with c_img:\n{}".format(c_img))
                     data = self.wl.label_image(c_img)
                     c_img = self.cam.read_color_data()
                     d_img = self.cam.read_depth_data()
                     self.add_data_point(c_img, d_img, data, self.side, 'grasp')
 
                     # Broadcasts grasp pose
-                    self.gripper.find_pick_region_labeler(data,c_img,d_img,self.grasp_count)
+                    self.gripper.find_pick_region_labeler(data, c_img, d_img, self.grasp_count)
 
                 # Execute the grasp and check for success.
-                pick_found,bed_pick = self.check_card_found()
+                pick_found, bed_pick = self.check_card_found()
                 if self.side == "BOTTOM":
-                    self.gripper.execute_grasp(bed_pick,self.whole_body,'head_down')
+                    self.gripper.execute_grasp(bed_pick, self.whole_body, 'head_down')
                 else:
-                    self.gripper.execute_grasp(bed_pick,self.whole_body,'head_up')
+                    self.gripper.execute_grasp(bed_pick, self.whole_body, 'head_up')
                 self.check_success_state()
 
 
@@ -176,14 +182,24 @@ class BedMaker():
 
 
     def position_head(self):
+        """Position the head for a grasp attempt."""
+        self.whole_body.move_to_go()
+
         if self.side == "TOP":
-            self.whole_body.move_to_joint_positions({'head_tilt_joint':-0.8})
+            self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})
         elif self.side == "BOTTOM":
             self.tt.move_to_pose(self.omni_base,'lower_start')
-            self.whole_body.move_to_joint_positions({'head_tilt_joint':-0.8})
+            self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})
+
+        # If the view mode is closer, always adjust these three extra joints.
+        if cfg.VIEW_MODE == 'close':
+            self.whole_body.move_to_joint_positions({'arm_flex_joint': -np.pi/16.0})
+            self.whole_body.move_to_joint_positions({'head_pan_joint':  np.pi/2.0})
+            self.whole_body.move_to_joint_positions({'arm_lift_joint':  0.120})
 
 
     def move_to_top_side(self):
+        self.whole_body.move_to_go()
         self.tt.move_to_pose(self.omni_base,'right_down')
         #self.tt.move_to_pose(self.omni_base,'right_mid')
         self.tt.move_to_pose(self.omni_base,'right_up')
@@ -191,6 +207,7 @@ class BedMaker():
 
 
     def move_to_start(self):
+        self.whole_body.move_to_go()
         self.tt.move_to_pose(self.omni_base,'right_up')
         #self.tt.move_to_pose(self.omni_base,'right_mid')
         self.tt.move_to_pose(self.omni_base,'right_down')

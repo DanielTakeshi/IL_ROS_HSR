@@ -1,17 +1,12 @@
-import os
-import Pyro4
-import time
+import os, Pyro4, time, IPython, cv2, hsrb_interface
 import cPickle as pickle
-import IPython
-import cv2
+import numpy as np
+import il_ros_hsr.p_pi.bed_making.config_bed as cfg
 from il_ros_hsr.p_pi.bed_making.gripper import Bed_Gripper
 from il_ros_hsr.p_pi.bed_making.table_top import TableTop
 from il_ros_hsr.core.web_labeler import Web_Labeler
 from il_ros_hsr.core.python_labeler import Python_Labeler
-import hsrb_interface
 from il_ros_hsr.core.sensors import  RGBD
-#robot interface
-#GLOBAL_PATH = "/home/autolab/Workspaces/michael_working/IL_ROS_HSR/"
 CANVAS_DIM = 420.0
 
 
@@ -26,17 +21,26 @@ class Success_Check:
 
 
     def check_bottom_success(self,wl):
+        """I think it's safer to set `whole_body.move_to_go()` first."""
         self.whole_body.move_to_go()
         self.tt.move_to_pose(self.omni_base,'lower_start')
-        #self.whole_body.move_to_joint_positions({'head_pan_joint': 1.5})
-        self.whole_body.move_to_joint_positions({'head_tilt_joint':-0.8})
+        self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})
+        if cfg.VIEW_MODE == 'close':
+            self.whole_body.move_to_joint_positions({'arm_flex_joint': -np.pi/16.0})
+            self.whole_body.move_to_joint_positions({'head_pan_joint':  np.pi/2.0})
+            self.whole_body.move_to_joint_positions({'arm_lift_joint':  0.120})
         return self.check_success(wl)
 
 
     def check_top_success(self,wl):
+        """I think it's safer to set `whole_body.move_to_go()` first."""
         self.whole_body.move_to_go()
         self.tt.move_to_pose(self.omni_base,'top_mid')
-        self.whole_body.move_to_joint_positions({'head_tilt_joint':-0.8})
+        self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})
+        if cfg.VIEW_MODE == 'close':
+            self.whole_body.move_to_joint_positions({'arm_flex_joint': -np.pi/16.0})
+            self.whole_body.move_to_joint_positions({'head_pan_joint':  np.pi/2.0})
+            self.whole_body.move_to_joint_positions({'arm_lift_joint':  0.120})
         return self.check_success(wl)
 
 

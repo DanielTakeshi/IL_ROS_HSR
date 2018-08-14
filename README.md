@@ -539,6 +539,16 @@ To inspect the training results, run `python scripts/inspect_results.py`.
 
 ## Evaluation
 
+When deploying the bed, always [check the bed-making configuration file][1] at:
+
+```
+src/il_ros_hsr/p_pi/bed_making/config_bed.py
+```
+
+Of particular note are the two perspectives from the `VIEW_MODE` variable, where
+we have `standard` representing Michael's view, and `close' representing H's
+view. The poses will be different each time.
+
 1. Run `python deploy_network.py` for testing the method we propose with deep imitation learning.
 
 2. Run `python deploy_analytic.py` for testing the baseline method.

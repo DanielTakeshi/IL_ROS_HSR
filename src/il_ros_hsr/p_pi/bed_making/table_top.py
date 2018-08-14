@@ -3,16 +3,18 @@ from geometry_msgs.msg import PoseStamped, Point, Quaternion, WrenchStamped, Pos
 from hsrb_interface import geometry
 from image_geometry import PinholeCameraModel as PCM
 from cv_bridge import CvBridge, CvBridgeError
-from il_ros_hsr.core.sensors import  RGBD, Gripper_Torque, Joint_Positions
-from il_ros_hsr.core.joystick import  JoyStick
+from il_ros_hsr.core.sensors import RGBD, Gripper_Torque, Joint_Positions
+from il_ros_hsr.core.joystick import JoyStick
 from il_ros_hsr.p_pi.bed_making.com import Bed_COM as COM
+import il_ros_hsr.p_pi.bed_making.config_bed as cfg
 from tf import TransformListener, TransformBroadcaster
 import numpy as np
 import numpy.linalg as LA
 
-# OFFSETs. To decide these, set other offsets in the transformations code to 0, then adjust these
-# below until the coordinate frames for the bed match the corners. Then add more offsets in the code
-# to make the corners 'further outwards' since the corners are actually grasing points.
+# OFFSETs. To decide these, set other offsets in the transformations code to 0,
+# then adjust these below until the coordinate frames for the bed match the
+# corners. Then add more offsets in the code to make the corners 'further
+# outwards' since the corners are actually grasing points.
 
 # Long side of top bed frame is about 91 cm, x-axis wrt AR marker.
 TABLE_LENGTH = 0.91
@@ -226,9 +228,9 @@ class TableTop():
         # Note: head_up and head_down are what we actually use for grasp pulling targets.
         # ------------------------------------------------------------------------------------------
 
-        # x-offset for head up/down. Increase this to make grasp target further away from corner.
-        # Probably a value like 0.05 or so will work ...
-        HX_OFF = 0.05
+        # x-offset for head up/down. Increase this to make grasp target further away from corner, 
+        # towards the dvrk machines. Probably a value like 0.04 or so will work ...
+        HX_OFF = 0.03
 
         # If this is zero, then the four corners should have y-axis that are roughly coinciding with
         # the bed's boundaries. (It's tricky for the opposite side which we can't see easily.)
@@ -279,25 +281,35 @@ class TableTop():
 
         # LOWER MID, HSR starts bed-making by moving here from `lower_mid`, so
         # it moves closer to the bed, and then receives the image of the setup.
+        # If using alternative view, we actually need to change the z-rotation.
         offsets = np.array([0.0,-OFFSET+0.16,0.0])
-        rot = np.array([0.0,0.0,1.57])
+        if cfg.VIEW_MODE == 'close':
+            rot = np.array([0.0, 0.0, np.pi])
+        elif cfg.VIEW_MODE == 'standard':
+            rot = np.array([0.0, 0.0, np.pi/2.0])
         self.new_pose_workaround(offsets, 'lower_start', rot)
 
+        # Quick note, subtracted 10cm from the value that we actually move,
+        # hopefully makes the trajectory closer.
+
         # RIGHT CORNER, go from `lower_start` to `right_down` after we finish grasp.
-        offsets = np.array([-(OFFSET+TABLE_LENGTH/2.0), 0.0, 0.0])
+        offsets = np.array([-(OFFSET + TABLE_LENGTH/2.0 - 0.10), 0.0, 0.0])
         self.new_pose_workaround(offsets, 'right_down', rot=None)
 
         # RIGHT MID, go from `right_down` to `right_mid`. (This might get skipped, actually)
-        offsets = np.array([-(OFFSET+TABLE_LENGTH/2.0),(OFFSET+TABLE_WIDTH/2.0),0.0])
+        offsets = np.array([-(OFFSET + TABLE_LENGTH/2.0 - 0.10),(OFFSET+TABLE_WIDTH/2.0),0.0])
         self.new_pose_workaround(offsets, 'right_mid', rot=None)
  
         # TOP CORNER, go from `right_mid` to `right_up`.
-        offsets = np.array([-(OFFSET+TABLE_LENGTH/2.0), (2*OFFSET+TABLE_WIDTH), 0.0])
+        offsets = np.array([-(OFFSET + TABLE_LENGTH/2.0 - 0.10), (2*OFFSET+TABLE_WIDTH), 0.0])
         self.new_pose_workaround(offsets, 'right_up', rot=None)
 
         # TOP MID, where HSR goes to see the bed from top side, and performs grasp.
         offsets = np.array([0.0, (2*OFFSET+TABLE_WIDTH), 0.0])
-        rot = np.array([0.0,0.0,-1.57])
+        if cfg.VIEW_MODE == 'close':
+            rot = np.array([0.0, 0.0, 0.0])
+        elif cfg.VIEW_MODE == 'standard':
+            rot = np.array([0.0, 0.0, -np.pi/2.0])
         self.new_pose_workaround(offsets, 'top_mid', rot)
 
         # ------------------------------------------------------------------------------------------

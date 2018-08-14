@@ -1,31 +1,49 @@
 import os, sys
 import numpy as np
+from os.path import join
 
 
-# View mode: STANDARD (the way I was doing earlier), CLOSE (the way they want).
-VIEW_MODE = 'standard'
+# ------------------------------------------------------------------------------
+
+# Overall root directory where we save files. Should be /nfs/diskstation.
+ROOT_DIR = '/nfs/diskstation/seita/bed-make/'
+
+# If we are running the `collect_data_bed` scripts, we save rollouts here.
+DATA_PATH = join(ROOT_DIR, 'collect_data_bed/')
+ROLLOUT_PATH = join(DATA_PATH, 'rollouts/')
+# There is also a BC_HELD_OUT but we probably don't need this.
+
+# STANDARD (the way I was doing earlier), CLOSE (the way they want).
+VIEW_MODE = 'close'
 assert VIEW_MODE in ['standard', 'close']
 
+# Whether we use a sampler which tells us how to adjust the bed. (Not really used now)
+INS_SAMPLE = False
 
+# Stuff for the tensioner.
+FORCE_LIMT = 25.0
+HIGH_FORCE = 25.0
+LOW_FORCE = 2.0
+MAX_PULLS = 3
+BOX = 10
 
+# Max number of grasps to attempt before exiting.
+GRASP_OUT = 8
 
-
+# ------------------------------------------------------------------------------
 # OLDER STUFF I'LL RESOLVE LATER
 
 
 CLASSES = ['success_bed','failure_bed']
 
 # path and dataset parameter
-ROOT_DIR = '/media/autolab/1tb/daniel-bed-make/'
 NET_NAME = '07_31_00_09_46save.ckpt-30300'
-DATA_PATH = ROOT_DIR + 'bed_rcnn/'
 
 USE_DART = False
 if USE_DART: 
 	ROLLOUT_PATH = DATA_PATH+'rollouts_dart_cal/'
 	BC_HELD_OUT = DATA_PATH+'held_out_debugpython'
 else: 
-	ROLLOUT_PATH = DATA_PATH+'rollouts/'
 	BC_HELD_OUT = DATA_PATH+'held_out_bc'
 FAST_PATH = DATA_PATH+'fast_pic/'
 
@@ -70,13 +88,6 @@ MSR_LOSS = True
 
 RIGHT_SIDE = True
 
-#TENSIONER 
-FORCE_LIMT = 25.0
-HIGH_FORCE = 25.0
-LOW_FORCE = 2.0
-MAX_PULLS = 3
-BOX = 10
-
 #DEBUG
 DEBUG_MODE = False
 
@@ -86,8 +97,3 @@ GRIPPER_HEIGHT = 0.055
 #GRIPPER_HEIGHT = 0.090
 MM_TO_M = 0.001
 
-GRASP_OUT = 8
-INS_SAMPLE = True
-
-DART_MAT = np.array([[ 1421.21439203,  -158.39422591],
- 					[ -158.39422591, 165.80726958]])

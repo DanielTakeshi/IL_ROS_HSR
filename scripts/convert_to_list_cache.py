@@ -35,15 +35,17 @@ np.set_printoptions(suppress=True, linewidth=200)
 from fast_grasp_detect.data_aug.depth_preprocess import datum_to_net_dim
 from fast_grasp_detect.data_aug.data_augment import augment_data
 
+# ----------------------------------------------------------------------------------------
 # The usual rollouts path. Easiest if you make the cache with matching names.
-ROLLOUTS = '/nfs/diskstation/seita/bed-make/rollouts_white_v01/'
-OUT_PATH = '/nfs/diskstation/seita/bed-make/cache_white_v01/'
+ROLLOUTS = '/nfs/diskstation/seita/bed-make/rollouts_h_v01/'
+OUT_PATH = '/nfs/diskstation/seita/bed-make/cache_h_v02/'
 
 # ALSO ADJUST, since we have slightly different ways of loading and storing data.
 # This format depends on what we used for ROLLOUTS, etc., in the above file names.
-is_my_format = True
-is_h_format = False
+is_my_format = False
+is_h_format = True
 assert not (is_my_format and is_h_format)
+# ----------------------------------------------------------------------------------------
 
 if not os.path.exists(OUT_PATH):
     os.makedirs(OUT_PATH)
@@ -53,6 +55,7 @@ files = sorted([x for x in os.listdir(ROLLOUTS)])
 
 # List of dictionaries we'll split later for CV.
 data_points = []
+num_skipped = 0
 
 
 if is_h_format:
@@ -79,6 +82,12 @@ if is_h_format:
         datum = datum_to_net_dim(datum)
         assert datum['d_img'].shape == (480, 640, 3)
         assert 'c_img' in datum.keys() and 'd_img' in datum.keys() and 'pose' in datum.keys()
+
+        # SKIP points that have pose[0] (i.e., x value) less than some threshold.
+        if datum['pose'][0] <= 30:
+            print("    NOTE: skipping this due to pose: {}".format(datum['pose']))
+            num_skipped += 1
+            continue
         data_points.append(datum)
 
 elif is_my_format:
@@ -119,6 +128,7 @@ elif is_my_format:
 else:
     raise NotImplementedError()
 
+print("Note: num_skippd: {}".format(num_skipped))
 
 # The indices which represent the CV split. THIS IS WHERE THE SHUFFLING HAPPENS!
 N = len(data_points)

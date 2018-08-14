@@ -490,6 +490,8 @@ Then we can do one of the following:
 3. Here are the versions of each dataset:
 
     - `white_v01`: my first attempt, collected via Fetch, at the rough location Michael was using.
+    - `h_v01`: H's data, 982 images.
+    - `h_v02`: H's data, 961 images, pruning away data w/x-axis value of <= 30.
 
 ### Training
 

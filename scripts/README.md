@@ -25,7 +25,9 @@ Visualize the data and do quick checks:
 
 Understanding grasping network performance after training:
 
-- `scripts/inspect_results.py`: **the main thing we use for evaluating grasping performance.**
+- **The main thing we use for evaluating grasping performance**, with self-explanatory names.
+    - `inspect_results_cache.py`
+    - `inspect_results_nocache.py`
 - `scripts/overlay_auto_preds_targ.py`: do this automatically, rather than copy/paste. This also
   reports lots of other interesting statistics, and creates heat maps. It's deprecated by the
   `inspect_results.py` script.

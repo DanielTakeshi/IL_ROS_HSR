@@ -1,11 +1,7 @@
 """Use this script for inspecting results after we run.
 
-E.g. after running:
-
-    ./main/grasp.sh | tee logs/grasp.log
-
-for either cross validation or not, I should be able to automate things. These should create output
-that lie under a directory, like: `grasp/ABC/[results...]`. And don't forget figures too.
+ASSUMES WE SAVED DATA VIA A CACHE, so we don't have extra `rollouts_X/rollouts_k/rollout.p`
+to load. I have another script that assumes we do not use a cache.
 """
 import argparse, cv2, os, pickle, sys, matplotlib, utils
 import os.path as osp
@@ -21,11 +17,11 @@ from collections import defaultdict
 # ADJUST. HH is the directory named like: 'grasp_1_img_depth_opt_adam_lr_0.0001_{etc...}'
 # ------------------------------------------------------------------------------
 HEAD = '/nfs/diskstation/seita/bed-make/'
-DATA_NAME = 'rollouts_white_v01'
+DATA_NAME = 'cache_h_v01'
 HH = 'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_cv_True'
-ROLLOUT_HEAD = osp.join(HEAD, DATA_NAME)
 
 # Sanity checks.
+assert 'cache' in DATA_NAME
 rgb_baseline = utils.rgb_baseline_check(HH)
 net_type = utils.net_check(HH)
 
@@ -46,7 +42,10 @@ tick_size = 18
 legend_size = 18
 alpha = 0.5
 error_alpha = 0.3
-error_fc = 'gold'
+error_fc = 'blue'
+
+# Might as well make y-axis a bit more informative, if we know it.
+LOSS_YLIM = [0.0, 0.035]
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 
@@ -64,8 +63,6 @@ def make_scatter(ss):
     all_targs = np.array(ss['all_targs'])
     all_preds = np.array(ss['all_preds'])
     all_L2s = np.array(ss['all_L2s'])
-    all_top = ss['all_top']
-    all_bot = ss['all_bot']
     all_x = ss['all_x']
     all_y = ss['all_y']
     all_names = ss['all_names']
@@ -75,10 +72,6 @@ def make_scatter(ss):
     print("all_preds.shape: {}".format(all_preds.shape))
     print("all_L2s.shape:   {}".format(all_L2s.shape))
     print("all_L2s (pixels): {:.1f} +/- {:.1f}".format(np.mean(all_L2s), np.std(all_L2s)))
-    print("TOP L2s (pixels): {:.1f} +/- {:.1f};  max {:.1f}, quantity {}".format(
-            np.mean(all_top), np.std(all_top), np.max(all_top), len(all_top)))
-    print("BOT L2s (pixels): {:.1f} +/- {:.1f};  max {:.1f}, quantity {}".format(
-            np.mean(all_bot), np.std(all_bot), np.max(all_bot), len(all_bot)))
     
     # Print names of the images with highest L2 errors for inspection later.
     print("\nHere are file names with highest L2 errors.")
@@ -98,7 +91,7 @@ def make_scatter(ss):
     # This might be helpful:
     # https://stackoverflow.com/questions/48472227/how-can-one-create-a-heatmap-from-a-2d-scatterplot-data-in-python
     # ------------------------------------------------------------------------------
-    I = cv2.imread("scripts/imgs/image_example.png")
+    I = cv2.imread("scripts/imgs/image_example_close.png")
     
     # Create a scatter plot of where the targets are located.
     ax[0,0].imshow(I, alpha=alpha)
@@ -120,7 +113,7 @@ def make_scatter(ss):
     
     # Original image.
     ax[1,1].imshow(I)
-    ax[1,1].set_title("*Example* Image of the Setup", fontsize=tsize)
+    ax[1,1].set_title("An *Example* Image of the Setup", fontsize=tsize)
     
     # Bells and whistles
     for i in range(nrows):
@@ -134,7 +127,7 @@ def make_scatter(ss):
     plt.tight_layout()
     figname = osp.join(OUTPUT_PATH,"check_predictions_scatter_map.png")
     plt.savefig(figname)
-    print("Look at this figure: {}".format(figname))
+    print("Look at this figure:\n{}".format(figname))
     
 
 def make_plot(ss):
@@ -167,27 +160,33 @@ def make_plot(ss):
         ax[0,0].plot(xs, all_train[cv,:], label='cv_{}'.format(cv))
         ax[0,1].plot(xs, all_test[cv,:], label='cv_{}'.format(cv))
 
+    # Train = 0, Test = 1.
     mean_0 = np.mean(all_train, axis=0)
     std_0  = np.std(all_train, axis=0)
     mean_1 = np.mean(all_test, axis=0)
     std_1  = np.std(all_test, axis=0)
 
-    ax[1,0].plot(xs, mean_0, lw=2, label='train_losses')
-    ax[1,1].plot(xs, mean_1, lw=2, label='test_losses')
+    train_label = 'Avg CV Losses; minv_{:.4f}'.format( np.min(mean_0) )
+    test_label  = 'Avg CV Losses; minv_{:.4f}'.format( np.min(mean_1) )
+    ax[1,0].plot(xs, mean_0, lw=2, label=train_label)
+    ax[1,1].plot(xs, mean_1, lw=2, label=test_label)
     ax[1,0].fill_between(xs, mean_0-std_0, mean_0+std_0, alpha=error_alpha, facecolor=error_fc)
     ax[1,1].fill_between(xs, mean_1-std_1, mean_1+std_1, alpha=error_alpha, facecolor=error_fc)
 
     # Titles
-    ax[0,0].set_title("CV Train Losses", fontsize=tsize)
-    ax[0,1].set_title("CV Test Losses", fontsize=tsize)
-    ax[1,0].set_title("CV Train Losses", fontsize=tsize)
-    ax[1,1].set_title("CV Test Losses", fontsize=tsize)
+    ax[0,0].set_title("CV Train Losses, All Folds (For Debugging Only)", fontsize=tsize)
+    ax[0,1].set_title("CV Test Losses, All Folds (For Debugging Only)", fontsize=tsize)
+    ax[1,0].set_title("CV Train Losses, Averaged", fontsize=tsize)
+    ax[1,1].set_title("CV Test Losses, Averaged", fontsize=tsize)
 
     # Bells and whistles
     for i in range(nrows):
         for j in range(ncols):
+            if LOSS_YLIM is not None:
+                ax[i,j].set_ylim(LOSS_YLIM)
             ax[i,j].legend(loc="best", ncol=2, prop={'size':legend_size})
             ax[i,j].set_xlabel('Epoch', fontsize=xsize)
+            ax[i,j].set_ylabel('Average L2 Loss', fontsize=ysize)
             ax[i,j].set_ylabel('Average L2 Loss', fontsize=ysize)
             ax[i,j].tick_params(axis='x', labelsize=tick_size)
             ax[i,j].tick_params(axis='y', labelsize=tick_size)
@@ -195,17 +194,18 @@ def make_plot(ss):
     plt.tight_layout()
     figname = osp.join(OUTPUT_PATH,"check_stats.png")
     plt.savefig(figname)
-    print("Look at this figure: {}".format(figname))
+    print("Look at this figure:\n{}".format(figname))
  
 
 if __name__ == "__main__":
+    print("RESULTS_PATH: {}".format(RESULTS_PATH))
     pfiles = sorted([x for x in os.listdir(RESULTS_PATH) if '_raw_imgs.p' in x])
     ss = defaultdict(list) # for plotting later
     
-    for pf in pfiles:
+    for cv_index,pf in enumerate(pfiles):
         # Now on one of the cross-validation splits (or a 'normal' training run).
         other_pf = pf.replace('_raw_imgs.p','.p')
-        print("\n\n\n ----- Now on: {}\n ----- with:   {}".format(pf, other_pf))
+        print("\n\n ----- Now on: {}\n ----- with:   {}".format(pf, other_pf))
         data_imgs  = pickle.load( open(osp.join(RESULTS_PATH,pf),'rb') )
         data_other = pickle.load( open(osp.join(RESULTS_PATH,other_pf),'rb') )
     
@@ -215,85 +215,57 @@ if __name__ == "__main__":
         c_imgs = data_imgs['c_imgs_list']
         d_imgs = data_imgs['d_imgs_list']
         assert len(y_pred) == len(y_targ) == len(c_imgs) == len(d_imgs)
+        K = len(c_imgs)
     
         # Later, figure out what to do if not using cross validation ...
         if 'cv_indices' in data_other:
-            cv_ids = data_other['cv_indices']
-            print("Now dealing with CV (rollout) indices: {}".format(cv_ids))
+            cv_fname = data_other['cv_indices']
+            print("Now processing CV file name: {}, idx {}, with {} images".format(
+                    cv_fname, cv_index, K))
     
-        # Index into y_pred, y_targ, c_imgs, d_imgs, _within_ this CV training run.
-        idx = 0
+        # `idx` = index into y_pred, y_targ, c_imgs, d_imgs, _within_ this CV test set.
+        # Get these from training run, stored from best iteration on validation set.
+        # Unlike with the non-cache case, we can't really load in rollouts easily due
+        # to shuffling when forming the cache. We could get indices but not with it IMO.
+        for idx in range(K):
+            if idx % 10 == 0:
+                print("  ... processing image {} in this test set".format(idx))
+            pred = y_pred[idx]
+            targ = y_targ[idx]
+            cimg = c_imgs[idx].copy()
+            dimg = d_imgs[idx].copy()
+            L2 = np.sqrt( (pred[0]-targ[0])**2 + (pred[1]-targ[1])**2)
+            c_suffix = 'r_cv_{}_grasp_{}_rgb_L2_{:.0f}.png'.format(cv_index, idx, L2)
+            d_suffix = 'r_cv_{}_grasp_{}_depth_L2_{:.0f}.png'.format(cv_index, idx, L2)
+            c_path = osp.join(OUTPUT_PATH, c_suffix)
+            d_path = osp.join(OUTPUT_PATH, d_suffix)
     
-        for rnum in cv_ids:
-            print("\n=====================================================================")
-            path = osp.join(ROLLOUT_HEAD, 'rollout_{}/rollout.p'.format(rnum))
-            if not osp.exists(path):
-                print("Error: {} does not exist".format(path))
-                sys.exit()
-            data = pickle.load(open(path,'rb'))
-            print("loaded: {}".format(path))
-            print("rollout {}, len(data): {}".format(rnum, len(data)))
+            # For plotting later. Note, `targ` is the ground truth.
+            ss['all_targs'].append(targ)
+            ss['all_preds'].append(pred)
+            ss['all_x'].append(targ[0])
+            ss['all_y'].append(targ[1])
+            ss['all_L2s'].append(L2)
+            ss['all_names'].append(d_path)
+            targ  = (int(targ[0]), int(targ[1]))
+            preds = (int(pred[0]), int(pred[1]))
     
-            # Unfortunately we'll assume that we have two grasps. For now we know this is the case, but
-            # we can also load the rollout (as we do) and further inspect within that just to confirm.
-            assert len(data) == 4
-            assert data[0]['type'] == 'grasp'
-            assert data[1]['type'] == 'success'
-            assert data[2]['type'] == 'grasp'
-            assert data[3]['type'] == 'success'
-    
-            for g_in_r in range(2):
-                # Get these from our training run, stored from best iteration on validation set.
-                pred = y_pred[idx]
-                targ = y_targ[idx]
-                cimg = c_imgs[idx].copy()
-                dimg = d_imgs[idx].copy()
-                idx += 1
-                l2 = np.sqrt( (pred[0]-targ[0])**2 + (pred[1]-targ[1])**2)
-                c_suffix = 'r_{}_grasp_{}_rgb_L2_{:.0f}.png'.format(rnum,g_in_r,l2)
-                d_suffix = 'r_{}_grasp_{}_depth_L2_{:.0f}.png'.format(rnum,g_in_r,l2)
-                c_path = osp.join(OUTPUT_PATH, c_suffix)
-                d_path = osp.join(OUTPUT_PATH, d_suffix)
-    
-                # For visualization and inspection later; good idea, Ron, Ajay, Honda :-).
-                side = data[g_in_r*2]['side']
-                if side == 'BOTTOM':
-                    ss['all_bot'].append(l2)
-                elif side == 'TOP':
-                    ss['all_top'].append(l2)
-                else:
-                    raise ValueError(side)
-                ss['all_targs'].append(targ)
-                ss['all_preds'].append(pred)
-                ss['all_x'].append(targ[0])
-                ss['all_y'].append(targ[1])
-                ss['all_L2s'].append(l2)
-                ss['all_names'].append(d_path)
-    
-                # Alternatively could get from rollout paths. Good to double check. Unfortunately again
-                # this assumes I did grasp then success then grasp then success ... yeah.
-                pose  = data[g_in_r*2]['pose']
-                pose  = (int(pose[0]), int(pose[1]))
-                targ  = (int(targ[0]), int(targ[1]))
-                preds = (int(pred[0]), int(pred[1]))
-                print("pose: {}, targ: {} (should match), w/preds {}".format(pose, targ, preds))
-    
-                # Overlay the pose to the image (red circle, black border).
-                cv2.circle(cimg, center=pose, radius=INNER, color=(0,0,255), thickness=-1)
-                cv2.circle(dimg, center=pose, radius=INNER, color=(0,0,255), thickness=-1)
-                cv2.circle(cimg, center=pose, radius=OUTER, color=(0,0,0), thickness=1)
-                cv2.circle(dimg, center=pose, radius=OUTER, color=(0,0,0), thickness=1)
+            # Overlay the pose to the image (red circle, black border).
+            cv2.circle(cimg, center=targ, radius=INNER, color=(0,0,255), thickness=-1)
+            cv2.circle(dimg, center=targ, radius=INNER, color=(0,0,255), thickness=-1)
+            cv2.circle(cimg, center=targ, radius=OUTER, color=(0,0,0), thickness=1)
+            cv2.circle(dimg, center=targ, radius=OUTER, color=(0,0,0), thickness=1)
         
-                # The PREDICTION, though, will be a large blue circle (yellow border?).
-                cv2.circle(cimg, center=preds, radius=INNER, color=(255,0,0), thickness=-1)
-                cv2.circle(dimg, center=preds, radius=INNER, color=(255,0,0), thickness=-1)
-                cv2.circle(cimg, center=preds, radius=OUTER, color=(0,255,0), thickness=1)
-                cv2.circle(dimg, center=preds, radius=OUTER, color=(0,255,0), thickness=1)
+            # The PREDICTION, though, will be a large blue circle (yellow border?).
+            cv2.circle(cimg, center=preds, radius=INNER, color=(255,0,0), thickness=-1)
+            cv2.circle(dimg, center=preds, radius=INNER, color=(255,0,0), thickness=-1)
+            cv2.circle(cimg, center=preds, radius=OUTER, color=(0,255,0), thickness=1)
+            cv2.circle(dimg, center=preds, radius=OUTER, color=(0,255,0), thickness=1)
         
-                cv2.imwrite(c_path, cimg)
-                cv2.imwrite(d_path, dimg)
+            cv2.imwrite(c_path, cimg)
+            cv2.imwrite(d_path, dimg)
             
-        # Add some more stuff about this cv set, e.g. loss curves.
+        # Add some more stuff about this cv set, e.g., loss curves.
         ss['train'].append(data_other['train'])
         ss['test'].append(data_other['test'])
         ss['raw_test'].append(data_other['raw_test'])
@@ -302,6 +274,7 @@ if __name__ == "__main__":
 
         print("=====================================================================")
 
-    print("\nDone with creating overlays, look at {}".format(OUTPUT_PATH))
+    print("\nDone with creating overlays, look at:\n{}\nfor all the predictions".format(
+            OUTPUT_PATH))
     make_scatter(ss)
     make_plot(ss)

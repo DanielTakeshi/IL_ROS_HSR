@@ -1,4 +1,4 @@
-import tf, IPython, sys, cv2, time, thread, rospy, glob, hsrb_interface
+import tf, IPython, os, sys, cv2, time, thread, rospy, glob, hsrb_interface
 from tf import TransformListener
 from hsrb_interface import geometry
 from geometry_msgs.msg import PoseStamped, Point, WrenchStamped, Twist
@@ -66,6 +66,8 @@ class BedMaker():
         if cfg.INS_SAMPLE:
             print("TODO: we don't have sampling code here.")
 
+        # When we start, spin this so we can check the frames. Then un-comment,
+        # etc. It's the current hack we have to get around crummy AR marker detection.
         #rospy.spin()
 
 
@@ -93,6 +95,12 @@ class BedMaker():
 
                     # Human supervisor labels. data = dictionary of relevant info
                     data = self.wl.label_image(c_img)
+
+                    ## # Temporary debugging to get viewpoints to align w/H's data.
+                    ## kk = len([x for x in os.listdir('imgs/') if 'bottom_view_close' in x])
+                    ## img_name = 'imgs/bottom_view_close_{}.png'.format(str(kk).zfill(2))
+                    ## cv2.imwrite(img_name, c_img)
+
                     c_img = self.cam.read_color_data()
                     d_img = self.cam.read_depth_data()
                     self.add_data_point(c_img, d_img, data, self.side, 'grasp')
@@ -100,11 +108,18 @@ class BedMaker():
                     # Broadcasts grasp pose
                     self.gripper.find_pick_region_labeler(data, c_img, d_img, self.grasp_count)
 
-                # Execute the grasp and check for success.
+                # Execute the grasp and check for success. But if VIEW_MODE is
+                # close, better to reset to a 'nicer' position for base movement.
                 pick_found, bed_pick = self.check_card_found()
                 if self.side == "BOTTOM":
+                    if cfg.VIEW_MODE == 'close':
+                        self.whole_body.move_to_go()
+                        self.tt.move_to_pose(self.omni_base,'lower_start')
                     self.gripper.execute_grasp(bed_pick, self.whole_body, 'head_down')
                 else:
+                    if cfg.VIEW_MODE == 'close':
+                        self.whole_body.move_to_go()
+                        self.tt.move_to_pose(self.omni_base,'top_mid')
                     self.gripper.execute_grasp(bed_pick, self.whole_body, 'head_up')
                 self.check_success_state()
 
@@ -182,34 +197,39 @@ class BedMaker():
 
 
     def position_head(self):
-        """Position the head for a grasp attempt."""
+        """Position the head for a grasp attempt.
+        After playing around a bit, I think `head_tilt_joint` should be set last.
+        """
         self.whole_body.move_to_go()
 
-        if self.side == "TOP":
-            self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})
-        elif self.side == "BOTTOM":
-            self.tt.move_to_pose(self.omni_base,'lower_start')
-            self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})
-
-        # If the view mode is closer, always adjust these three extra joints.
         if cfg.VIEW_MODE == 'close':
+            if self.side == "BOTTOM":
+                self.tt.move_to_pose(self.omni_base,'lower_start_tmp')
             self.whole_body.move_to_joint_positions({'arm_flex_joint': -np.pi/16.0})
             self.whole_body.move_to_joint_positions({'head_pan_joint':  np.pi/2.0})
             self.whole_body.move_to_joint_positions({'arm_lift_joint':  0.120})
+            self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})
+        else:
+            if self.side == "TOP":
+                self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})
+            elif self.side == "BOTTOM":
+                self.tt.move_to_pose(self.omni_base,'lower_start')
+                self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})
 
 
     def move_to_top_side(self):
         self.whole_body.move_to_go()
         self.tt.move_to_pose(self.omni_base,'right_down')
-        #self.tt.move_to_pose(self.omni_base,'right_mid')
         self.tt.move_to_pose(self.omni_base,'right_up')
-        self.tt.move_to_pose(self.omni_base,'top_mid')
+        if cfg.VIEW_MODE == 'close':
+            self.tt.move_to_pose(self.omni_base,'top_mid_tmp')
+        else:
+            self.tt.move_to_pose(self.omni_base,'top_mid')
 
 
     def move_to_start(self):
         self.whole_body.move_to_go()
         self.tt.move_to_pose(self.omni_base,'right_up')
-        #self.tt.move_to_pose(self.omni_base,'right_mid')
         self.tt.move_to_pose(self.omni_base,'right_down')
         self.tt.move_to_pose(self.omni_base,'lower_mid')
         

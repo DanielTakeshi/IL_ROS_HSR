@@ -115,97 +115,97 @@ class TableTop():
         return trans,quat
 
    
-    def find_table(self, robot):
-        """Creates the various poses that we need for bed-making.
+    ##def find_table(self, robot):
+    ##    """Creates the various poses that we need for bed-making.
 
-        Unfortunately, the robot detector seems to be malfunctioning. Here's the docs:
-        https://docs.hsr.io/archives/manual/1710/en/reference/python.html#objectdetector
+    ##    Unfortunately, the robot detector seems to be malfunctioning. Here's the docs:
+    ##    https://docs.hsr.io/archives/manual/1710/en/reference/python.html#objectdetector
 
-        Angles are in radians, so 1.57 is approx pi/2 or 90 degrees.
+    ##    Angles are in radians, so 1.57 is approx pi/2 or 90 degrees.
 
-        Must be wrt AR marker, so e.g., a negative x-axis means moving closer to
-        the HEAD up/down sides of the bed, a negative y-axis offset means moving
-        AWAY from the bed, and a negative z-axis means moving UPWARDS.
-        """
+    ##    Must be wrt AR marker, so e.g., a negative x-axis means moving closer to
+    ##    the HEAD up/down sides of the bed, a negative y-axis offset means moving
+    ##    AWAY from the bed, and a negative z-axis means moving UPWARDS.
+    ##    """
 
-        # ---- This stuff is not working ----
-        detector = robot.get("marker")
-        sd = detector.get_objects()
-        print("detector: {}".format(detector))
-        print("detector.get_objects(): {}".format(sd))
-        trans, quat = self.calculat_ar_in_map(obj=sd[0])
+    ##    # ---- This stuff is not working ----
+    ##    detector = robot.get("marker")
+    ##    sd = detector.get_objects()
+    ##    print("detector: {}".format(detector))
+    ##    print("detector.get_objects(): {}".format(sd))
+    ##    trans, quat = self.calculat_ar_in_map(obj=sd[0])
 
-        # ---- The four corners of the bed, or more accurately, grasp targets. ----
+    ##    # ---- The four corners of the bed, or more accurately, grasp targets. ----
 
-        # HEAD DOWN, corner for first (bottom) side of bed, but has offset for grasp target.
-        offsets = np.array([-(TABLE_LENGTH/2.0+0.02), OFFSET_T+0.04, -TABLE_HEIGHT+0.04])
-        rot = np.array([0.0,0.0,1.57])
-        self.make_new_pose(offsets,'head_down',rot = rot)
+    ##    # HEAD DOWN, corner for first (bottom) side of bed, but has offset for grasp target.
+    ##    offsets = np.array([-(TABLE_LENGTH/2.0+0.02), OFFSET_T+0.04, -TABLE_HEIGHT+0.04])
+    ##    rot = np.array([0.0,0.0,1.57])
+    ##    self.make_new_pose(offsets,'head_down',rot = rot)
 
-        # HEAD UP, corner for second (top) side of the bed, but has offset for grasp target.
-        # As expected, only difference with HEAD UP is that we add TABLE_WIDTH to the y-axis.
-        offsets = np.array([-(TABLE_LENGTH/2.0+0.02), (OFFSET_T+TABLE_WIDTH+0.02), -TABLE_HEIGHT+0.04])
-        rot = np.array([0.0,0.0,-1.57])
-        self.make_new_pose(offsets,'head_up',rot = rot)
+    ##    # HEAD UP, corner for second (top) side of the bed, but has offset for grasp target.
+    ##    # As expected, only difference with HEAD UP is that we add TABLE_WIDTH to the y-axis.
+    ##    offsets = np.array([-(TABLE_LENGTH/2.0+0.02), (OFFSET_T+TABLE_WIDTH+0.02), -TABLE_HEIGHT+0.04])
+    ##    rot = np.array([0.0,0.0,-1.57])
+    ##    self.make_new_pose(offsets,'head_up',rot = rot)
 
-        # BOTTOM DOWN AT TABLE HEIGHT.
-        offsets = np.array([(TABLE_LENGTH/2.0+0.08), OFFSET_T+0.04, -TABLE_HEIGHT+TABLE_OFFSET])
-        rot = np.array([0.0,0.0,1.57])
-        self.make_new_pose(offsets,'bottom_down',rot = rot)
+    ##    # BOTTOM DOWN AT TABLE HEIGHT.
+    ##    offsets = np.array([(TABLE_LENGTH/2.0+0.08), OFFSET_T+0.04, -TABLE_HEIGHT+TABLE_OFFSET])
+    ##    rot = np.array([0.0,0.0,1.57])
+    ##    self.make_new_pose(offsets,'bottom_down',rot = rot)
 
-        # BOTTOM UP AT TABLE HEIGHT
-        offsets = np.array([(TABLE_LENGTH/2.0+0.08), (OFFSET_T+TABLE_WIDTH+0.02), -TABLE_HEIGHT+TABLE_OFFSET])
-        rot = np.array([0.0,0.0,-1.57])
-        self.make_new_pose(offsets,'bottom_up',rot = rot)
+    ##    # BOTTOM UP AT TABLE HEIGHT
+    ##    offsets = np.array([(TABLE_LENGTH/2.0+0.08), (OFFSET_T+TABLE_WIDTH+0.02), -TABLE_HEIGHT+TABLE_OFFSET])
+    ##    rot = np.array([0.0,0.0,-1.57])
+    ##    self.make_new_pose(offsets,'bottom_up',rot = rot)
 
-        # ---- The trajectory of the HSR. ----
+    ##    # ---- The trajectory of the HSR. ----
 
-        # LOWER MID, where HSR begins, ideally we can see AR marker 11 from here.
-        offsets = np.array([0.0,-OFFSET-0.07,0.0])
-        rot = np.array([0.0,0.0,-3.14])
-        self.make_new_pose(offsets,'lower_mid',rot=rot)
+    ##    # LOWER MID, where HSR begins, ideally we can see AR marker 11 from here.
+    ##    offsets = np.array([0.0,-OFFSET-0.07,0.0])
+    ##    rot = np.array([0.0,0.0,-3.14])
+    ##    self.make_new_pose(offsets,'lower_mid',rot=rot)
 
-        # LOWER MID, HSR starts bed-making by moving here from `lower_mid`, so
-        # it moves closer to the bed, and then receives the image of the setup.
-        offsets = np.array([0.0,-OFFSET+0.16,0.0])
-        rot = np.array([0.0,0.0,1.57])
-        self.make_new_pose(offsets,'lower_start',rot=rot)
+    ##    # LOWER MID, HSR starts bed-making by moving here from `lower_mid`, so
+    ##    # it moves closer to the bed, and then receives the image of the setup.
+    ##    offsets = np.array([0.0,-OFFSET+0.16,0.0])
+    ##    rot = np.array([0.0,0.0,1.57])
+    ##    self.make_new_pose(offsets,'lower_start',rot=rot)
 
-        # RIGHT CORNER, go from `lower_start` to `right_down` after we finish grasp.
-        offsets = np.array([-(OFFSET+TABLE_LENGTH/2.0), 0.0, 0.0])
-        self.make_new_pose(offsets,'right_down')
+    ##    # RIGHT CORNER, go from `lower_start` to `right_down` after we finish grasp.
+    ##    offsets = np.array([-(OFFSET+TABLE_LENGTH/2.0), 0.0, 0.0])
+    ##    self.make_new_pose(offsets,'right_down')
 
-        # RIGHT MID, go from `right_down` to `right_mid`. (This might get skipped, actually)
-        offsets = np.array([-(OFFSET+TABLE_LENGTH/2.0),(OFFSET+TABLE_WIDTH/2.0),0.0])
-        self.make_new_pose(offsets,'right_mid')
+    ##    # RIGHT MID, go from `right_down` to `right_mid`. (This might get skipped, actually)
+    ##    offsets = np.array([-(OFFSET+TABLE_LENGTH/2.0),(OFFSET+TABLE_WIDTH/2.0),0.0])
+    ##    self.make_new_pose(offsets,'right_mid')
  
-        # TOP CORNER, go from `right_mid` to `right_up`.
-        offsets = np.array([-(OFFSET+TABLE_LENGTH/2.0), (2*OFFSET+TABLE_WIDTH), 0.0])
-        self.make_new_pose(offsets,'right_up')
+    ##    # TOP CORNER, go from `right_mid` to `right_up`.
+    ##    offsets = np.array([-(OFFSET+TABLE_LENGTH/2.0), (2*OFFSET+TABLE_WIDTH), 0.0])
+    ##    self.make_new_pose(offsets,'right_up')
 
-        # TOP MID, where HSR goes to see the bed from top side, and performs grasp.
-        offsets = np.array([0.0, (2*OFFSET+TABLE_WIDTH), 0.0])
-        rot = np.array([0.0,0.0,-1.57])
-        self.make_new_pose(offsets,'top_mid',rot=rot)
+    ##    # TOP MID, where HSR goes to see the bed from top side, and performs grasp.
+    ##    offsets = np.array([0.0, (2*OFFSET+TABLE_WIDTH), 0.0])
+    ##    rot = np.array([0.0,0.0,-1.57])
+    ##    self.make_new_pose(offsets,'top_mid',rot=rot)
 
-        # Then after this, we go in reverse, to `right_up`, etc., all the way
-        # back to `lower_mid`, NOT `lower_start`!!!
-        #
-        # If we want the robot to have a closer-view of the bed, as with Honda's
-        # setup, we need `top_mid` to be closer to the bed.
+    ##    # Then after this, we go in reverse, to `right_up`, etc., all the way
+    ##    # back to `lower_mid`, NOT `lower_start`!!!
+    ##    #
+    ##    # If we want the robot to have a closer-view of the bed, as with Honda's
+    ##    # setup, we need `top_mid` to be closer to the bed.
   
-        # ---- Not sure when we use these? ----
+    ##    # ---- Not sure when we use these? ----
 
-        # TOP MID FAR, like 'top_mid' except further away.
-        offsets = np.array([0.0, 3 * OFFSET + TABLE_WIDTH, 0.0])
-        rot = np.array([0.0,0.0,1.57])
-        self.make_new_pose(offsets,'top_mid_far',rot = rot)
+    ##    # TOP MID FAR, like 'top_mid' except further away.
+    ##    offsets = np.array([0.0, 3 * OFFSET + TABLE_WIDTH, 0.0])
+    ##    rot = np.array([0.0,0.0,1.57])
+    ##    self.make_new_pose(offsets,'top_mid_far',rot = rot)
 
-        # TOP LEFT FAR, like 'top_mid' except further away and also further to
-        # the left, so it's closer to the part the _human_ tucked-in, on other side.
-        offsets = np.array([(TABLE_WIDTH/2.0), 3 * OFFSET + TABLE_WIDTH, 0.0])
-        rot = np.array([0.0, 0.0, 3.14 * 1.0/4.0])
-        self.make_new_pose(offsets, 'top_left_far',rot = rot)
+    ##    # TOP LEFT FAR, like 'top_mid' except further away and also further to
+    ##    # the left, so it's closer to the part the _human_ tucked-in, on other side.
+    ##    offsets = np.array([(TABLE_WIDTH/2.0), 3 * OFFSET + TABLE_WIDTH, 0.0])
+    ##    rot = np.array([0.0, 0.0, 3.14 * 1.0/4.0])
+    ##    self.make_new_pose(offsets, 'top_left_far',rot = rot)
 
 
     # WORKAROUNDS
@@ -230,7 +230,7 @@ class TableTop():
 
         # x-offset for head up/down. Increase this to make grasp target further away from corner, 
         # towards the dvrk machines. Probably a value like 0.04 or so will work ...
-        HX_OFF = 0.03
+        HX_OFF = 0.04
 
         # If this is zero, then the four corners should have y-axis that are roughly coinciding with
         # the bed's boundaries. (It's tricky for the opposite side which we can't see easily.)
@@ -282,35 +282,38 @@ class TableTop():
         # LOWER MID, HSR starts bed-making by moving here from `lower_mid`, so
         # it moves closer to the bed, and then receives the image of the setup.
         # If using alternative view, we actually need to change the z-rotation.
-        offsets = np.array([0.0,-OFFSET+0.16,0.0])
-        if cfg.VIEW_MODE == 'close':
-            rot = np.array([0.0, 0.0, np.pi])
-        elif cfg.VIEW_MODE == 'standard':
-            rot = np.array([0.0, 0.0, np.pi/2.0])
-        self.new_pose_workaround(offsets, 'lower_start', rot)
+        # But _after_ that, we'll go back to this normal pose to help w/base movement.
 
-        # Quick note, subtracted 10cm from the value that we actually move,
-        # hopefully makes the trajectory closer.
+        if cfg.VIEW_MODE == 'close':
+            offsets = np.array([-0.13, -0.15, 0.0])
+            rot = np.array([0.0, 0.0, np.pi/2.0])
+            self.new_pose_workaround(offsets, 'lower_start', rot)
+            rot = np.array([0.0, 0.0, np.pi])
+            self.new_pose_workaround(offsets, 'lower_start_tmp', rot)
+        else:
+            offsets = np.array([0.0, -OFFSET+0.16, 0.0])
+            rot = np.array([0.0, 0.0, np.pi/2.0])
+            self.new_pose_workaround(offsets, 'lower_start', rot)
 
         # RIGHT CORNER, go from `lower_start` to `right_down` after we finish grasp.
         offsets = np.array([-(OFFSET + TABLE_LENGTH/2.0 - 0.10), 0.0, 0.0])
         self.new_pose_workaround(offsets, 'right_down', rot=None)
 
         # RIGHT MID, go from `right_down` to `right_mid`. (This might get skipped, actually)
-        offsets = np.array([-(OFFSET + TABLE_LENGTH/2.0 - 0.10),(OFFSET+TABLE_WIDTH/2.0),0.0])
+        offsets = np.array([-(OFFSET + TABLE_LENGTH/2.0 - 0.10), (OFFSET+TABLE_WIDTH/2.0),0.0])
         self.new_pose_workaround(offsets, 'right_mid', rot=None)
  
-        # TOP CORNER, go from `right_mid` to `right_up`.
-        offsets = np.array([-(OFFSET + TABLE_LENGTH/2.0 - 0.10), (2*OFFSET+TABLE_WIDTH), 0.0])
+        # TOP CORNER, go from `right_mid` to `right_up`. Update: added a few -10cm offsets.
+        offsets = np.array([-(OFFSET + TABLE_LENGTH/2.0 - 0.10), (2*OFFSET+TABLE_WIDTH - 0.10), 0.0])
         self.new_pose_workaround(offsets, 'right_up', rot=None)
 
         # TOP MID, where HSR goes to see the bed from top side, and performs grasp.
         offsets = np.array([0.0, (2*OFFSET+TABLE_WIDTH), 0.0])
+        rot = np.array([0.0, 0.0, -np.pi/2.0])
+        self.new_pose_workaround(offsets, 'top_mid', rot)
         if cfg.VIEW_MODE == 'close':
             rot = np.array([0.0, 0.0, 0.0])
-        elif cfg.VIEW_MODE == 'standard':
-            rot = np.array([0.0, 0.0, -np.pi/2.0])
-        self.new_pose_workaround(offsets, 'top_mid', rot)
+            self.new_pose_workaround(offsets, 'top_mid_tmp', rot)
 
         # ------------------------------------------------------------------------------------------
         # Then after this, we go in reverse, to `right_up`, etc., all the way

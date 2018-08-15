@@ -17,7 +17,7 @@ from collections import defaultdict
 # ADJUST. HH is the directory named like: 'grasp_1_img_depth_opt_adam_lr_0.0001_{etc...}'
 # ------------------------------------------------------------------------------
 HEAD = '/nfs/diskstation/seita/bed-make/'
-DATA_NAME = 'cache_h_v01'
+DATA_NAME = 'cache_h_v02'
 HH = 'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_cv_True'
 
 # Sanity checks.
@@ -176,8 +176,8 @@ def make_plot(ss):
     # Titles
     ax[0,0].set_title("CV Train Losses, All Folds (For Debugging Only)", fontsize=tsize)
     ax[0,1].set_title("CV Test Losses, All Folds (For Debugging Only)", fontsize=tsize)
-    ax[1,0].set_title("CV Train Losses, Averaged", fontsize=tsize)
-    ax[1,1].set_title("CV Test Losses, Averaged", fontsize=tsize)
+    ax[1,0].set_title("CV Train Losses, Averaged (Scaled, Not Pixels)", fontsize=tsize)
+    ax[1,1].set_title("CV Test Losses, Averaged (Scaled, Not Pixels)", fontsize=tsize)
 
     # Bells and whistles
     for i in range(nrows):
@@ -186,8 +186,8 @@ def make_plot(ss):
                 ax[i,j].set_ylim(LOSS_YLIM)
             ax[i,j].legend(loc="best", ncol=2, prop={'size':legend_size})
             ax[i,j].set_xlabel('Epoch', fontsize=xsize)
-            ax[i,j].set_ylabel('Average L2 Loss', fontsize=ysize)
-            ax[i,j].set_ylabel('Average L2 Loss', fontsize=ysize)
+            ax[i,j].set_ylabel('Average L2 Loss (Scaled)', fontsize=ysize)
+            ax[i,j].set_ylabel('Average L2 Loss (Scaled)', fontsize=ysize)
             ax[i,j].tick_params(axis='x', labelsize=tick_size)
             ax[i,j].tick_params(axis='y', labelsize=tick_size)
     

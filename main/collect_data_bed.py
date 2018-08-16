@@ -95,12 +95,6 @@ class BedMaker():
 
                     # Human supervisor labels. data = dictionary of relevant info
                     data = self.wl.label_image(c_img)
-
-                    ## # Temporary debugging to get viewpoints to align w/H's data.
-                    ## kk = len([x for x in os.listdir('imgs/') if 'bottom_view_close' in x])
-                    ## img_name = 'imgs/bottom_view_close_{}.png'.format(str(kk).zfill(2))
-                    ## cv2.imwrite(img_name, c_img)
-
                     c_img = self.cam.read_color_data()
                     d_img = self.cam.read_depth_data()
                     self.add_data_point(c_img, d_img, data, self.side, 'grasp')

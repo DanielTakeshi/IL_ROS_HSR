@@ -230,7 +230,7 @@ class TableTop():
 
         # x-offset for head up/down. Increase this to make grasp target further away from corner, 
         # towards the dvrk machines. Probably a value like 0.04 or so will work ...
-        HX_OFF = 0.04
+        HX_OFF = 0.05
 
         # If this is zero, then the four corners should have y-axis that are roughly coinciding with
         # the bed's boundaries. (It's tricky for the opposite side which we can't see easily.)
@@ -285,7 +285,7 @@ class TableTop():
         # But _after_ that, we'll go back to this normal pose to help w/base movement.
 
         if cfg.VIEW_MODE == 'close':
-            offsets = np.array([-0.13, -0.15, 0.0])
+            offsets = np.array([-0.14, -0.14, 0.0])
             rot = np.array([0.0, 0.0, np.pi/2.0])
             self.new_pose_workaround(offsets, 'lower_start', rot)
             rot = np.array([0.0, 0.0, np.pi])
@@ -300,7 +300,7 @@ class TableTop():
         self.new_pose_workaround(offsets, 'right_down', rot=None)
 
         # RIGHT MID, go from `right_down` to `right_mid`. (This might get skipped, actually)
-        offsets = np.array([-(OFFSET + TABLE_LENGTH/2.0 - 0.10), (OFFSET+TABLE_WIDTH/2.0),0.0])
+        offsets = np.array([-(OFFSET + TABLE_LENGTH/2.0 - 0.10), (OFFSET + TABLE_WIDTH/2.0), 0.0])
         self.new_pose_workaround(offsets, 'right_mid', rot=None)
  
         # TOP CORNER, go from `right_mid` to `right_up`. Update: added a few -10cm offsets.
@@ -308,12 +308,17 @@ class TableTop():
         self.new_pose_workaround(offsets, 'right_up', rot=None)
 
         # TOP MID, where HSR goes to see the bed from top side, and performs grasp.
-        offsets = np.array([0.0, (2*OFFSET+TABLE_WIDTH), 0.0])
-        rot = np.array([0.0, 0.0, -np.pi/2.0])
-        self.new_pose_workaround(offsets, 'top_mid', rot)
         if cfg.VIEW_MODE == 'close':
+            # x-axis of -0.14 is to align w/bottom; y-axis unfortunately requires tuning.
+            offsets = np.array([-0.14, (2*OFFSET + TABLE_WIDTH) - 0.10, 0.0])
+            rot = np.array([0.0, 0.0, -np.pi/2.0])
+            self.new_pose_workaround(offsets, 'top_mid', rot)
             rot = np.array([0.0, 0.0, 0.0])
             self.new_pose_workaround(offsets, 'top_mid_tmp', rot)
+        else:
+            offsets = np.array([0.0, (2*OFFSET + TABLE_WIDTH), 0.0])
+            rot = np.array([0.0, 0.0, -np.pi/2.0])
+            self.new_pose_workaround(offsets, 'top_mid', rot)
 
         # ------------------------------------------------------------------------------------------
         # Then after this, we go in reverse, to `right_up`, etc., all the way

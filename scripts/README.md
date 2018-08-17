@@ -27,7 +27,9 @@ Understanding grasping network performance after training:
 
 - **The main thing we use for evaluating grasping performance**, with self-explanatory names.
     - `inspect_results_cache.py`
-    - `inspect_results_nocache.py`
+    - `inspect_results_nocache.py` (edit: deprecated)
+- Can also run `stitch_results.py` for stitching together different dictionaries together in an
+  ad-hoc way, e.g., net 1 and net 3 comparisons.
 - `scripts/overlay_auto_preds_targ.py`: do this automatically, rather than copy/paste. This also
   reports lots of other interesting statistics, and creates heat maps. It's deprecated by the
   `inspect_results.py` script.

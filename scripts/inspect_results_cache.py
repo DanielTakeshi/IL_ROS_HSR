@@ -1,7 +1,7 @@
 """Use this script for inspecting results after we run.
 
 ASSUMES WE SAVED DATA VIA A CACHE, so we don't have extra `rollouts_X/rollouts_k/rollout.p`
-to load. I have another script that assumes we do not use a cache.
+to load. I have another script that assumes we do not use a cache. But that's deprecated.
 """
 import argparse, cv2, os, pickle, sys, matplotlib, utils
 import os.path as osp
@@ -18,7 +18,7 @@ from collections import defaultdict
 # ------------------------------------------------------------------------------
 HEAD = '/nfs/diskstation/seita/bed-make/'
 DATA_NAME = 'cache_h_v02'
-HH = 'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_cv_True'
+HH = 'grasp_3_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_cv_True'
 
 # Sanity checks.
 assert 'cache' in DATA_NAME

@@ -29,6 +29,11 @@ class BedMaker():
         Assumes we roll out the robot's policy via code (not via human touch).
         This is the 'slower' way where we have the python interface that the
         human clicks on to indicate grasping points.
+
+        Good news is, our deployment code is probably going to be similar to this.
+
+        NOTE ABOUT JOYSTICK: you only need it plugged in for the initial state
+        sampler, which (at the moment) we are not even using.
         """
         self.robot = robot = hsrb_interface.Robot()
         self.rgbd_map = RGBD2Map()

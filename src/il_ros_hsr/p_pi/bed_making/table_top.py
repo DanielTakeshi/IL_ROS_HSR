@@ -291,9 +291,11 @@ class TableTop():
             rot = np.array([0.0, 0.0, np.pi])
             self.new_pose_workaround(offsets, 'lower_start_tmp', rot)
         else:
-            offsets = np.array([0.0, -OFFSET+0.16, 0.0])
+            offsets = np.array([-0.05, -OFFSET+0.16 - 0.05, 0.0])
             rot = np.array([0.0, 0.0, np.pi/2.0])
             self.new_pose_workaround(offsets, 'lower_start', rot)
+            rot = np.array([0.0, 0.0, np.pi])
+            self.new_pose_workaround(offsets, 'lower_start_tmp', rot)
 
         # RIGHT CORNER, go from `lower_start` to `right_down` after we finish grasp.
         offsets = np.array([-(OFFSET + TABLE_LENGTH/2.0 - 0.10), 0.0, 0.0])
@@ -316,9 +318,11 @@ class TableTop():
             rot = np.array([0.0, 0.0, 0.0])
             self.new_pose_workaround(offsets, 'top_mid_tmp', rot)
         else:
-            offsets = np.array([0.0, (2*OFFSET + TABLE_WIDTH), 0.0])
+            offsets = np.array([-0.05, (2*OFFSET + TABLE_WIDTH) + 0.05, 0.0])
             rot = np.array([0.0, 0.0, -np.pi/2.0])
             self.new_pose_workaround(offsets, 'top_mid', rot)
+            rot = np.array([0.0, 0.0, 0.0])
+            self.new_pose_workaround(offsets, 'top_mid_tmp', rot)
 
         # ------------------------------------------------------------------------------------------
         # Then after this, we go in reverse, to `right_up`, etc., all the way

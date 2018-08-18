@@ -143,7 +143,7 @@ if __name__ == "__main__":
     print("The transform: {}.\n(Now let's execute the grasp...)\n".format(result))
 
     # Don't do this until we know we've checked the grasp pose!
-    do_it = True
+    do_it = False
 
     if do_it:
         # Normally I'd do:

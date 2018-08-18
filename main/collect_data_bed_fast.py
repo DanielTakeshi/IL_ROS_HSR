@@ -17,6 +17,7 @@ from il_ros_hsr.p_pi.bed_making.table_top import TableTop
 from il_ros_hsr.p_pi.bed_making.check_success import Success_Check
 from il_ros_hsr.p_pi.bed_making.get_success import get_success
 from il_ros_hsr.p_pi.bed_making.initial_state_sampler import InitialSampler
+import cPickle as pickle
 import numpy as np
 import numpy.linalg as LA
 from numpy.random import normal
@@ -114,7 +115,12 @@ class BedMaker():
 
     def collect_data_bed(self):
         """Collect data using Michael Laskey's faster way.
+
+        It alternates between saving as 'grasp' or 'success' images.
+        I added in a `data` list which we can save as a single dictionary.
         """
+        data = [] # TODO didn't finish implementatoin
+
         while True:
             c_img = self.cam.read_color_data()
             d_img = self.cam.read_depth_data()
@@ -139,6 +145,12 @@ class BedMaker():
             if (cur_recording[0] < -0.1 and self.true_count%20 == 0):
                 print("PHOTO SNAPPED (cur_recording: {})".format(cur_recording))
                 self.save_image(c_img, d_img)
+                info = {'c_img':c_img, 'd_img':d_img,
+                        'grasp':self.grasp, 'r_count': self.r_count,
+                        'grasp_count':self.grasp_count,
+                        'success_count':self.success_count}
+                data.append(info)
+
                 if self.grasp:
                     self.grasp_count += 1
                     self.grasp = False
@@ -179,7 +191,7 @@ class BedMaker():
         """
         f_rc_grasp   = 'frame_{}_{}.png'.format(self.r_count, self.grasp_count)
         f_rc_success = 'frame_{}_{}.png'.format(self.r_count, self.success_count)
-        d_img = depth_to_net_dim(d_img, cutoff=1400)
+        d_img = depth_to_net_dim(d_img, cutoff=1400) # for visualization only
 
         if self.side == "BOTTOM":
             if self.grasp:

@@ -29,6 +29,11 @@ class BedMaker():
         Assumes we roll out the robot's policy via code (not via human touch).
         This is the 'slower' way where we have the python interface that the
         human clicks on to indicate grasping points.
+
+        Good news is, our deployment code is probably going to be similar to this.
+
+        NOTE ABOUT JOYSTICK: you only need it plugged in for the initial state
+        sampler, which (at the moment) we are not even using.
         """
         self.robot = robot = hsrb_interface.Robot()
         self.rgbd_map = RGBD2Map()
@@ -50,7 +55,7 @@ class BedMaker():
         self.tt.make_fake_ar()
         self.tt.find_table_workaround(robot)
 
-        self.ins = InitialSampler(self.cam)
+        #self.ins = InitialSampler(self.cam)
         self.side = 'BOTTOM'
         self.grasp_count = 0
 
@@ -106,14 +111,14 @@ class BedMaker():
                 # close, better to reset to a 'nicer' position for base movement.
                 pick_found, bed_pick = self.check_card_found()
                 if self.side == "BOTTOM":
-                    if cfg.VIEW_MODE == 'close':
-                        self.whole_body.move_to_go()
-                        self.tt.move_to_pose(self.omni_base,'lower_start')
+                    #if cfg.VIEW_MODE == 'close':
+                    self.whole_body.move_to_go()
+                    self.tt.move_to_pose(self.omni_base,'lower_start')
                     self.gripper.execute_grasp(bed_pick, self.whole_body, 'head_down')
                 else:
-                    if cfg.VIEW_MODE == 'close':
-                        self.whole_body.move_to_go()
-                        self.tt.move_to_pose(self.omni_base,'top_mid')
+                    #if cfg.VIEW_MODE == 'close':
+                    self.whole_body.move_to_go()
+                    self.tt.move_to_pose(self.omni_base,'top_mid')
                     self.gripper.execute_grasp(bed_pick, self.whole_body, 'head_up')
                 self.check_success_state()
 
@@ -196,29 +201,36 @@ class BedMaker():
         """
         self.whole_body.move_to_go()
 
-        if cfg.VIEW_MODE == 'close':
-            if self.side == "BOTTOM":
-                self.tt.move_to_pose(self.omni_base,'lower_start_tmp')
-            self.whole_body.move_to_joint_positions({'arm_flex_joint': -np.pi/16.0})
-            self.whole_body.move_to_joint_positions({'head_pan_joint':  np.pi/2.0})
-            self.whole_body.move_to_joint_positions({'arm_lift_joint':  0.120})
-            self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})
-        else:
-            if self.side == "TOP":
-                self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})
-            elif self.side == "BOTTOM":
-                self.tt.move_to_pose(self.omni_base,'lower_start')
-                self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})
+        #if cfg.VIEW_MODE == 'close':
+        #    if self.side == "BOTTOM":
+        #        self.tt.move_to_pose(self.omni_base,'lower_start_tmp')
+        #    self.whole_body.move_to_joint_positions({'arm_flex_joint': -np.pi/16.0})
+        #    self.whole_body.move_to_joint_positions({'head_pan_joint':  np.pi/2.0})
+        #    self.whole_body.move_to_joint_positions({'arm_lift_joint':  0.120})
+        #    self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})
+        #else:
+        #    if self.side == "TOP":
+        #        self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})
+        #    elif self.side == "BOTTOM":
+        #        self.tt.move_to_pose(self.omni_base,'lower_start')
+        #        self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})
+        if self.side == "BOTTOM":
+            self.tt.move_to_pose(self.omni_base,'lower_start_tmp')
+        self.whole_body.move_to_joint_positions({'arm_flex_joint': -np.pi/16.0})
+        self.whole_body.move_to_joint_positions({'head_pan_joint':  np.pi/2.0})
+        self.whole_body.move_to_joint_positions({'arm_lift_joint':  0.120})
+        self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})
 
 
     def move_to_top_side(self):
         self.whole_body.move_to_go()
         self.tt.move_to_pose(self.omni_base,'right_down')
         self.tt.move_to_pose(self.omni_base,'right_up')
-        if cfg.VIEW_MODE == 'close':
-            self.tt.move_to_pose(self.omni_base,'top_mid_tmp')
-        else:
-            self.tt.move_to_pose(self.omni_base,'top_mid')
+        #if cfg.VIEW_MODE == 'close':
+        #    self.tt.move_to_pose(self.omni_base,'top_mid_tmp')
+        #else:
+        #    self.tt.move_to_pose(self.omni_base,'top_mid')
+        self.tt.move_to_pose(self.omni_base,'top_mid_tmp')
 
 
     def move_to_start(self):

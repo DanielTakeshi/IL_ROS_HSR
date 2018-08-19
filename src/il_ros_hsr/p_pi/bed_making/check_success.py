@@ -23,32 +23,44 @@ class Success_Check:
     def check_bottom_success(self,wl):
         """I think it's safer to set `whole_body.move_to_go()` first."""
         self.whole_body.move_to_go()
-        if cfg.VIEW_MODE == 'close':
-            self.tt.move_to_pose(self.omni_base,'lower_start_tmp')
-            self.whole_body.move_to_joint_positions({'arm_flex_joint': -np.pi/16.0})
-            self.whole_body.move_to_joint_positions({'head_pan_joint':  np.pi/2.0})
-            self.whole_body.move_to_joint_positions({'arm_lift_joint':  0.120})
-            self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})
-            print("inside check_bottom_success, we should have tilt joint at -45 deg")
-            time.sleep(1) # try to ensure we get head tilt joint moving?
-        else:
-            self.tt.move_to_pose(self.omni_base,'lower_start')
-            self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})
+        #if cfg.VIEW_MODE == 'close':
+        #    self.tt.move_to_pose(self.omni_base,'lower_start_tmp')
+        #    self.whole_body.move_to_joint_positions({'arm_flex_joint': -np.pi/16.0})
+        #    self.whole_body.move_to_joint_positions({'head_pan_joint':  np.pi/2.0})
+        #    self.whole_body.move_to_joint_positions({'arm_lift_joint':  0.120})
+        #    self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})
+        #else:
+        #    self.tt.move_to_pose(self.omni_base,'lower_start')
+        #    self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})
+
+        self.tt.move_to_pose(self.omni_base,'lower_start_tmp')
+        self.whole_body.move_to_joint_positions({'arm_flex_joint': -np.pi/16.0})
+        self.whole_body.move_to_joint_positions({'head_pan_joint':  np.pi/2.0})
+        self.whole_body.move_to_joint_positions({'arm_lift_joint':  0.120})
+        self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})
+
         return self.check_success(wl)
 
 
     def check_top_success(self,wl):
         """I think it's safer to set `whole_body.move_to_go()` first."""
         self.whole_body.move_to_go()
-        if cfg.VIEW_MODE == 'close':
-            self.tt.move_to_pose(self.omni_base,'top_mid_tmp')
-            self.whole_body.move_to_joint_positions({'arm_flex_joint': -np.pi/16.0})
-            self.whole_body.move_to_joint_positions({'head_pan_joint':  np.pi/2.0})
-            self.whole_body.move_to_joint_positions({'arm_lift_joint':  0.120})
-            self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})
-        else:
-            self.tt.move_to_pose(self.omni_base,'top_mid')
-            self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})
+        #if cfg.VIEW_MODE == 'close':
+        #    self.tt.move_to_pose(self.omni_base,'top_mid_tmp')
+        #    self.whole_body.move_to_joint_positions({'arm_flex_joint': -np.pi/16.0})
+        #    self.whole_body.move_to_joint_positions({'head_pan_joint':  np.pi/2.0})
+        #    self.whole_body.move_to_joint_positions({'arm_lift_joint':  0.120})
+        #    self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})
+        #else:
+        #    self.tt.move_to_pose(self.omni_base,'top_mid')
+        #    self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})
+
+        self.tt.move_to_pose(self.omni_base,'top_mid_tmp')
+        self.whole_body.move_to_joint_positions({'arm_flex_joint': -np.pi/16.0})
+        self.whole_body.move_to_joint_positions({'head_pan_joint':  np.pi/2.0})
+        self.whole_body.move_to_joint_positions({'arm_lift_joint':  0.120})
+        self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})
+
         return self.check_success(wl)
 
 

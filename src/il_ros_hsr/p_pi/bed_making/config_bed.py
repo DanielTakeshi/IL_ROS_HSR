@@ -29,7 +29,8 @@ DATA_PATH = join(ROOT_DIR, 'collect_data_bed/')
 ROLLOUT_PATH = join(DATA_PATH, 'rollouts/')
 
 # STANDARD (the way I was doing earlier), CLOSE (the way they want).
-VIEW_MODE = 'close'
+# Update: change STANDARD to now use the CLOSE joints, but _original_ positions.
+VIEW_MODE = 'standard'
 assert VIEW_MODE in ['standard', 'close']
 
 # When deploying, we need to load in a config (text) file and a network.

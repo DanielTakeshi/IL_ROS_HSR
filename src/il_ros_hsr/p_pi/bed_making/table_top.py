@@ -318,7 +318,8 @@ class TableTop():
             rot = np.array([0.0, 0.0, 0.0])
             self.new_pose_workaround(offsets, 'top_mid_tmp', rot)
         else:
-            offsets = np.array([-0.05, (2*OFFSET + TABLE_WIDTH) + 0.05, 0.0])
+            # Offsets should ideally match the bottom but they don't ... yeah. :-(
+            offsets = np.array([ 0.00, (2*OFFSET + TABLE_WIDTH) + 0.16, 0.0])
             rot = np.array([0.0, 0.0, -np.pi/2.0])
             self.new_pose_workaround(offsets, 'top_mid', rot)
             rot = np.array([0.0, 0.0, 0.0])

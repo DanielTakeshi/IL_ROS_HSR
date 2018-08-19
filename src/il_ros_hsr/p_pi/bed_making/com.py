@@ -38,7 +38,7 @@ class Bed_COM(Common):
         #if cfg.VIEW_MODE == 'close':
         whole_body.move_to_joint_positions({'arm_flex_joint':  -np.pi/16.0})
         whole_body.move_to_joint_positions({'head_pan_joint':  np.pi/2.0})
-        whole_body.move_to_joint_positions({'head_tilt_joint':  -np.pi/4.0})
+        whole_body.move_to_joint_positions({'head_tilt_joint':  -np.pi/4.0})# -np.pi/36.0})
         #if cfg.VIEW_MODE == 'close':
         whole_body.move_to_joint_positions({'arm_lift_joint':  0.120})
         

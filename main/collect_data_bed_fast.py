@@ -25,15 +25,70 @@ from os.path import join
 FAST_PATH = 'fast_path/'
 
 
+
+def red_contour(image):
+    """The HSR (and Fetch) have images in BGR mode.
+
+    Courtesy of Ron Berenstein. We tried HSV-based methods but it's really bad.
+    In my cv2 version of 3.3.1, there are 3 return arguments from `findContours`.
+    """
+    b, g, r = cv2.split(image)
+    bw0 = (r[:,:]>150).astype(np.uint8)*255
+
+    bw1 = cv2.divide(r, g[:, :] + 1)
+    bw1 = (bw1[:, :] > 1.5).astype(np.uint8)*255
+    bw1 = np.multiply(bw1, bw0).astype(np.uint8) * 255
+    bw2 = cv2.divide(r, b[:,:]+1)
+    bw2 = (bw2[:, :] > 1.5).astype(np.uint8)*255
+
+    bw = np.multiply(bw1, bw2).astype(np.uint8) * 255
+    kernel = np.ones((5, 5), np.uint8)
+    bw = cv2.morphologyEx(bw, cv2.MORPH_OPEN, kernel)
+    bw = cv2.dilate(bw, kernel, iterations=1)
+    _, bw = cv2.threshold(bw,0,255,0)
+
+    # Now get the actual contours.  Note that contour detection requires a
+    # single channel image. Also, we only want the max one as that should be
+    # where the sewn patch is located.
+    (_, cnts, _) = cv2.findContours(bw, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    cnt_largest = max(cnts, key = lambda cnt: cv2.contourArea(cnt))
+
+    # Find the centroid in _pixel_space_. Draw it.
+    try:
+        M = cv2.moments(cnt_largest)
+        cX = int(M["m10"] / M["m00"])
+        cY = int(M["m01"] / M["m00"])
+        peri = cv2.arcLength(cnt_largest, True)
+        approx = cv2.approxPolyDP(cnt_largest, 0.02*peri, True)
+        cv2.circle(image, (cX,cY), 50, (0,0,255))
+        cv2.drawContours(image, [approx], -1, (0,255,0), 2)
+        cv2.putText(img=image, 
+                    text="{},{}".format(cX,cY), 
+                    org=(cX+10,cY+10), 
+                    fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                    fontScale=1, 
+                    color=(255,255,255), 
+                    thickness=2)
+        return (cX,cY)
+    except:
+        print("PROBLEM CANNOT DETECT CONTOUR ...")
+
+
+
 class BedMaker():
 
     def __init__(self):
         """
         For faster data collection where we manually simulate it.
         We move with our hands.  This will give us the large datasets we need.
-
-        NOTE ABOUT JOYSTICK: 
         """
+        if not os.path.exists(FAST_PATH):
+            os.makedirs(FAST_PATH)
+        if not os.path.exists( join(FAST_PATH,'b_grasp') ):
+            os.makedirs( join(FAST_PATH,'b_grasp') )
+        if not os.path.exists( join(FAST_PATH,'t_grasp') ):
+            os.makedirs( join(FAST_PATH,'t_grasp') )
+
         self.robot = robot = hsrb_interface.Robot()
         self.rgbd_map = RGBD2Map()
         self.omni_base = self.robot.get('omni_base')
@@ -45,7 +100,6 @@ class BedMaker():
         # PARAMETERS TO CHANGE 
         # We choose a fixed side and collect data from there, no switching.
         # Automatically saves based on `r_count` and counting the saved files.
-        # TODO grasp vs success?
         self.side = 'BOTTOM'
         self.grasp = True
         self.grasp_count = 0
@@ -78,11 +132,18 @@ class BedMaker():
 
     def get_rollout_number(self):
         """Had to modify this a bit from Michael's code. Test+see if it works.
+
+        For now, let's save based on how many `data.pkl` files we have in the
+        appropriate directory.
         """
         if self.side == "BOTTOM":
-            rollouts = glob.glob(FAST_PATH+'b_grasp/*.png')
+            rollouts = sorted(
+                [x for x in os.listdir(join(FAST_PATH,'b_grasp')) if 'data' in x and 'pkl' in x]
+            )
         else:
-            rollouts = glob.glob(FAST_PATH+'t_grasp/*.png')
+            rollouts = sorted(
+                [x for x in os.listdir(join(FAST_PATH,'t_grasp')) if 'data' in x and 'pkl' in x]
+            )
         return len(rollouts)
 
 
@@ -100,6 +161,7 @@ class BedMaker():
         #    self.whole_body.move_to_joint_positions({'head_tilt_joint':-0.8})
 
         # New code reflecting the different poses and HSR joints:
+
         self.whole_body.move_to_go()
         if self.side == "BOTTOM":
             self.tt.move_to_pose(self.omni_base,'lower_start_tmp')
@@ -107,19 +169,68 @@ class BedMaker():
             self.tt.move_to_pose(self.omni_base,'right_down')
             self.tt.move_to_pose(self.omni_base,'right_up')
             self.tt.move_to_pose(self.omni_base,'top_mid_tmp')
+        # NOTE: If robot is already at the top, I don't want to adjust position.
+        # Thus, comment out the three lines and the preceding `else` statement.
+
         self.whole_body.move_to_joint_positions({'arm_flex_joint': -np.pi/16.0})
         self.whole_body.move_to_joint_positions({'head_pan_joint':  np.pi/2.0})
         self.whole_body.move_to_joint_positions({'arm_lift_joint':  0.120})
-        self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})
+        self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0}) # -np.pi/36.0})
 
 
-    def collect_data_bed(self):
-        """Collect data using Michael Laskey's faster way.
+    ##def collect_data_bed(self):
+    ##    """Collect data using Michael Laskey's faster way.
 
-        It alternates between saving as 'grasp' or 'success' images.
-        I added in a `data` list which we can save as a single dictionary.
+    ##    It alternates between saving as 'grasp' or 'success' images.
+    ##    """
+    ##    while True:
+    ##        c_img = self.cam.read_color_data()
+    ##        d_img = self.cam.read_depth_data()
+
+    ##        # Continually show the camera image on screen and wait for user.
+    ##        # Doing `k=cv2.waitKey(33)` and `print(k)` results in -1 except for
+    ##        # when we press the joystick in a certain configuration.
+    ##        cv2.imshow('video_feed', c_img)
+    ##        cv2.waitKey(30)
+
+    ##        # Here's what they mean. Y is top, and going counterclockwise:
+    ##        # Y: [ 1,  0]
+    ##        # X: [-1,  0] # this is what we want for image collection
+    ##        # A: [ 0,  1]
+    ##        # B: [ 0, -1] # use to terminate the rollout
+    ##        #
+    ##        # There is also a bit of a delay embedded, i.e., repeated clicking
+    ##        # of `X` won't save images until some time has passed. Good! It is
+    ##        # also necessary to press for a few milliseconds (and not just tap).
+    ##        cur_recording = self.joystick.get_record_actions_passive()
+
+    ##        if (cur_recording[0] < -0.1 and self.true_count%20 == 0):
+    ##            print("PHOTO SNAPPED (cur_recording: {})".format(cur_recording))
+    ##            self.save_image(c_img, d_img)
+    ##            if self.grasp:
+    ##                self.grasp_count += 1
+    ##                self.grasp = False
+    ##                print("self.grasp_count: {}".format(self.grasp_count))
+    ##            else:
+    ##                self.success_count += 1
+    ##                self.grasp = True
+    ##                print("self.success_count: {}".format(self.grasp_count))
+
+    ##        # I would probably kill the script here to re-position and get more
+    ##        # diversity in the camera view that we have.
+    ##        if (cur_recording[1] < -0.1 and self.true_count%20 == 0):
+    ##            print("ROLLOUT DONE (cur_recording: {})".format(cur_recording))
+    ##            self.r_count += 1
+    ##            self.grasp_count = 0
+    ##            self.success_count = 0
+    ##            self.grasp = True
+    ##        self.true_count += 1
+
+
+    def collect_data_grasp_only(self):
+        """Collect data for the grasping network only, like H's method.
         """
-        data = [] # TODO didn't finish implementatoin
+        data = [] 
 
         while True:
             c_img = self.cam.read_color_data()
@@ -144,41 +255,40 @@ class BedMaker():
 
             if (cur_recording[0] < -0.1 and self.true_count%20 == 0):
                 print("PHOTO SNAPPED (cur_recording: {})".format(cur_recording))
+                self.grasp = True
                 self.save_image(c_img, d_img)
-                info = {'c_img':c_img, 'd_img':d_img,
-                        'grasp':self.grasp, 'r_count': self.r_count,
-                        'grasp_count':self.grasp_count,
-                        'success_count':self.success_count}
+                self.grasp_count += 1
+
+                # Add to dictionary info we want, including target pose.
+                pose = red_contour(c_img)
+                info = {'c_img':c_img, 'd_img':d_img, 'pose':pose}
                 data.append(info)
+                print("  image {}, pose: {}".format(len(data), pose))
 
-                if self.grasp:
-                    self.grasp_count += 1
-                    self.grasp = False
-                    print("self.grasp_count: {}".format(self.grasp_count))
+                # --------------------------------------------------------------
+                # We better save each time since we might get a failure to
+                # detect, thus losing some data. We overwrite existing saved
+                # files, which is fine since it's the current rollout `r_count`.
+                # Since we detect pose before this, if the pose isn't detected,
+                # we don't save. Good.
+                # --------------------------------------------------------------
+                rc = str(self.r_count).zfill(3)
+                if self.side == 'BOTTOM':
+                    save_path = join(FAST_PATH, 'b_grasp', 'data_{}.pkl'.format(rc))
                 else:
-                    self.success_count += 1
-                    self.grasp = True
-                    print("self.success_count: {}".format(self.grasp_count))
+                    save_path = join(FAST_PATH, 't_grasp', 'data_{}.pkl'.format(rc))
+                with open(save_path, 'w') as f:
+                    pickle.dump(data, f)
 
-            # I would probably kill the script here to re-position and get more
-            # diversity in the camera view that we have.
+            # Kill the script and re-position HSR to get diversity in camera views.
             if (cur_recording[1] < -0.1 and self.true_count%20 == 0):
                 print("ROLLOUT DONE (cur_recording: {})".format(cur_recording))
-                self.r_count += 1
-                self.grasp_count = 0
-                self.success_count = 0
-                self.grasp = True
+                print("Length is {}. See our saved pickle files.".format(len(data)))
+                sys.exit()
+
+            # Necessary, otherwise we'd save 3-4 times per click.
             self.true_count += 1
 
-
-    def collect_data_grasp_only(self):
-        """Collect data for the grasping network only, like H's method.
-        """
-        # TODO TODO TODO
-        #while True:
-        #    c_img = self.cam.read_color_data()
-        #    d_img = self.cam.read_depth_data()
-        pass
 
 
     def save_image(self, c_img, d_img):
@@ -189,8 +299,9 @@ class BedMaker():
         it would be better to save the original d_img in a dictionary. Don't use
         cv2.imwrite() as I know from experience that it won't work as desired.
         """
-        f_rc_grasp   = 'frame_{}_{}.png'.format(self.r_count, self.grasp_count)
-        f_rc_success = 'frame_{}_{}.png'.format(self.r_count, self.success_count)
+        rc = str(self.r_count).zfill(3)
+        f_rc_grasp   = 'frame_{}_{}.png'.format(rc, str(self.grasp_count).zfill(2))
+        f_rc_success = 'frame_{}_{}.png'.format(rc, str(self.success_count).zfill(2))
         d_img = depth_to_net_dim(d_img, cutoff=1400) # for visualization only
 
         if self.side == "BOTTOM":
@@ -213,6 +324,5 @@ class BedMaker():
 
 if __name__ == "__main__":
     cp = BedMaker()
-    cp.collect_data_bed()
-    #cp.collect_data_grasp_only()
-
+    #cp.collect_data_bed()
+    cp.collect_data_grasp_only()

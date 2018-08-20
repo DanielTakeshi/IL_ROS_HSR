@@ -9,7 +9,6 @@ from il_ros_hsr.core.sensors import RGBD, Gripper_Torque, Joint_Positions
 from il_ros_hsr.core.joystick_X import JoyStick_X # Different JoyStick?
 from il_ros_hsr.core.grasp_planner import GraspPlanner
 from il_ros_hsr.core.rgbd_to_map import RGBD2Map
-from il_ros_hsr.core.web_labeler import Web_Labeler
 from il_ros_hsr.core.python_labeler import Python_Labeler
 from il_ros_hsr.p_pi.bed_making.com import Bed_COM as COM
 from il_ros_hsr.p_pi.bed_making.gripper import Bed_Gripper
@@ -24,6 +23,22 @@ from numpy.random import normal
 from os.path import join
 FAST_PATH = 'fast_path/'
 
+
+def makedirs():
+    if not os.path.exists(FAST_PATH):
+        os.makedirs(FAST_PATH)
+    pth = join(FAST_PATH,'b_grasp')
+    if not os.path.exists(pth):
+        os.makedirs(pth)
+    pth = join(FAST_PATH,'t_grasp')
+    if not os.path.exists(pth):
+        os.makedirs(pth)
+    pth = join(FAST_PATH,'b_success')
+    if not os.path.exists(pth):
+        os.makedirs(pth)
+    pth = join(FAST_PATH,'t_success')
+    if not os.path.exists(pth):
+        os.makedirs(pth)
 
 
 def red_contour(image):
@@ -82,13 +97,7 @@ class BedMaker():
         For faster data collection where we manually simulate it.
         We move with our hands.  This will give us the large datasets we need.
         """
-        if not os.path.exists(FAST_PATH):
-            os.makedirs(FAST_PATH)
-        if not os.path.exists( join(FAST_PATH,'b_grasp') ):
-            os.makedirs( join(FAST_PATH,'b_grasp') )
-        if not os.path.exists( join(FAST_PATH,'t_grasp') ):
-            os.makedirs( join(FAST_PATH,'t_grasp') )
-
+        makedirs()
         self.robot = robot = hsrb_interface.Robot()
         self.rgbd_map = RGBD2Map()
         self.omni_base = self.robot.get('omni_base')
@@ -100,14 +109,18 @@ class BedMaker():
         # PARAMETERS TO CHANGE 
         # We choose a fixed side and collect data from there, no switching.
         # Automatically saves based on `r_count` and counting the saved files.
+        # `self.grasp` remains FIXED in the code, so we're either only
+        # collecting grasp or only collecting success images.
+        # ----------------------------------------------------------------------
         self.side = 'BOTTOM'
         self.grasp = True
         self.grasp_count = 0
         self.success_count = 0
         self.true_count = 0
         self.r_count = self.get_rollout_number()
-        print("rollout number: {}".format(self.r_count))
         self.joystick = JoyStick_X(self.com)
+        print("NOTE: grasp={} (success={}), side: {}, rollout num: {}".format(
+                self.grasp, not self.grasp, self.side, self.r_count))
 
         # Set up initial state, table, etc.
         self.com.go_to_initial_state(self.whole_body)
@@ -124,7 +137,7 @@ class BedMaker():
 
         # When we start, spin this so we can check the frames. Then un-comment,
         # etc. It's the current hack we have to get around crummy AR marker detection.
-        #rospy.spin()
+        rospy.spin()
 
         # THEN we position the head since that involves moving the _base_.
         self.position_head()
@@ -137,31 +150,28 @@ class BedMaker():
         appropriate directory.
         """
         if self.side == "BOTTOM":
+            nextdir = 'b_grasp'
+            if not self.grasp:
+                nextdir = 'b_success'
             rollouts = sorted(
-                [x for x in os.listdir(join(FAST_PATH,'b_grasp')) if 'data' in x and 'pkl' in x]
+                [x for x in os.listdir(join(FAST_PATH,nextdir)) if 'data' in x and 'pkl' in x]
             )
         else:
+            nextdir = 't_grasp'
+            if not self.grasp:
+                nextdir = 't_success'
             rollouts = sorted(
-                [x for x in os.listdir(join(FAST_PATH,'t_grasp')) if 'data' in x and 'pkl' in x]
+                [x for x in os.listdir(join(FAST_PATH,nextdir)) if 'data' in x and 'pkl' in x]
             )
         return len(rollouts)
 
 
     def position_head(self):
-        """Ah, I see, we can go straight to the top. Whew."""
+        """Ah, I see, we can go straight to the top. Whew.
 
-        # Original code:
-        #if self.side == "TOP":
-        #    self.tt.move_to_pose(self.omni_base,'right_down')
-        #    self.tt.move_to_pose(self.omni_base,'right_up')
-        #    self.tt.move_to_pose(self.omni_base,'top_mid')
-        #    self.whole_body.move_to_joint_positions({'head_tilt_joint':-0.8})
-        #elif self.side == "BOTTOM":
-        #    self.tt.move_to_pose(self.omni_base,'lower_start')
-        #    self.whole_body.move_to_joint_positions({'head_tilt_joint':-0.8})
-
-        # New code reflecting the different poses and HSR joints:
-
+        It's new code reflecting the different poses and HSR joints:
+        But, see important note below about commenting out four lines ...
+        """
         self.whole_body.move_to_go()
         if self.side == "BOTTOM":
             self.tt.move_to_pose(self.omni_base,'lower_start_tmp')
@@ -178,59 +188,15 @@ class BedMaker():
         self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0}) # -np.pi/36.0})
 
 
-    ##def collect_data_bed(self):
-    ##    """Collect data using Michael Laskey's faster way.
-
-    ##    It alternates between saving as 'grasp' or 'success' images.
-    ##    """
-    ##    while True:
-    ##        c_img = self.cam.read_color_data()
-    ##        d_img = self.cam.read_depth_data()
-
-    ##        # Continually show the camera image on screen and wait for user.
-    ##        # Doing `k=cv2.waitKey(33)` and `print(k)` results in -1 except for
-    ##        # when we press the joystick in a certain configuration.
-    ##        cv2.imshow('video_feed', c_img)
-    ##        cv2.waitKey(30)
-
-    ##        # Here's what they mean. Y is top, and going counterclockwise:
-    ##        # Y: [ 1,  0]
-    ##        # X: [-1,  0] # this is what we want for image collection
-    ##        # A: [ 0,  1]
-    ##        # B: [ 0, -1] # use to terminate the rollout
-    ##        #
-    ##        # There is also a bit of a delay embedded, i.e., repeated clicking
-    ##        # of `X` won't save images until some time has passed. Good! It is
-    ##        # also necessary to press for a few milliseconds (and not just tap).
-    ##        cur_recording = self.joystick.get_record_actions_passive()
-
-    ##        if (cur_recording[0] < -0.1 and self.true_count%20 == 0):
-    ##            print("PHOTO SNAPPED (cur_recording: {})".format(cur_recording))
-    ##            self.save_image(c_img, d_img)
-    ##            if self.grasp:
-    ##                self.grasp_count += 1
-    ##                self.grasp = False
-    ##                print("self.grasp_count: {}".format(self.grasp_count))
-    ##            else:
-    ##                self.success_count += 1
-    ##                self.grasp = True
-    ##                print("self.success_count: {}".format(self.grasp_count))
-
-    ##        # I would probably kill the script here to re-position and get more
-    ##        # diversity in the camera view that we have.
-    ##        if (cur_recording[1] < -0.1 and self.true_count%20 == 0):
-    ##            print("ROLLOUT DONE (cur_recording: {})".format(cur_recording))
-    ##            self.r_count += 1
-    ##            self.grasp_count = 0
-    ##            self.success_count = 0
-    ##            self.grasp = True
-    ##        self.true_count += 1
-
-
     def collect_data_grasp_only(self):
         """Collect data for the grasping network only, like H's method.
+
+        Actually, some of these images should likely be part of the success
+        network training, where the 'success=False' because I don't think I
+        collected data here that was considered a 'success=True' ...
         """
         data = [] 
+        assert self.grasp
 
         while True:
             c_img = self.cam.read_color_data()
@@ -255,7 +221,6 @@ class BedMaker():
 
             if (cur_recording[0] < -0.1 and self.true_count%20 == 0):
                 print("PHOTO SNAPPED (cur_recording: {})".format(cur_recording))
-                self.grasp = True
                 self.save_image(c_img, d_img)
                 self.grasp_count += 1
 
@@ -277,6 +242,56 @@ class BedMaker():
                     save_path = join(FAST_PATH, 'b_grasp', 'data_{}.pkl'.format(rc))
                 else:
                     save_path = join(FAST_PATH, 't_grasp', 'data_{}.pkl'.format(rc))
+                with open(save_path, 'w') as f:
+                    pickle.dump(data, f)
+
+            # Kill the script and re-position HSR to get diversity in camera views.
+            if (cur_recording[1] < -0.1 and self.true_count%20 == 0):
+                print("ROLLOUT DONE (cur_recording: {})".format(cur_recording))
+                print("Length is {}. See our saved pickle files.".format(len(data)))
+                sys.exit()
+
+            # Necessary, otherwise we'd save 3-4 times per click.
+            self.true_count += 1
+
+
+    def collect_data_success_only(self):
+        """Collect data for the success network.
+        
+        NOTE: for now this should be SUCCESS ONLY, though we can add a few
+        failures here and then. Haven't enirely decided, btw. Current idea is to
+        support both based on the current recording of the joystick ...
+
+        Recall that 0 = successful grasp, 1 = failed grasp.
+        """
+        data = [] 
+        assert not self.grasp
+
+        while True:
+            c_img = self.cam.read_color_data()
+            d_img = self.cam.read_depth_data()
+            cv2.imshow('video_feed', c_img)
+            cv2.waitKey(30)
+            cur_recording = self.joystick.get_record_actions_passive()
+
+            if (cur_recording[0] < -0.1 and self.true_count%20 == 0):
+                print("PHOTO SNAPPED (cur_recording: {})".format(cur_recording))
+                self.grasp = True
+                self.save_image(c_img, d_img)
+                self.success_count += 1
+
+                # Add to dictionary info we want, including class.
+                pose = red_contour(c_img)
+                s_class = ... # TODO
+                info = {'c_img':c_img, 'd_img':d_img, 'class':s_class, 'type':'success'}
+                data.append(info)
+                print("  image {}, class: {} (1=failure)".format(len(data), s_class))
+
+                rc = str(self.r_count).zfill(3)
+                if self.side == 'BOTTOM':
+                    save_path = join(FAST_PATH, 'b_success', 'data_{}.pkl'.format(rc))
+                else:
+                    save_path = join(FAST_PATH, 't_success', 'data_{}.pkl'.format(rc))
                 with open(save_path, 'w') as f:
                     pickle.dump(data, f)
 
@@ -324,5 +339,5 @@ class BedMaker():
 
 if __name__ == "__main__":
     cp = BedMaker()
-    #cp.collect_data_bed()
     cp.collect_data_grasp_only()
+    #cp.collect_data_success_only()

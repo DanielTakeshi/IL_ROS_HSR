@@ -80,7 +80,8 @@ GRASP_OUT = 8
 INS_SAMPLE = False
 
 # Gripper height. If these are off try tuning it. Michael used 0.065 (m).
-GRIPPER_HEIGHT = 0.055
+# Update: hmm ... 0.055 still seems a bit off for our white sheet?
+GRIPPER_HEIGHT = 0.052
 
 
 # ------------------------------------------------------------------------------

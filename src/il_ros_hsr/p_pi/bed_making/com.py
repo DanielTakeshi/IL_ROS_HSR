@@ -35,14 +35,12 @@ class Bed_COM(Common):
         This is for the view-mode of being closer.
         """
         whole_body.move_to_go()
-        #if cfg.VIEW_MODE == 'close':
         whole_body.move_to_joint_positions({'arm_flex_joint':  -np.pi/16.0})
         whole_body.move_to_joint_positions({'head_pan_joint':  np.pi/2.0})
         whole_body.move_to_joint_positions({'head_tilt_joint':  -np.pi/4.0})# -np.pi/36.0})
-        #if cfg.VIEW_MODE == 'close':
         whole_body.move_to_joint_positions({'arm_lift_joint':  0.120})
         
-    # haven't checked anything beyond this point ...
+    # haven't checked anything beyond this point in detal ...
 
     def format_data(self,color_img,depth_img):
         c_img = color_img[self.Options.OFFSET_X:self.Options.OFFSET_X+self.Options.WIDTH,self.Options.OFFSET_Y:self.Options.OFFSET_Y+self.Options.HEIGHT,:]

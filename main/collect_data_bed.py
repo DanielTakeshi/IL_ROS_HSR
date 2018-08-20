@@ -8,7 +8,6 @@ from il_ros_hsr.core.sensors import RGBD, Gripper_Torque, Joint_Positions
 from il_ros_hsr.core.joystick import JoyStick
 from il_ros_hsr.core.grasp_planner import GraspPlanner
 from il_ros_hsr.core.rgbd_to_map import RGBD2Map
-from il_ros_hsr.core.web_labeler import Web_Labeler
 from il_ros_hsr.core.python_labeler import Python_Labeler
 from il_ros_hsr.p_pi.bed_making.com import Bed_COM as COM
 from il_ros_hsr.p_pi.bed_making.gripper import Bed_Gripper
@@ -28,12 +27,11 @@ class BedMaker():
 
         Assumes we roll out the robot's policy via code (not via human touch).
         This is the 'slower' way where we have the python interface that the
-        human clicks on to indicate grasping points.
+        human clicks on to indicate grasping points. Good news is, our deployment
+        code is probably going to be similar to this.
 
-        Good news is, our deployment code is probably going to be similar to this.
-
-        NOTE ABOUT JOYSTICK: you only need it plugged in for the initial state
-        sampler, which (at the moment) we are not even using.
+        For joystick: you only need it plugged in for the initial state sampler,
+        which (at the moment) we are not even using.
         """
         self.robot = robot = hsrb_interface.Robot()
         self.rgbd_map = RGBD2Map()
@@ -78,7 +76,9 @@ class BedMaker():
 
     def bed_make(self):
         """Runs the pipeline for data collection.
+
         You can run this for multiple bed-making trajectories.
+        For now, though, assume one call to this means one trajectory.
         """
         self.rollout_data = []
         self.get_new_grasp = True
@@ -111,12 +111,10 @@ class BedMaker():
                 # close, better to reset to a 'nicer' position for base movement.
                 pick_found, bed_pick = self.check_card_found()
                 if self.side == "BOTTOM":
-                    #if cfg.VIEW_MODE == 'close':
                     self.whole_body.move_to_go()
                     self.tt.move_to_pose(self.omni_base,'lower_start')
                     self.gripper.execute_grasp(bed_pick, self.whole_body, 'head_down')
                 else:
-                    #if cfg.VIEW_MODE == 'close':
                     self.whole_body.move_to_go()
                     self.tt.move_to_pose(self.omni_base,'top_mid')
                     self.gripper.execute_grasp(bed_pick, self.whole_body, 'head_up')
@@ -135,7 +133,7 @@ class BedMaker():
             success, data = self.sc.check_top_success(self.wl)
         c_img = self.cam.read_color_data()
         d_img = self.cam.read_depth_data()
-        self.add_data_point(c_img,d_img,data,self.side,'success')
+        self.add_data_point(c_img, d_img, data, self.side, 'success')
         print("WAS SUCCESFUL: {}".format(success))
 
         # Handle transitioning to different side
@@ -163,12 +161,7 @@ class BedMaker():
 
     def transition_to_top(self):
         """Transition to top (not bottom)."""
-        if cfg.DEBUG_MODE:
-            self.com.save_rollout(self.rollout_data)
-            self.tt.move_to_pose(self.omni_base,'lower_mid')
-            sys.exit()
-        else:
-            self.move_to_top_side()
+        self.move_to_top_side()
 
 
     def transition_to_start(self):
@@ -200,20 +193,6 @@ class BedMaker():
         After playing around a bit, I think `head_tilt_joint` should be set last.
         """
         self.whole_body.move_to_go()
-
-        #if cfg.VIEW_MODE == 'close':
-        #    if self.side == "BOTTOM":
-        #        self.tt.move_to_pose(self.omni_base,'lower_start_tmp')
-        #    self.whole_body.move_to_joint_positions({'arm_flex_joint': -np.pi/16.0})
-        #    self.whole_body.move_to_joint_positions({'head_pan_joint':  np.pi/2.0})
-        #    self.whole_body.move_to_joint_positions({'arm_lift_joint':  0.120})
-        #    self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})
-        #else:
-        #    if self.side == "TOP":
-        #        self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})
-        #    elif self.side == "BOTTOM":
-        #        self.tt.move_to_pose(self.omni_base,'lower_start')
-        #        self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})
         if self.side == "BOTTOM":
             self.tt.move_to_pose(self.omni_base,'lower_start_tmp')
         self.whole_body.move_to_joint_positions({'arm_flex_joint': -np.pi/16.0})
@@ -223,17 +202,15 @@ class BedMaker():
 
 
     def move_to_top_side(self):
+        """Assumes we're at the bottom and want to go to the top."""
         self.whole_body.move_to_go()
         self.tt.move_to_pose(self.omni_base,'right_down')
         self.tt.move_to_pose(self.omni_base,'right_up')
-        #if cfg.VIEW_MODE == 'close':
-        #    self.tt.move_to_pose(self.omni_base,'top_mid_tmp')
-        #else:
-        #    self.tt.move_to_pose(self.omni_base,'top_mid')
         self.tt.move_to_pose(self.omni_base,'top_mid_tmp')
 
 
     def move_to_start(self):
+        """Assumes we're at the top and we go back to the start."""
         self.whole_body.move_to_go()
         self.tt.move_to_pose(self.omni_base,'right_up')
         self.tt.move_to_pose(self.omni_base,'right_down')
@@ -246,10 +223,9 @@ class BedMaker():
         cards = []
         try:
             for transform in transforms:
-                print transform
                 current_grasp = 'bed_'+str(self.grasp_count)
                 if current_grasp in transform:
-                    print 'got here'
+                    print('found {}'.format(current_grasp))
                     f_p = self.tl.lookupTransform('map',transform, rospy.Time(0))
                     cards.append(transform)
         except: 

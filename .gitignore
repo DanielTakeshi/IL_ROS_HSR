@@ -4,3 +4,5 @@
 *.npz
 *.swp
 *.swo
+trash
+fast_path

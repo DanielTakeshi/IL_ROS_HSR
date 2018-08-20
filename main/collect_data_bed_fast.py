@@ -96,6 +96,17 @@ class BedMaker():
         """
         For faster data collection where we manually simulate it.
         We move with our hands.  This will give us the large datasets we need.
+
+        Supports both grasping and success net data collection. If doing the
+        grasping, DON'T MAKE IT A SUCCESS CASE where the blanket is all the way
+        over the corner. That way we can use the images for both grasping and
+        as failure cases for the success net.
+        
+        For the success net data collection, collect data at roughly a 5:1 ratio
+        of successes:failures, and make failures the borderline cases. Then we
+        borrow data from the grasping network to make it 5:5 or 1:1 for the actual
+        success net training process (use another script for forming the data).
+        We use the keys on the joystick to indicate the success/failure class.
         """
         makedirs()
         self.robot = robot = hsrb_interface.Robot()
@@ -106,14 +117,15 @@ class BedMaker():
         self.com = COM()
         self.wl = Python_Labeler(cam=self.cam)
 
-        # PARAMETERS TO CHANGE 
+        # ----------------------------------------------------------------------
+        # PARAMETERS TO CHANGE  (well, really the 'side' and 'grasp' only).
         # We choose a fixed side and collect data from there, no switching.
         # Automatically saves based on `r_count` and counting the saved files.
         # `self.grasp` remains FIXED in the code, so we're either only
         # collecting grasp or only collecting success images.
         # ----------------------------------------------------------------------
-        self.side = 'BOTTOM'
-        self.grasp = True
+        self.side = 'BOTTOM'    # CHANGE AS NEEDED
+        self.grasp = False      # CHANGE AS NEEDED
         self.grasp_count = 0
         self.success_count = 0
         self.true_count = 0
@@ -121,6 +133,7 @@ class BedMaker():
         self.joystick = JoyStick_X(self.com)
         print("NOTE: grasp={} (success={}), side: {}, rollout num: {}".format(
                 self.grasp, not self.grasp, self.side, self.r_count))
+        print("Press X for any SUCCESS (class 0), Y for FAILURES (class 1).")
 
         # Set up initial state, table, etc.
         self.com.go_to_initial_state(self.whole_body)
@@ -137,7 +150,7 @@ class BedMaker():
 
         # When we start, spin this so we can check the frames. Then un-comment,
         # etc. It's the current hack we have to get around crummy AR marker detection.
-        rospy.spin()
+        #rospy.spin()
 
         # THEN we position the head since that involves moving the _base_.
         self.position_head()
@@ -197,6 +210,7 @@ class BedMaker():
         """
         data = [] 
         assert self.grasp
+        rc = str(self.r_count).zfill(3)
 
         while True:
             c_img = self.cam.read_color_data()
@@ -225,8 +239,9 @@ class BedMaker():
                 self.grasp_count += 1
 
                 # Add to dictionary info we want, including target pose.
+                # Also add 'type' key since data augmentation code uses it.
                 pose = red_contour(c_img)
-                info = {'c_img':c_img, 'd_img':d_img, 'pose':pose}
+                info = {'c_img':c_img, 'd_img':d_img, 'pose':pose, 'type':grasp}
                 data.append(info)
                 print("  image {}, pose: {}".format(len(data), pose))
 
@@ -237,7 +252,6 @@ class BedMaker():
                 # Since we detect pose before this, if the pose isn't detected,
                 # we don't save. Good.
                 # --------------------------------------------------------------
-                rc = str(self.r_count).zfill(3)
                 if self.side == 'BOTTOM':
                     save_path = join(FAST_PATH, 'b_grasp', 'data_{}.pkl'.format(rc))
                 else:
@@ -258,14 +272,18 @@ class BedMaker():
     def collect_data_success_only(self):
         """Collect data for the success network.
         
-        NOTE: for now this should be SUCCESS ONLY, though we can add a few
-        failures here and then. Haven't enirely decided, btw. Current idea is to
-        support both based on the current recording of the joystick ...
+        Should be more emphasis on the success cases (not failures) because the
+        grasing network data can supplement the failures. Focus on _borderline_
+        failures in this method.
 
         Recall that 0 = successful grasp, 1 = failed grasp.
+
+        SAVE AND EXIT FREQUENTLY, perhaps after every 15-20 images. It's easy to
+        make a mistake with the class label, so better to exit early often.
         """
         data = [] 
         assert not self.grasp
+        rc = str(self.r_count).zfill(3)
 
         while True:
             c_img = self.cam.read_color_data()
@@ -274,20 +292,28 @@ class BedMaker():
             cv2.waitKey(30)
             cur_recording = self.joystick.get_record_actions_passive()
 
-            if (cur_recording[0] < -0.1 and self.true_count%20 == 0):
+            # Joystick controllers. Y is top, and going counterclockwise:
+            # Y: [ 1,  0] # FAILURE images (class index 1)
+            # X: [-1,  0] # SUCCESS images (class index 0)
+            # A: [ 0,  1]
+            # B: [ 0, -1] # terminate data collection
+            # ------------------------------------------------------------------
+            if (cur_recording[0] < -0.1 or cur_recording[0] > 0.1) and self.true_count % 20 == 0:
                 print("PHOTO SNAPPED (cur_recording: {})".format(cur_recording))
-                self.grasp = True
-                self.save_image(c_img, d_img)
+                if cur_recording[0] < -0.1:
+                    s_class = 0
+                elif cur_recording[0] > 0.1:
+                    s_class = 1
+                else:
+                    raise ValueError(cur_recording)
+                self.save_image(c_img, d_img, success_class=s_class)
                 self.success_count += 1
 
-                # Add to dictionary info we want, including class.
-                pose = red_contour(c_img)
-                s_class = ... # TODO
+                # Add to dictionary info we want, including the class.
                 info = {'c_img':c_img, 'd_img':d_img, 'class':s_class, 'type':'success'}
                 data.append(info)
-                print("  image {}, class: {} (1=failure)".format(len(data), s_class))
+                print("  image {}, class: {}".format(len(data), s_class))
 
-                rc = str(self.r_count).zfill(3)
                 if self.side == 'BOTTOM':
                     save_path = join(FAST_PATH, 'b_success', 'data_{}.pkl'.format(rc))
                 else:
@@ -296,7 +322,7 @@ class BedMaker():
                     pickle.dump(data, f)
 
             # Kill the script and re-position HSR to get diversity in camera views.
-            if (cur_recording[1] < -0.1 and self.true_count%20 == 0):
+            if (cur_recording[1] < -0.1 and self.true_count % 20 == 0):
                 print("ROLLOUT DONE (cur_recording: {})".format(cur_recording))
                 print("Length is {}. See our saved pickle files.".format(len(data)))
                 sys.exit()
@@ -305,8 +331,7 @@ class BedMaker():
             self.true_count += 1
 
 
-
-    def save_image(self, c_img, d_img):
+    def save_image(self, c_img, d_img, success_class=None):
         """Save images. Don't forget to process depth images.
 
         For now I'm using a tuned cutoff like 1400, at least to _visualize_.
@@ -316,7 +341,8 @@ class BedMaker():
         """
         rc = str(self.r_count).zfill(3)
         f_rc_grasp   = 'frame_{}_{}.png'.format(rc, str(self.grasp_count).zfill(2))
-        f_rc_success = 'frame_{}_{}.png'.format(rc, str(self.success_count).zfill(2))
+        f_rc_success = 'frame_{}_{}_class_{}.png'.format(rc,
+                str(self.success_count).zfill(2), success_class)
         d_img = depth_to_net_dim(d_img, cutoff=1400) # for visualization only
 
         if self.side == "BOTTOM":
@@ -339,5 +365,5 @@ class BedMaker():
 
 if __name__ == "__main__":
     cp = BedMaker()
-    cp.collect_data_grasp_only()
-    #cp.collect_data_success_only()
+    #cp.collect_data_grasp_only()
+    cp.collect_data_success_only()

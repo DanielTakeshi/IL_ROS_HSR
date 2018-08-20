@@ -12,11 +12,13 @@ Data labeling:
 Data formatting:
 
 - `convert_to_list_cache.py`: for making the cache. **We should try and always cache our data**, to
-  turn it from separate rollout directories into a series of 10 lists, for each CV fold.
+  turn it from separate rollout directories into a series of 10 lists, for each CV fold. This script
+  is flexible to handle different datasets.
 
 Visualize the data and do quick checks:
 
 - `check_raw_data.py`: for checking the data after we collect rollouts.
+    - Also `check_other_data.py` for H's data, `check_daniel_data.py` for mine.
 - `data_augmentation_example.py`: for inspecting data augmentation.
 - `nan_check.py`: to check if NaNs exist in the depth image data. I process it out but H does not.
 - `analytic_viz.py`: check how analytic baselines work on images, e.g., using corner detection.

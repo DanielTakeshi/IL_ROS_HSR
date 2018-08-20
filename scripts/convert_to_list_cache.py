@@ -32,19 +32,22 @@ augmentation, and we just load this into our code. _Should_ be easy ...
 import cv2, os, pickle, sys
 import numpy as np
 np.set_printoptions(suppress=True, linewidth=200)
-from fast_grasp_detect.data_aug.depth_preprocess import datum_to_net_dim
+from os.path import join
+from fast_grasp_detect.data_aug.depth_preprocess import (datum_to_net_dim, depth_to_net_dim)
 from fast_grasp_detect.data_aug.data_augment import augment_data
 
 # ----------------------------------------------------------------------------------------
 # The usual rollouts path. Easiest if you make the cache with matching names.
-ROLLOUTS = '/nfs/diskstation/seita/bed-make/rollouts_h_v01/'
-OUT_PATH = '/nfs/diskstation/seita/bed-make/cache_h_v02/'
+# Update: if using `rollouts_d_vXY` which is my data, have two sub-directories.
+ROLLOUTS = '/nfs/diskstation/seita/bed-make/rollouts_d_v01/'
+OUT_PATH = '/nfs/diskstation/seita/bed-make/cache_d_v01/'
 
 # ALSO ADJUST, since we have slightly different ways of loading and storing data.
 # This format depends on what we used for ROLLOUTS, etc., in the above file names.
-is_my_format = False
-is_h_format = True
-assert not (is_my_format and is_h_format)
+is_old_format = 'rollouts_white_v' in ROLLOUTS
+is_h_format   = 'rollouts_h_v' in ROLLOUTS
+is_d_format   = 'rollouts_d_v' in ROLLOUTS
+assert not (is_old_format and is_h_format and is_d_format)
 # ----------------------------------------------------------------------------------------
 
 if not os.path.exists(OUT_PATH):
@@ -62,6 +65,7 @@ if is_h_format:
     # They saved in format: `rollout_TOP_Grasp_K/rollout.pkl` where `number=K`.
     # Currently, each data point has keys:
     # ['headState', 'c_img', 'pose', 'class', 'd_img', 'type', 'armState', 'side']
+    # This was with the Fetch.
     for fidx,ff in enumerate(files):
         print("\n=====================================================================")
 
@@ -76,10 +80,10 @@ if is_h_format:
         assert datum['c_img'].shape == (480, 640, 3)
         assert datum['d_img'].shape == (480, 640)
         num = str(number).zfill(3)
-        cv2.patchNaNs(datum['d_img'], 0) # Note the patching!
+        cv2.patchNaNs(datum['d_img'], 0) # NOTE the patching!
 
         # As usual, datum to net dim must be done before data augmentation.
-        datum = datum_to_net_dim(datum)
+        datum = datum_to_net_dim(datum, cutoff=1.25) # NOTE CUTOFF!!
         assert datum['d_img'].shape == (480, 640, 3)
         assert 'c_img' in datum.keys() and 'd_img' in datum.keys() and 'pose' in datum.keys()
 
@@ -90,12 +94,13 @@ if is_h_format:
             continue
         data_points.append(datum)
 
-elif is_my_format:
+elif is_old_format:
     # I saved as: `rollout_K/rollout.p`.
     # If it's in my format, I have to deal with multiple data points within a rollout,
     # distinguishing between grasping and successes (here, we care about grasping), etc.
     # Currently, each data point has keys:
     # ['perc', 'style', 'c_img', 'pose', 'd_img', 'type', 'side']
+    # This was with the Fetch.
     for fidx,ff in enumerate(files):
         print("\n=====================================================================")
 
@@ -120,17 +125,50 @@ elif is_my_format:
             # All this does is modify the datum['d_img'] key; it leaves datum['c_img'] alone.
             # This will fail if there are NaNs, but I already patched beforehand.
             assert not np.isnan(np.sum(datum['d_img']))
-            datum = datum_to_net_dim(datum)
+            datum = datum_to_net_dim(datum, cutoff=1.25) # NOTE CUTOFF
             assert datum['c_img'].shape == (480, 640, 3)
             assert datum['d_img'].shape == (480, 640, 3)
             assert 'c_img' in datum.keys() and 'd_img' in datum.keys() and 'pose' in datum.keys()
             data_points.append(datum)
+
+elif is_d_format:
+    # My NEWER format, saved via 'fast' collection script. Has `t_grasp` and `b_grasp`.
+    # Unlike the above, `files` actually contains the full pickle path to the data.
+    # This was with the HSR.
+    ROLLOUTS1 = join(ROLLOUTS,'b_grasp')
+    ROLLOUTS2 = join(ROLLOUTS,'t_grasp')
+    files = sorted(
+        [join(ROLLOUTS1,x) for x in os.listdir(ROLLOUTS1)] +
+        [join(ROLLOUTS2,x) for x in os.listdir(ROLLOUTS2)]
+    )
+
+    for fidx,ff in enumerate(files):
+        print("\n=====================================================================")
+        data = pickle.load(open(ff,'rb'))
+        print("On {}, len {}".format(ff,len(data)))
+
+        for (d_idx,datum) in enumerate(data):
+            print("  item {}, pose {}".format(d_idx, datum['pose']))
+            assert not np.isnan(np.sum(datum['d_img']))
+            datum = datum_to_net_dim(datum, cutoff=1400) # NOTE CUTOFF
+            assert datum['c_img'].shape == (480, 640, 3)
+            assert datum['d_img'].shape == (480, 640, 3)
+            assert 'c_img' in datum.keys() and 'd_img' in datum.keys() and 'pose' in datum.keys()
+            # SKIP points that have pose[0] (i.e., x value) less than some threshold.
+            if datum['pose'][0] <= 56:
+                print("    NOTE: skipping this due to pose: {}".format(datum['pose']))
+                num_skipped += 1
+                continue
+            data_points.append(datum)
+
 else:
     raise NotImplementedError()
 
-print("Note: num_skippd: {}".format(num_skipped))
+print("Note: num_skipped: {}".format(num_skipped))
 
-# The indices which represent the CV split. THIS IS WHERE THE SHUFFLING HAPPENS!
+
+# The indices which represent the CV split.
+# NOTE: THIS IS WHERE THE SHUFFLING HAPPENS!
 N = len(data_points)
 print("\nNow doing cross validation on {} points ...".format(N))
 folds = [list(x) for x in np.array_split(np.random.permutation(N), NUM_CV) ]

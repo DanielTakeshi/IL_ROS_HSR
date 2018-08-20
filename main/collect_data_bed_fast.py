@@ -60,15 +60,15 @@ def red_contour(image):
         cY = int(M["m01"] / M["m00"])
         peri = cv2.arcLength(cnt_largest, True)
         approx = cv2.approxPolyDP(cnt_largest, 0.02*peri, True)
-        cv2.circle(image, (cX,cY), 50, (0,0,255))
-        cv2.drawContours(image, [approx], -1, (0,255,0), 2)
-        cv2.putText(img=image, 
-                    text="{},{}".format(cX,cY), 
-                    org=(cX+10,cY+10), 
-                    fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                    fontScale=1, 
-                    color=(255,255,255), 
-                    thickness=2)
+        #cv2.circle(image, (cX,cY), 50, (0,0,255))
+        #cv2.drawContours(image, [approx], -1, (0,255,0), 2)
+        #cv2.putText(img=image, 
+        #            text="{},{}".format(cX,cY), 
+        #            org=(cX+10,cY+10), 
+        #            fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+        #            fontScale=1, 
+        #            color=(255,255,255), 
+        #            thickness=2)
         return (cX,cY)
     except:
         print("PROBLEM CANNOT DETECT CONTOUR ...")

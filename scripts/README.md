@@ -14,6 +14,7 @@ Data formatting:
 - `convert_to_list_cache.py`: for making the cache. **We should try and always cache our data**, to
   turn it from separate rollout directories into a series of 10 lists, for each CV fold. This script
   is flexible to handle different datasets.
+- Use `success_list_cache.py` for the equivalent version but for the success network's data.
 
 Visualize the data and do quick checks:
 
@@ -27,14 +28,9 @@ Visualize the data and do quick checks:
 
 Understanding grasping network performance after training:
 
-- **The main thing we use for evaluating grasping performance**, with self-explanatory names.
-    - `inspect_results_cache.py`
-    - `inspect_results_nocache.py` (edit: deprecated)
+- **The main thing we use for evaluating grasping performance**: `inspect_results_cache.py`.
 - Can also run `stitch_results.py` for stitching together different dictionaries together in an
-  ad-hoc way, e.g., net 1 and net 3 comparisons.
-- `scripts/overlay_auto_preds_targ.py`: do this automatically, rather than copy/paste. This also
-  reports lots of other interesting statistics, and creates heat maps. It's deprecated by the
-  `inspect_results.py` script.
+  ad-hoc way, e.g., net 1 and net 3 comparisons. This will probably be needed for a paper.
 
 ## Other / Old
 

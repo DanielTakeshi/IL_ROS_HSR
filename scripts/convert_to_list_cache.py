@@ -41,6 +41,7 @@ from fast_grasp_detect.data_aug.data_augment import augment_data
 # Update: if using `rollouts_d_vXY` which is my data, have two sub-directories.
 ROLLOUTS = '/nfs/diskstation/seita/bed-make/rollouts_d_v01/'
 OUT_PATH = '/nfs/diskstation/seita/bed-make/cache_d_v01/'
+assert 'success' not in OUT_PATH
 
 # ALSO ADJUST, since we have slightly different ways of loading and storing data.
 # This format depends on what we used for ROLLOUTS, etc., in the above file names.

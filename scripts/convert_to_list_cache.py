@@ -66,6 +66,7 @@ if is_h_format:
     # Currently, each data point has keys:
     # ['headState', 'c_img', 'pose', 'class', 'd_img', 'type', 'armState', 'side']
     # This was with the Fetch.
+    # --------------------------------------------------------------------------
     for fidx,ff in enumerate(files):
         print("\n=====================================================================")
 
@@ -101,6 +102,7 @@ elif is_old_format:
     # Currently, each data point has keys:
     # ['perc', 'style', 'c_img', 'pose', 'd_img', 'type', 'side']
     # This was with the Fetch.
+    # --------------------------------------------------------------------------
     for fidx,ff in enumerate(files):
         print("\n=====================================================================")
 
@@ -134,7 +136,10 @@ elif is_old_format:
 elif is_d_format:
     # My NEWER format, saved via 'fast' collection script. Has `t_grasp` and `b_grasp`.
     # Unlike the above, `files` actually contains the full pickle path to the data.
-    # This was with the HSR.
+    # Only keys are 'pose', 'c_img', and 'd_img' but I need to add 'type' for downstream data
+    # augmentation code.
+    # FYI: This was with the HSR.
+    # --------------------------------------------------------------------------
     ROLLOUTS1 = join(ROLLOUTS,'b_grasp')
     ROLLOUTS2 = join(ROLLOUTS,'t_grasp')
     files = sorted(
@@ -159,6 +164,8 @@ elif is_d_format:
                 print("    NOTE: skipping this due to pose: {}".format(datum['pose']))
                 num_skipped += 1
                 continue
+            assert 'type' not in datum
+            datum['type'] = 'grasp'
             data_points.append(datum)
 
 else:

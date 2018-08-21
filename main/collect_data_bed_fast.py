@@ -343,6 +343,8 @@ class BedMaker():
         f_rc_grasp   = 'frame_{}_{}.png'.format(rc, str(self.grasp_count).zfill(2))
         f_rc_success = 'frame_{}_{}_class_{}.png'.format(rc,
                 str(self.success_count).zfill(2), success_class)
+        if np.isnan(np.sum(d_img)):
+            cv2.patchNaNs(d_img, 0.0)
         d_img = depth_to_net_dim(d_img, cutoff=1400) # for visualization only
 
         if self.side == "BOTTOM":

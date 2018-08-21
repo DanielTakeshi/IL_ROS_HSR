@@ -1,6 +1,5 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
 import hsrb_interface
 import rospy
 import sys
@@ -11,40 +10,32 @@ import tf2_geometry_msgs
 import IPython
 from hsrb_interface import geometry
 from geometry_msgs.msg import PoseStamped, Point, WrenchStamped
-
-
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
-
 from sensor_msgs.msg import Image, CameraInfo, JointState
 
 
 class RGBD(object):
 
     def __init__(self):
-        #topic_name = '/hsrb/head_rgbd_sensor/depth_registered/image_raw'
         topic_name_c = '/hsrb/head_rgbd_sensor/rgb/image_rect_color'
         topic_name_i = '/hsrb/head_rgbd_sensor/rgb/camera_info'
         #topic_name_i = '/hsrb/head_rgbd_sensor/projector/camera_info'
-        topic_name_d = '/hsrb/head_rgbd_sensor/depth_registered/image_raw'
 
-        # /hsrb/head_rgbd_sensor/rgb/image_color
-        # /hsrb/head_rgbd_sensor/rgb/image_mono
-        # /hsrb/head_rgbd_sensor/rgb/image_raw
-        # /hsrb/head_rgbd_sensor/rgb/image_rect_color
-        # /hsrb/head_rgbd_sensor/rgb/image_rect_mono
+        # Two possibilities for depth. Michael used `image_raw`, but HSR support
+        # suggests `image_rect_raw`, but for that we need to patch NaNs.
+        self.topic_name_d = topic_name_d = \
+                '/hsrb/head_rgbd_sensor/depth_registered/image_raw'
+        #self.topic_name_d = topic_name_d = \
+        #        '/hsrb/head_rgbd_sensor/depth_registered/image_rect_raw'
 
         self._bridge = CvBridge()
-
         self._input_color_image = None
         self._input_depth_image = None
         self._info = None
-
         self.is_updated = False
 
         # Subscribe color image data from HSR
-       
-
         self._sub_color_image = rospy.Subscriber(
             topic_name_c, Image, self._color_image_cb)
 
@@ -84,7 +75,11 @@ class RGBD(object):
         return self._input_color_image
 
     def read_depth_data(self):
-        return self._input_depth_image
+        dimg = self._input_depth_image
+        # Sigh, this seems bugged ...
+        #if 'image_rect_raw' in self.topic_name_d:
+        #    cv2.patchNaNs(dimg, 0.0)
+        return dimg
 
     def read_info_data(self):
         return self._info

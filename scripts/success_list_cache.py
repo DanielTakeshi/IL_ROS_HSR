@@ -139,8 +139,9 @@ else:
     raise NotImplementedError()
 
 
-# The indices which represent the CV split.
-# NOTE: THIS IS WHERE THE SHUFFLING HAPPENS!
+# The indices which represent the CV split. NOTE THIS IS WHERE THE SHUFFLING HAPPENS!
+# Well, OK, we shuffle for indices, but iterate through the `data_points` list in
+# order of indices, so it's not 'entirely' random but we shuffle the training anyway.
 N = len(data_points)
 print("\nNow doing cross validation on {} points ...".format(N))
 folds = [list(x) for x in np.array_split(np.random.permutation(N), NUM_CV) ]

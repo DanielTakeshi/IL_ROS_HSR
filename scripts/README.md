@@ -29,6 +29,7 @@ Visualize the data and do quick checks:
 Understanding grasping network performance after training:
 
 - **The main thing we use for evaluating grasping performance**: `inspect_results_cache.py`.
+    - For success net: `success_inspect_results.py`.
 - Can also run `stitch_results.py` for stitching together different dictionaries together in an
   ad-hoc way, e.g., net 1 and net 3 comparisons. This will probably be needed for a paper.
 

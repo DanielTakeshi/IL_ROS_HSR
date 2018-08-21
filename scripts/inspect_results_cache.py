@@ -1,7 +1,11 @@
 """Use this script for inspecting results after we run.
 
-ASSUMES WE SAVED DATA VIA A CACHE, so we don't have extra `rollouts_X/rollouts_k/rollout.p`
-to load. I have another script that assumes we do not use a cache. But that's deprecated.
+ASSUMES WE SAVED DATA VIA CACHE, so we don't use `rollouts_X/rollouts_k/rollout.p`.
+
+Update Aug 20, 2018: adding a third method here, `scatter_heat_final` which hopefully
+can create a finalized version of a scatter plot figure that we might want to include.
+The other figures created in this script here are mostly for quick debugging after a
+training run.
 """
 import argparse, cv2, os, pickle, sys, matplotlib, utils
 import os.path as osp
@@ -14,16 +18,18 @@ from fast_grasp_detect.data_aug.depth_preprocess import datum_to_net_dim
 from collections import defaultdict
 
 # ------------------------------------------------------------------------------
-# ADJUST. HH is the directory named like: 'grasp_1_img_depth_opt_adam_lr_0.0001_{etc...}'
+# ADJUST. HH is directory like: 'grasp_1_img_depth_opt_adam_lr_0.0001_{etc...}'
 # ------------------------------------------------------------------------------
 HEAD = '/nfs/diskstation/seita/bed-make/'
-DATA_NAME = 'cache_h_v02'
-HH = 'grasp_3_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_cv_True'
+DATA_NAME = 'cache_d_v01'
+HH = 'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_cv_True'
 
 # Sanity checks.
 assert 'cache' in DATA_NAME
 rgb_baseline = utils.rgb_baseline_check(HH)
 net_type = utils.net_check(HH)
+VIEW_TYPE = 'standard'
+assert VIEW_TYPE in ['standard', 'close']
 
 # Make directory. In separate `figures/`, we put the same directory name for results.
 RESULTS_PATH = osp.join(HEAD, net_type, DATA_NAME, HH)
@@ -35,11 +41,11 @@ if not osp.exists(OUTPUT_PATH):
 INNER, OUTER = 3, 4
 
 # For the plot(s). There are a few plot-specific parameters, though.
-tsize = 20
-xsize = 18
-ysize = 18
-tick_size = 18
-legend_size = 18
+tsize = 30
+xsize = 25
+ysize = 25
+tick_size = 25
+legend_size = 25
 alpha = 0.5
 error_alpha = 0.3
 error_fc = 'blue'
@@ -50,16 +56,78 @@ LOSS_YLIM = [0.0, 0.035]
 # ------------------------------------------------------------------------------
 
 
+def scatter_heat_final(ss):
+    """Finalized scatter plot for paper."""
+    nrows, ncols = 1, 2
+    fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(10*ncols,8*nrows), squeeze=False)
+    xlim = [0, 640]
+    ylim = [480, 0]
+    VMIN = 0
+    VMAX = 140
+
+    # Put all stuff locally from dictionary input (turning into np.arrays as needed).
+    all_targs = np.array(ss['all_targs'])
+    all_preds = np.array(ss['all_preds'])
+    all_L2s = np.array(ss['all_L2s'])
+    all_x = ss['all_x']
+    all_y = ss['all_y']
+    all_names = ss['all_names']
+    num_pts = len(ss['all_L2s'])
+    # skipping over some of the debugging messages from the other method ...
+   
+    # Heat-map of the L2 losses.
+    if VIEW_TYPE == 'close':
+        I = cv2.imread("scripts/imgs/image_example_close.png")
+    elif VIEW_TYPE == 'standard':
+        I = cv2.imread("scripts/imgs/daniel_data_example_file_15_idx_023_rgb.png")
+    
+    # Create a scatter plot of where the targets are located.
+    ax[0,0].imshow(I, alpha=alpha)
+    ax[0,0].scatter(all_targs[:,0], all_targs[:,1], color='black')
+    ax[0,0].set_title("Ground Truth ({} Points)".format(num_pts), fontsize=tsize)
+    
+    # Heat map now. To make color bars more equal:
+    # https://stackoverflow.com/questions/18195758/set-matplotlib-colorbar-size-to-match-graph
+    # Better than before but still not perfect ... but I'll take it!
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+    axes = plt.gca()
+    divider = make_axes_locatable(axes)
+    print(axes)
+    print(divider)
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+
+    ax[0,1].imshow(I, alpha=alpha)
+    cf = ax[0,1].tricontourf(all_x, all_y, all_L2s, cmap='YlOrRd', vmin=VMIN, vmax=VMAX)
+    fig.colorbar(cf, ax=ax[0,1], cax=cax)
+    mean = np.mean(all_L2s)
+    std = np.std(all_L2s)
+    ax[0,1].set_title("Pixel L2 Loss Heat Map: {:.1f} +/- {:.1f}".format(mean, std), fontsize=tsize)
+    
+    # Bells and whistles
+    for i in range(nrows):
+        for j in range(ncols):
+            ax[i,j].legend(loc="best", prop={'size':legend_size})
+            ax[i,j].set_xlim(xlim)
+            ax[i,j].set_ylim(ylim)
+            ax[i,j].tick_params(axis='x', labelsize=tick_size)
+            ax[i,j].tick_params(axis='y', labelsize=tick_size)
+    
+    plt.tight_layout()
+    figname = osp.join(OUTPUT_PATH,"check_predictions_scatter_map_final.png")
+    plt.savefig(figname)
+    print("Hopefully this figure can be in the paper:\n{}".format(figname))
+ 
+
 def make_scatter(ss):
     """Make giant scatter plot image."""
     nrows, ncols = 2, 2
-    fig, ax = plt.subplots(nrows, ncols, figsize=(8*nrows,6*ncols))
+    fig, ax = plt.subplots(nrows, ncols, figsize=(10*ncols,8*nrows))
     xlim = [0, 640]
     ylim = [480, 0]
     VMIN = 0
     VMAX = 200
 
-    # Put all stuff locally from the dictionary input (turning into np.arrays as needed).
+    # Put all stuff locally from dictionary input (turning into np.arrays as needed).
     all_targs = np.array(ss['all_targs'])
     all_preds = np.array(ss['all_preds'])
     all_L2s = np.array(ss['all_L2s'])
@@ -91,7 +159,10 @@ def make_scatter(ss):
     # This might be helpful:
     # https://stackoverflow.com/questions/48472227/how-can-one-create-a-heatmap-from-a-2d-scatterplot-data-in-python
     # ------------------------------------------------------------------------------
-    I = cv2.imread("scripts/imgs/image_example_close.png")
+    if VIEW_TYPE == 'close':
+        I = cv2.imread("scripts/imgs/image_example_close.png")
+    elif VIEW_TYPE == 'standard':
+        I = cv2.imread("scripts/imgs/daniel_data_example_file_15_idx_023_rgb.png")
     
     # Create a scatter plot of where the targets are located.
     ax[0,0].imshow(I, alpha=alpha)
@@ -109,8 +180,8 @@ def make_scatter(ss):
     fig.colorbar(cf, ax=ax[1,0])
     mean = np.mean(all_L2s)
     std = np.std(all_L2s)
-    ax[1,0].set_title("L2 Losses (Heat Map) in Pixels: {:.1f} +/- {:.1f}".format(mean, std), fontsize=tsize)
-    
+    ax[1,0].set_title("Pixel L2 Loss Heat Map: {:.1f} +/- {:.1f}".format(mean, std), fontsize=tsize)
+
     # Original image.
     ax[1,1].imshow(I)
     ax[1,1].set_title("An *Example* Image of the Setup", fontsize=tsize)
@@ -133,8 +204,7 @@ def make_scatter(ss):
 def make_plot(ss):
     """Make plot (w/subplots) of losses, etc."""
     nrows, ncols = 2, 2
-    fig, ax = plt.subplots(nrows, ncols, figsize=(8*nrows,6*ncols),
-            sharey=True)
+    fig, ax = plt.subplots(nrows, ncols, figsize=(10*ncols,8*nrows), sharey=True)
 
     all_train = np.array(ss['train'])
     all_test = np.array(ss['test'])
@@ -278,3 +348,4 @@ if __name__ == "__main__":
             OUTPUT_PATH))
     make_scatter(ss)
     make_plot(ss)
+    scatter_heat_final(ss)

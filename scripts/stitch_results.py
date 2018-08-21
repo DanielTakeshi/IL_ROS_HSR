@@ -1,10 +1,6 @@
-"""Use this script for combining various data points.
+"""Use this script for combining various results form various files.
 
-NO overlaying of images, etc. This is more for comparing two different 
-training runs and plotting them together.
-Also I want both pixels and scaled losses for the L2 plots.
-
-Ideally this can go in the final paper, which means there's always going to be
+Ideally these are figures that can go in the final paper, which means there's always going to be
 some manual fine-tuning anyway with legend labels and so forth.
 """
 import argparse, cv2, os, pickle, sys, matplotlib, utils
@@ -22,7 +18,7 @@ from collections import defaultdict
 # We'll just put the figure in the same directory this code is called.
 # ------------------------------------------------------------------------------
 HEAD = '/nfs/diskstation/seita/bed-make/'
-DATA_NAME = 'cache_h_v02'
+DATA_NAME = 'cache_d_v01'
 HH_LIST = [
     'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_cv_True',
     'grasp_3_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_cv_True',
@@ -36,11 +32,12 @@ for HH  in HH_LIST:
     RESULTS_LABELS.append( HH )
 
 # For the plot(s). There are a few plot-specific parameters, though.
-tsize = 20
-xsize = 18
-ysize = 18
-tick_size = 18
-legend_size = 18
+# Also, sizes make more sense for each subplot being about (10 x 8).
+tsize = 30
+xsize = 25
+ysize = 25
+tick_size = 25
+legend_size = 25
 alpha = 0.5
 error_alpha = 0.3
 colors = ['blue', 'red']
@@ -52,6 +49,64 @@ LOSS_YLIMS = [
 ]
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
+
+
+def make_plot_pixel_only(ss_list):
+    """Make plot (w/subplots) of pixel losses only.
+    
+    Hopefully this will be in the final paper.
+    Adjust the 'names' for legends. Look at `HH_LIST` to see what the labels should be.
+    """
+    nrows, ncols = 1, 1
+    fig, ax = plt.subplots(nrows, ncols, figsize=(10*ncols,8*nrows), squeeze=False)
+    NAMES = [
+        'YOLO Pre-Trained',
+        'Augmented AlexNet',
+    ]
+
+    for idx,(ss,name) in enumerate(zip(ss_list,NAMES)):
+        all_train = np.array(ss['train'])
+        all_test = np.array(ss['test'])
+        all_test_raw = np.array(ss['raw_test'])
+        all_lrates = np.array(ss['lrates'])
+        epochs = ss['epoch']
+        
+        # {train, test, raw_test} = shape (K,N) where N is how often we recorded it.
+        # For plots, ideally N = E, where E is number of epochs, but usually N > E.
+        # For all cross validation folds, we must have N be the same.
+        assert all_test.shape == all_test_raw.shape
+        K, N = all_train.shape
+        print("on, name:         {}".format(name))
+        print("all_train.shape:  {}".format(all_train.shape))
+        print("all_test.shape:   {}".format(all_test.shape))
+        print("epoch: {}\n".format(epochs))
+
+        # Since N != E in general, try to get epochs to line up.
+        xs = np.arange(N) * (epochs[0] / float(N))
+        mean_raw    = np.mean(all_test_raw, axis=0)
+        std_raw     = np.std(all_test_raw, axis=0)
+        mean_scaled = np.mean(all_test, axis=0)
+        std_scaled  = np.std(all_test, axis=0)
+
+        label_raw  = '{}; min {:.1f}'.format(name, np.min(mean_raw))
+        ax[0,0].plot(xs, mean_raw, lw=2, color=colors[idx], label=label_raw)
+        ax[0,0].fill_between(xs, mean_raw-std_raw, mean_raw+std_raw,
+                alpha=error_alpha, facecolor=colors[idx])
+
+    # Bells and whistles
+    ax[0,0].set_ylim([0,120]) # tune
+    ax[0,0].legend(loc="best", ncol=1, prop={'size':legend_size})
+    ax[0,0].set_xlabel('Training Epochs Over Augmented Data', fontsize=xsize)
+    ax[0,0].tick_params(axis='x', labelsize=tick_size)
+    ax[0,0].tick_params(axis='y', labelsize=tick_size)
+    ax[0,0].set_ylabel('Average Test L2 Loss (Scaled)', fontsize=ysize)
+    ax[0,0].set_ylabel('Average Test L2 Loss (in Pixels)', fontsize=ysize)
+    ax[0,0].set_title("Grasp Point Cross-Validation Predictions", fontsize=tsize)
+
+    plt.tight_layout()
+    figname = osp.join("fig_stitch_results_only_pixel.png")
+    plt.savefig(figname)
+    print("Look at this figure:\n{}".format(figname))
 
 
 def make_plot(ss_list):
@@ -109,13 +164,13 @@ def make_plot(ss_list):
             if LOSS_YLIMS[idx] is not None:
                 ax[i,j].set_ylim(LOSS_YLIMS[idx])
             ax[i,j].legend(loc="best", ncol=1, prop={'size':legend_size})
-            ax[i,j].set_xlabel('Epoch', fontsize=xsize)
-            ax[i,j].set_ylabel('Average Test L2 Loss', fontsize=ysize)
-            ax[i,j].set_ylabel('Average Test L2 Loss', fontsize=ysize)
+            ax[i,j].set_xlabel('Training Epochs (Over Augmented Data)', fontsize=xsize)
             ax[i,j].tick_params(axis='x', labelsize=tick_size)
             ax[i,j].tick_params(axis='y', labelsize=tick_size)
-    ax[0,0].set_title("CV Test Losses, Scaled Values", fontsize=tsize)
-    ax[0,1].set_title("CV Test Losses, Raw Pixel Values", fontsize=tsize)
+    ax[0,0].set_ylabel('Average Test L2 Loss (Scaled)', fontsize=ysize)
+    ax[0,1].set_ylabel('Average Test L2 Loss (in Pixels)', fontsize=ysize)
+    ax[0,0].set_title("Grasp Point Cross-Validation Predictions, Scaled", fontsize=tsize)
+    ax[0,1].set_title("Grasp Point Cross-Validation Predictions", fontsize=tsize)
 
     plt.tight_layout()
     figname = osp.join("fig_stitch_results.png")
@@ -167,4 +222,5 @@ if __name__ == "__main__":
         ss_list.append(ss)
 
     print("\nDone with data loading. Now making the plots ...")
-    make_plot(ss_list)
+    #make_plot(ss_list)
+    make_plot_pixel_only(ss_list)

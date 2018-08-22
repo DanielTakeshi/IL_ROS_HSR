@@ -39,8 +39,8 @@ from fast_grasp_detect.data_aug.data_augment import augment_data
 # ----------------------------------------------------------------------------------------
 # The usual rollouts path. Easiest if you make the cache with matching names.
 # Update: if using `rollouts_d_vXY` which is my data, have two sub-directories.
-ROLLOUTS = '/nfs/diskstation/seita/bed-make/rollouts_d_v01/'
-OUT_PATH = '/nfs/diskstation/seita/bed-make/cache_d_v01/'
+ROLLOUTS = '/nfs/diskstation/seita/bed-make/rollouts_h_v03/'
+OUT_PATH = '/nfs/diskstation/seita/bed-make/cache_h_v03/'
 assert 'success' not in OUT_PATH
 
 # ALSO ADJUST, since we have slightly different ways of loading and storing data.
@@ -76,6 +76,12 @@ if is_h_format:
         file_path = os.path.join(ROLLOUTS,pkl_f)
         datum = pickle.load(open(file_path,'rb'))
 
+        # Update: as of August 22, they have datums as lists.
+        if len(datum) == 0:
+            continue
+        assert len(datum) == 1
+        datum = datum[0]
+
         # Debug and accumulate statistics for plotting later.
         print("\nOn data: {}, number {}".format(file_path, number))
         print("    data['pose']: {}".format(np.array(datum['pose'])))
@@ -85,7 +91,7 @@ if is_h_format:
         cv2.patchNaNs(datum['d_img'], 0) # NOTE the patching!
 
         # As usual, datum to net dim must be done before data augmentation.
-        datum = datum_to_net_dim(datum, cutoff=1.25) # NOTE CUTOFF!!
+        datum = datum_to_net_dim(datum, robot='Fetch') # NOTE robot!
         assert datum['d_img'].shape == (480, 640, 3)
         assert 'c_img' in datum.keys() and 'd_img' in datum.keys() and 'pose' in datum.keys()
 
@@ -128,7 +134,7 @@ elif is_old_format:
             # All this does is modify the datum['d_img'] key; it leaves datum['c_img'] alone.
             # This will fail if there are NaNs, but I already patched beforehand.
             assert not np.isnan(np.sum(datum['d_img']))
-            datum = datum_to_net_dim(datum, cutoff=1.25) # NOTE CUTOFF
+            datum = datum_to_net_dim(datum, robot='HSR') # NOTE robot
             assert datum['c_img'].shape == (480, 640, 3)
             assert datum['d_img'].shape == (480, 640, 3)
             assert 'c_img' in datum.keys() and 'd_img' in datum.keys() and 'pose' in datum.keys()
@@ -156,7 +162,7 @@ elif is_d_format:
         for (d_idx,datum) in enumerate(data):
             print("  item {}, pose {}".format(d_idx, datum['pose']))
             assert not np.isnan(np.sum(datum['d_img']))
-            datum = datum_to_net_dim(datum, cutoff=1400) # NOTE CUTOFF
+            datum = datum_to_net_dim(datum, robot='HSR') # NOTE robot
             assert datum['c_img'].shape == (480, 640, 3)
             assert datum['d_img'].shape == (480, 640, 3)
             assert 'c_img' in datum.keys() and 'd_img' in datum.keys() and 'pose' in datum.keys()

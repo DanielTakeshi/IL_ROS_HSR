@@ -490,8 +490,13 @@ Then we can do one of the following:
 3. Here are the versions of each dataset:
 
     - `white_v01`: my first attempt, collected via Fetch, at the rough location Michael was using.
+    - `d_v01`: my first attempt with large-scale collection via HSR, with a view relatively far from
+      the bed due to depth camera noise issues.
     - `h_v01`: H's data, 982 images.
     - `h_v02`: H's data, 961 images, pruning away data w/x-axis value of <= 30.
+    - `h_v03`: H's data, 990 images, with the Fetch further away, ideally at a similar distance as
+      `d_v01`.
+    - `combo_v01`: combining `d_v01` and `h_v03`.
 
 ### Training
 

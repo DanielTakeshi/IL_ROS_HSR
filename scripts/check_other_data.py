@@ -23,7 +23,7 @@ if not os.path.exists(IMG_PATH):
 files = sorted([x for x in os.listdir(ROLLOUTS)])
 
 # --- CUTOFF, EXTREMELY IMPORTANT (in meters if images are from the Fetch) ---
-CUTOFF = 1.4
+ROBOT = 'Fetch'
 
 # --- Matplotlib and cv2 stuff ---
 import matplotlib
@@ -75,7 +75,7 @@ for ff in files:
     c_img = (data['c_img']).copy()
     d_img = (data['d_img']).copy()
     cv2.patchNaNs(d_img, 0) # I did this
-    d_img = depth_to_net_dim(d_img, cutoff=CUTOFF)
+    d_img = depth_to_net_dim(d_img, robot=ROBOT)
     assert d_img.shape == (480, 640, 3)
     pos = tuple(data['pose'])
 

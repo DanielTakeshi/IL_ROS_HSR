@@ -16,7 +16,7 @@ import cv2, os, pickle, sys
 import numpy as np
 np.set_printoptions(suppress=True, linewidth=200)
 from os.path import join
-from fast_grasp_detect.data_aug.depth_preprocess import (datum_to_net_dim, depth_to_net_dim)
+from fast_grasp_detect.data_aug.depth_preprocess import datum_to_net_dim
 from fast_grasp_detect.data_aug.data_augment import augment_data
 
 # ----------------------------------------------------------------------------------------
@@ -33,8 +33,8 @@ is_h_format   = 'rollouts_h_v' in DATA_PATH
 is_d_format   = 'rollouts_d_v' in DATA_PATH
 assert not (is_old_format and is_h_format and is_d_format)
 
-# CUTOFF FOR THE HSR! IMPORTANT!
-CUTOFF = 1400
+# NOTE THE ROBOT, needed for the cutoff for depth images.
+ROBOT = 'HSR'
 # ----------------------------------------------------------------------------------------
 
 if not os.path.exists(OUT_PATH):
@@ -86,7 +86,7 @@ elif is_d_format:
             assert datum['c_img'].shape == (480, 640, 3)
             assert datum['d_img'].shape == (480, 640)
             assert not np.isnan(np.sum(datum['d_img']))
-            datum = datum_to_net_dim(datum, cutoff=CUTOFF)
+            datum = datum_to_net_dim(datum, robot=ROBOT)
             assert datum['d_img'].shape == (480, 640, 3)
             if datum['class'] == 0:
                 num_successes += 1
@@ -120,7 +120,7 @@ elif is_d_format:
                 num_skipped += 1
                 continue
             assert not np.isnan(np.sum(datum['d_img']))
-            datum = datum_to_net_dim(datum, cutoff=CUTOFF)
+            datum = datum_to_net_dim(datum, robot=ROBOT)
             assert datum['c_img'].shape == (480, 640, 3)
             assert datum['d_img'].shape == (480, 640, 3)
             assert 'c_img' in datum and 'd_img' in datum and 'pose' in datum

@@ -56,10 +56,16 @@ class BedMaker():
         self.grasp_count = 0
 
         # Policy for grasp detection, using Deep Imitation Learning.
+        print("\nnow forming the GDetector")
         self.g_detector = GDetector(fg_cfg=BED_CFG.GRASP_CONFIG, bed_cfg=BED_CFG)
+        self._test_detector()
+        print("finished with GDetector")
         
-        # TODO haven't gotten this done yet ...
-        self.sn = Success_Net(self.whole_body, self.tt, self.cam, self.omni_base)
+        print("\nnow making success net")
+        self.sn = Success_Net(self.whole_body, self.tt, self.cam, self.omni_base,
+                fg_cfg=BED_CFG.SUCC_CONFIG, bed_cfg=BED_CFG)
+        self._test_snet()
+        print("finished with success net")
 
         # Bells and whistles.
         self.br = tf.TransformBroadcaster()
@@ -67,16 +73,21 @@ class BedMaker():
         self.gp = GraspPlanner()
         self.gripper = Bed_Gripper(self.gp, self.cam, self.com.Options, robot.get('gripper'))
 
-        # Here's example usage, can try before executing.
-        if False:
-            c_img = self.cam.read_color_data()
-            self.sn.sdect.predict(c_img)
-            sys.exit()
-        time.sleep(4)
-
         # When we start, spin this so we can check the frames. Then un-comment,
         # etc. It's the current hack we have to get around crummy AR marker detection.
-        #rospy.spin()
+        time.sleep(4)
+        rospy.spin()
+
+
+    def _test_detector(self):
+        """Test to see if we loaded it."""
+        pass
+
+
+    def _test_snet(self):
+        """Test to see if we loaded it."""
+        c_img = self.cam.read_color_data()
+        self.sn.sdect.predict(c_img)
 
 
     def bed_make(self):

@@ -1,20 +1,11 @@
-import os
-import Pyro4
-import time
+import os, Pyro4, time, IPython, cv2, hsrb_interface, time
 import cPickle as pickle
-import IPython
-import cv2
 import numpy as np
+import il_ros_hsr.p_pi.bed_making.config_bed as cfg
 from il_ros_hsr.p_pi.bed_making.gripper import Bed_Gripper
 from il_ros_hsr.p_pi.bed_making.table_top import TableTop
-from il_ros_hsr.core.web_labeler import Web_Labeler
-from il_ros_hsr.core.python_labeler import Python_Labeler
-import hsrb_interface
-import il_ros_hsr.p_pi.bed_making.config_bed as cfg
 from il_ros_hsr.core.sensors import  RGBD
 from fast_grasp_detect.detectors.tran_detector import SDetector
-import time
-GLOBAL_PATH = "/home/autolab/Workspaces/michael_working/IL_ROS_HSR/"
 
 
 class Success_Net:
@@ -22,12 +13,12 @@ class Success_Net:
     Actual net is in `fast_grasp_detect.detectors.tran_detector`.
     """
 
-    def __init__(self,whole_body,tt,cam,base):
-        self.cam = cam
+    def __init__(self, whole_body, tt, cam, base, fg_cfg, bed_cfg):
         self.whole_body = whole_body
         self.tt = tt
+        self.cam = cam
         self.omni_base = base
-        self.sdect = SDetector(cfg.TRAN_NET_NAME)
+        self.sdect = SDetector(fg_cfg=fg_cfg, bed_cfg=bed_cfg)
 
 
     def check_bottom_success(self,wl):

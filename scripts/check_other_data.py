@@ -15,11 +15,15 @@ np.set_printoptions(suppress=True, linewidth=200, precision=5)
 from fast_grasp_detect.data_aug.depth_preprocess import depth_to_net_dim
 
 # --- ADJUST PATHS ---
-ROLLOUTS = '/nfs/diskstation/seita/bed-make/rollouts_h_v01/'
-IMG_PATH = '/nfs/diskstation/seita/bed-make/images_h_v01/'
+# Note: for v03 (dataset_2) they saved as one-item (or zero-item) lists.
+ROLLOUTS = '/nfs/diskstation/seita/bed-make/rollouts_h_v03/'
+IMG_PATH = '/nfs/diskstation/seita/bed-make/images_h_v03/'
 if not os.path.exists(IMG_PATH):
     os.makedirs(IMG_PATH)
 files = sorted([x for x in os.listdir(ROLLOUTS)])
+
+# --- CUTOFF, EXTREMELY IMPORTANT (in meters if images are from the Fetch) ---
+CUTOFF = 1.4
 
 # --- Matplotlib and cv2 stuff ---
 import matplotlib
@@ -48,6 +52,15 @@ for ff in files:
 
     # Debug and accumulate statistics for plotting later.
     print("\nOn data: {}, number {}".format(file_path, number))
+
+    # Change from their dataset_1 (my v01) to dataset_2 (my v03).
+    if len(data) == 0:
+        print("length is 0, skipping...")
+        continue
+    assert len(data) == 1
+    data = data[0]
+
+    # Back to normal ...
     print("    data['armState']:  {}".format(np.array(data['armState'])))
     print("    data['headState']: {}".format(np.array(data['headState'])))
     print("    data['pose']:      {}".format(np.array(data['pose'])))
@@ -56,21 +69,21 @@ for ff in files:
 
     # Deal with paths and load the images. Note, here need to patch NaNs. I did this
     # _before_ actually saving the rollouts, so I patched it at a different step.
-    num = str(number).zfill(3)
+    num = str(number).zfill(4)
     c_path = os.path.join(IMG_PATH, 'num_{}_rgb.png'.format(num))
     d_path = os.path.join(IMG_PATH, 'num_{}_depth.png'.format(num))
     c_img = (data['c_img']).copy()
     d_img = (data['d_img']).copy()
     cv2.patchNaNs(d_img, 0) # I did this
-    d_img = depth_to_net_dim(d_img, cutoff=1.25)
+    d_img = depth_to_net_dim(d_img, cutoff=CUTOFF)
     assert d_img.shape == (480, 640, 3)
     pos = tuple(data['pose'])
 
     # Can overlay images with the marker position, which presumably is the target.
-    #cv2.circle(c_img, center=pos, radius=8,  color=RED,   thickness=-1)
-    #cv2.circle(c_img, center=pos, radius=10, color=BLACK, thickness=3)
-    #cv2.circle(d_img, center=pos, radius=8,  color=RED,   thickness=-1)
-    #cv2.circle(d_img, center=pos, radius=10, color=BLACK, thickness=3)
+    #cv2.circle(c_img, center=pos, radius=2, color=RED,   thickness=-1)
+    #cv2.circle(c_img, center=pos, radius=3, color=BLACK, thickness=1)
+    cv2.circle(d_img, center=pos, radius=2, color=RED,   thickness=-1)
+    cv2.circle(d_img, center=pos, radius=3, color=BLACK, thickness=1)
 
     cv2.imwrite(c_path, c_img)
     cv2.imwrite(d_path, d_img)

@@ -22,6 +22,7 @@ DATA_NAME = 'cache_d_v01'
 HH_LIST = [
     'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_cv_True',
     'grasp_3_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_cv_True',
+    #'grasp_3_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_cv_True_init_TrNorm',
 ]
 
 RESULTS_PATHS = []
@@ -30,6 +31,13 @@ for HH  in HH_LIST:
     net_type = utils.net_check(HH)
     RESULTS_PATHS.append( osp.join(HEAD,net_type,DATA_NAME,HH) )
     RESULTS_LABELS.append( HH )
+
+NAMES = [
+    'YOLO Pre-Trained',
+    'Augmented AlexNet', # xavier + ReLU
+    #'Augmented AlexNet TrNorm+LReLU',
+]
+assert len(NAMES) == len(HH_LIST)
 
 # For the plot(s). There are a few plot-specific parameters, though.
 # Also, sizes make more sense for each subplot being about (10 x 8).
@@ -40,7 +48,7 @@ tick_size = 25
 legend_size = 25
 alpha = 0.5
 error_alpha = 0.3
-colors = ['blue', 'red']
+colors = ['blue', 'red', 'green']
 
 # Might as well make y-axis a bit more informative, if we know it.
 LOSS_YLIMS = [
@@ -59,10 +67,6 @@ def make_plot_pixel_only(ss_list):
     """
     nrows, ncols = 1, 1
     fig, ax = plt.subplots(nrows, ncols, figsize=(10*ncols,8*nrows), squeeze=False)
-    NAMES = [
-        'YOLO Pre-Trained',
-        'Augmented AlexNet',
-    ]
 
     for idx,(ss,name) in enumerate(zip(ss_list,NAMES)):
         all_train = np.array(ss['train'])
@@ -94,7 +98,7 @@ def make_plot_pixel_only(ss_list):
                 alpha=error_alpha, facecolor=colors[idx])
 
     # Bells and whistles
-    ax[0,0].set_ylim([0,120]) # tune
+    ax[0,0].set_ylim([0,100]) # TUNE !!
     ax[0,0].legend(loc="best", ncol=1, prop={'size':legend_size})
     ax[0,0].set_xlabel('Training Epochs Over Augmented Data', fontsize=xsize)
     ax[0,0].tick_params(axis='x', labelsize=tick_size)

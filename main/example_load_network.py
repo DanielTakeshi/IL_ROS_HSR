@@ -1,31 +1,74 @@
-"""Example of how to load in and use a trained network.
+"""Example of how to load in and use both trained networks.
 """
 import sys, os, IPython, cv2, time, thread, pickle
 import numpy as np
+import tensorflow as tf
 np.set_printoptions(suppress=True, precision=3)
 from os.path import join
 
-# We need a config any time we deploy (or use IL_ROS_HSR, for that matter).
+# We need a deployment-related config. This is where we put details
+# on the paths to the grasp and success network trained weights!
 import il_ros_hsr.p_pi.bed_making.config_bed as BED_CFG
 
-# Import the grasping network.
+# Import the grasping network and the success network.
 from fast_grasp_detect.detectors.grasp_detector import GDetector
+from fast_grasp_detect.detectors.tran_detector import SDetector
 
-# Something similar happens to the success network.
-# TODO for now we're testing the grasping network, and we'll get the success later
-#from il_ros_hsr.p_pi.bed_making.net_success import Success_Net
+# In the actual deployment code, loading success is a bit more 'roundabout':
+#
+# from il_ros_hsr.p_pi.bed_making.net_success import Success_Net
+# Success_Net(whole_body, tt, cam, omni_base, SUCC_CONFIG, BED_CFG)
+#
+# then `Success_Net` calls `SDetector(SUCC_CONFIG, BEC_CFG)`.
+# So it's like a wrapper, and contains separate bottom/top success checks.
+
+# Finally, load YOLO stem. Assumes we load pre-trained weights. It's the same
+# for both networks, so load before building to avoid duplicate TF names.
+from fast_grasp_detect.core.yolo_conv_features_cs import YOLO_CONV
 
 
 class Test():
 
     def __init__(self):
         """For testing how to deploy the policy.
+
+        As mentioned earlier, load in YOLO here and supply it to both of the
+        detectors. (For now, assume both use YOLO pre-trained, fixed stem.)
+        However, this requires an fg_cfg, which could be either the grasp or the
+        success one ... i.e., the cfg we used for training. So, if both used the
+        YOLO net, they better use the same cfg! If only one did, then we'll use
+        that one ... a lot of manual work, unfortunately.
+
+        BTW, this will create three TensorFlow sessions, assuming we're sharing
+        the YOLO stem (which is one TF session) among the two policies.
         """
-        self.g_detector = GDetector(fg_cfg=BED_CFG.GRASP_CONFIG, bed_cfg=BED_CFG)
+        g_cfg = BED_CFG.GRASP_CONFIG
+        s_cfg = BED_CFG.SUCC_CONFIG
+
+        # YOLO_CONV will use this, so make sure we had the same settings ...
+        assert g_cfg.IMAGE_SIZE == s_cfg.IMAGE_SIZE
+        assert g_cfg.T_IMAGE_SIZE_W == s_cfg.T_IMAGE_SIZE_W
+        assert g_cfg.T_IMAGE_SIZE_H == s_cfg.T_IMAGE_SIZE_H
+        assert g_cfg.SMALLER_NET == s_cfg.SMALLER_NET
+        assert g_cfg.FIX_PRETRAINED_LAYERS == s_cfg.FIX_PRETRAINED_LAYERS
+        assert g_cfg.PRE_TRAINED_DIR == s_cfg.PRE_TRAINED_DIR
+        assert g_cfg.ALPHA == s_cfg.ALPHA
+        assert g_cfg.FILTER_SIZE == s_cfg.FILTER_SIZE
+        assert g_cfg.NUM_FILTERS == s_cfg.NUM_FILTERS
+
+        # Build YOLO net using one of the configs, load pre-trained weights.
+        self.yc = YOLO_CONV(options=g_cfg)
+        self.yc.load_network()
+
+        # Build the two policies for deployment; `get_variables()` to debug.
+        self.g_detector = GDetector(g_cfg, BED_CFG, yc=self.yc)
+        self.s_detector = SDetector(s_cfg, BED_CFG, yc=self.yc)
 
 
-    def test(self, all_cv_files):
-        """Test on all the data in all our cross validation files.
+    def test_grasp(self, all_cv_files):
+        """Test on all the (grasping-related) data in our CV files.
+
+        These have ALREADY had the depth image pre-processed.
         """
         L2_results = []
 
@@ -41,17 +84,85 @@ class Test():
                 else:
                     c_img = np.copy(item['c_img'])
                     result = self.g_detector.predict(c_img)
-                result = np.array(result)
+                result = np.squeeze( np.array(result) ) # batch size is 1
                 targ = item['pose']
                 L2 = np.sqrt( (result[0]-targ[0])**2 + (result[1]-targ[1])**2 )
-                print("prediction {} for {}, pixel L2 {:.1f}".format(result, idx, L2))
+                print("  prediction {} for {}, pixel L2 {:.1f}".format(result, idx, L2))
                 L2_results.append(L2)
+                #time.sleep(0.5) # pause the 'video' of images :-)
         
         print("L2s: {:.1f} +/- {:.1f}".format(np.mean(L2_results), np.std(L2_results)))
 
 
+    def test_success(self, all_cv_files):
+        """Test on all the (success/transition-related) data in our CV files.
+
+        These have ALREADY had the depth image pre-processed.
+        """
+        correct = 0
+        total = 0
+        incorrect0 = 0  # CNN thought a ground-truth success img was actually a failure
+        incorrect1 = 0  # CNN thought a ground-truth failure img was actually a success
+
+        for test_list in all_cv_files:
+            with open(test_list, 'r') as f:
+                data = pickle.load(f)
+            print("loaded test data: {} (length {})".format(test_list, len(data)))
+
+            for idx,item in enumerate(data):
+                if BED_CFG.SUCC_CONFIG.USE_DEPTH:
+                    d_img = np.copy(item['d_img'])
+                    result = self.s_detector.predict(d_img)
+                else:
+                    c_img = np.copy(item['c_img'])
+                    result = self.s_detector.predict(c_img)
+                result = np.squeeze( np.array(result) ) # batch size is 1
+                print("  prediction: {}".format(result))
+
+                if result[0] < result[1]:
+                    prediction = 1
+                else:
+                    prediction = 0
+                targ = item['class']
+                if prediction == targ:
+                    correct += 1
+                else:
+                    if targ == 0:
+                        incorrect0 += 1
+                    else:
+                        incorrect1 += 1
+                total += 1
+
+        print("Correct: {} / {}  ({:.2f})".format(correct, total, float(correct)/total))
+        print("Predicted failure but image was really success: {}".format(incorrect0))
+        print("Predicted success but image was really failure: {}".format(incorrect1))
+        print("Remember, if we predict on training data, we should do very well. :-)")
+
+
+def get_variables():
+    print("")
+    variables = tf.trainable_variables()
+    numv = 0
+    for vv in variables:
+        numv += np.prod(vv.shape)
+        print(vv)
+    print("\nNumber of parameters: {}".format(numv))
+
+
 if __name__ == "__main__":
-    test = Test()
-    path = '/nfs/diskstation/seita/bed-make/cache_white_v01/'
-    all_cv_files = [join(path,x) for x in os.listdir(path) if 'cv_' in x]
-    test.test(all_cv_files)
+    TestBed = Test()
+
+    # Get paths setup.
+    PATH_GRASP   = '/nfs/diskstation/seita/bed-make/cache_d_v01/'
+    PATH_SUCCESS = '/nfs/diskstation/seita/bed-make/cache_d_v01_success/'
+    all_cv_files_grasp   = sorted(
+            [join(PATH_GRASP,x) for x in os.listdir(PATH_GRASP) if 'cv_' in x]
+    )
+    all_cv_files_success = sorted(
+            [join(PATH_SUCCESS,x) for x in os.listdir(PATH_SUCCESS) if 'cv_' in x]
+    )
+
+    # Test grasping, then success net.
+    TestBed.test_grasp(all_cv_files_grasp)
+    TestBed.test_success(all_cv_files_success)
+    print("\nDone!")

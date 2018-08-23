@@ -37,9 +37,25 @@ class Bed_COM(Common):
         whole_body.move_to_go()
         whole_body.move_to_joint_positions({'arm_flex_joint':  -np.pi/16.0})
         whole_body.move_to_joint_positions({'head_pan_joint':  np.pi/2.0})
-        whole_body.move_to_joint_positions({'head_tilt_joint':  -np.pi/4.0})# -np.pi/36.0})
+        whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})# -np.pi/36.0})
         whole_body.move_to_joint_positions({'arm_lift_joint':  0.120})
         
+
+    def save_stat(self, recording, target_path):
+        """Saves the recording list to the specified file
+
+        Called from the deployment script, for network deployment.
+        """
+        rollouts = [x for x in os.listdir(target_path) if 'results_rollout' in x]
+        count = len(rollouts)
+        K = len(recording)
+        pkl_name = 'results_rollout_{}_len_{}.p'.format(count, K)
+        final_path = os.path.join(target_path, pkl_name)
+        with open(final_path, 'w') as f:
+            pickle.dump(recording, f)
+        print("Just saved to: {} ...".format(final_path))
+
+
     # haven't checked anything beyond this point in detal ...
 
     def format_data(self,color_img,depth_img):
@@ -241,34 +257,6 @@ class Bed_COM(Common):
             path = prefix + 'stat_'+str(i) + "/"
             
         return 'stat_' + str(i)
-
-    def save_stat(self,recording,rollouts=False):
-        """  
-        Saves the recoring to the specified file
-
-        Paramters
-        ---------
-        recording: list 
-            The recording of the label point shoud be a list of images and labels
-
-        bc: BinaryCamera
-
-        rollouts: bool 
-            If True will save to a rollout directory instead of Supervisor (Default False)
-        """
-      
-       
-        name = self.next_stat()
-        path = cfg.STAT_PATH + name + '/'
-       
-
-        print "Saving to " + path + "..."
-        
-        os.makedirs(path)
-
-        pickle.dump(recording,open(path+'rollout.p','wb'))
-
-        print "Done saving."
 
 
     def save_rollout(self,recording,rollouts=False):

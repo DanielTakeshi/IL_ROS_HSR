@@ -297,17 +297,32 @@ class TableTop():
             rot = np.array([0.0, 0.0, np.pi])
             self.new_pose_workaround(offsets, 'lower_start_tmp', rot)
 
+        # ------------------------------------------------------------------------------------------
+        # For the corners, I am making two versions. This is so the HSR moves
+        # 'straight' when we go to different sides, instead of moving sideways.
+        # When moving to the top, use `right_X_1`, etc.
+        # ------------------------------------------------------------------------------------------
+
         # RIGHT CORNER, go from `lower_start` to `right_down` after we finish grasp.
         offsets = np.array([-(OFFSET + TABLE_LENGTH/2.0 - 0.10), 0.0, 0.0])
-        self.new_pose_workaround(offsets, 'right_down', rot=None)
+        rot = np.array([0.0, 0.0, np.pi/2.0])
+        self.new_pose_workaround(offsets, 'right_down_1', rot=rot)
+        rot = np.array([0.0, 0.0, -np.pi/2.0])
+        self.new_pose_workaround(offsets, 'right_down_2', rot=rot)
 
-        # RIGHT MID, go from `right_down` to `right_mid`. (This might get skipped, actually)
+        # RIGHT MID, go from `right_down` to `right_mid`. (This may get skipped)
         offsets = np.array([-(OFFSET + TABLE_LENGTH/2.0 - 0.10), (OFFSET + TABLE_WIDTH/2.0), 0.0])
-        self.new_pose_workaround(offsets, 'right_mid', rot=None)
+        rot = np.array([0.0, 0.0, np.pi/2.0])
+        self.new_pose_workaround(offsets, 'right_mid_1', rot=rot)
+        rot = np.array([0.0, 0.0, -np.pi/2.0])
+        self.new_pose_workaround(offsets, 'right_mid_2', rot=rot)
  
         # TOP CORNER, go from `right_mid` to `right_up`. Update: added a few -10cm offsets.
         offsets = np.array([-(OFFSET + TABLE_LENGTH/2.0 - 0.10), (2*OFFSET+TABLE_WIDTH - 0.10), 0.0])
-        self.new_pose_workaround(offsets, 'right_up', rot=None)
+        rot = np.array([0.0, 0.0, np.pi/2.0])
+        self.new_pose_workaround(offsets, 'right_up_1', rot=rot)
+        rot = np.array([0.0, 0.0, -np.pi/2.0])
+        self.new_pose_workaround(offsets, 'right_up_2', rot=rot)
 
         # TOP MID, where HSR goes to see the bed from top side, and performs grasp.
         if cfg.VIEW_MODE == 'close':

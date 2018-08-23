@@ -1,4 +1,4 @@
-import IPython, os, sys, cv2, time, thread, rospy, glob, hsrb_interface
+import IPython, os, sys, cv2, time, thread, rospy, glob, hsrb_interface, argparse
 from tf import TransformBroadcaster, TransformListener
 from hsrb_interface import geometry
 from geometry_msgs.msg import PoseStamped, Point, WrenchStamped, Twist
@@ -42,7 +42,7 @@ def call_wait_key(nothing=None):
 
 class BedMaker():
 
-    def __init__(self):
+    def __init__(self, args):
         """For deploying the bed-making policy, not for data collection.
 
         Uses the neural network, `GDetector`, not the analytic baseline.
@@ -105,13 +105,15 @@ class BedMaker():
         self.gripper = Bed_Gripper(self.gp, self.cam, self.com.Options, robot.get('gripper'))
         self.dp = DrawPrediction()
 
-        # When we start, do rospy.spin() to check the frames. Then un-comment.
-        # The current hack we have to get around crummy AR marker detection.
+        # When we start, do rospy.spin() to check the frames (phase 1). Then re-run.
+        # The current hack we have to get around crummy AR marker detection. :-(
         if DEBUG:
             self._test_variables()
         print("Finished with init method")
         time.sleep(4)
-        #rospy.spin()
+        if args.phase == 1:
+            print("Now doing rospy.spin() because phase = 1.")
+            rospy.spin()
 
 
     def _test_grasp(self):
@@ -132,7 +134,7 @@ class BedMaker():
         img = self.dp.draw_prediction(d_img, pred)
 
         print("prediction: {}".format(pred))
-        caption = 'Predicted: {} (ESC to abort, other key to proceed)'.format(pred)
+        caption = 'G Predicted: {} (ESC to abort, other key to proceed)'.format(pred)
         cv2.imshow(caption, img)
         key = cv2.waitKey(0)
         if key in ESC_KEYS:
@@ -159,7 +161,7 @@ class BedMaker():
         result = np.squeeze(result)
 
         print("s-net pred: {} (if [0]<[1] failure, else success...)".format(result))
-        caption = 'Predicted: {} (ESC to abort, other key to proceed)'.format(result)
+        caption = 'S Predicted: {} (ESC to abort, other key to proceed)'.format(result)
         cv2.imshow(caption, d_img)
         key = cv2.waitKey(0)
         if key in ESC_KEYS:
@@ -180,9 +182,13 @@ class BedMaker():
     def bed_make(self):
         """Runs the pipeline for deployment, testing out bed-making.
         """
-        self.rollout_stats = []
         self.get_new_grasp = True
         self.new_grasp = True
+        self.rollout_stats = [] # What we actually save for analysis later
+
+        # Add to self.rollout_stats at the end for more timing info
+        self.g_time_stats = []      # for _execution_ of a grasp
+        self.move_time_stats = []   # for moving to the other side
 
         while True:
             c_img = self.cam.read_color_data()
@@ -202,24 +208,24 @@ class BedMaker():
                     if np.isnan(np.sum(d_img)):
                         cv2.patchNaNs(d_img, 0.0)
                     d_img = depth_to_net_dim(d_img, robot='HSR')
+                    net_input = np.copy(d_img)
+                else:
+                    net_input = np.copy(c_img)
 
                 # Run grasp detector to get data=(x,y) point for grasp target.
                 sgraspt = time.time()
-                if BED_CFG.GRASP_CONFIG.USE_DEPTH:
-                    data = self.g_detector.predict(np.copy(d_img))
-                else:
-                    data = self.g_detector.predict(np.copy(c_img))
+                data = self.g_detector.predict(net_input)
                 egraspt = time.time()
                 g_predict_t = egraspt - sgraspt
                 print("Grasp predict time: {:.2f}".format(g_predict_t))
-                self.record_stats(c_img, d_img, data, self.side, 'grasp')
+                self.record_stats(c_img, d_img, data, self.side, g_predict_t, 'grasp')
 
                 # For safety, we can check image and abort as needed before execution.
                 if BED_CFG.GRASP_CONFIG.USE_DEPTH:
                     img = self.dp.draw_prediction(d_img, data)
                 else:
                     img = self.dp.draw_prediction(c_img, data)
-                caption = 'Predicted: {} (ESC to abort, other key to proceed)'.format(data)
+                caption = 'G Predicted: {} (ESC to abort, other key to proceed)'.format(data)
                 call_wait_key( cv2.imshow(caption,img) )
 
                 # Broadcast grasp pose, execute the grasp, check for success.
@@ -229,11 +235,16 @@ class BedMaker():
                 if self.side == "BOTTOM":
                     self.whole_body.move_to_go()
                     self.tt.move_to_pose(self.omni_base,'lower_start')
+                    tic = time.time()
                     self.gripper.execute_grasp(bed_pick, self.whole_body, 'head_down')
+                    toc = time.time()
                 else:
                     self.whole_body.move_to_go()
                     self.tt.move_to_pose(self.omni_base,'top_mid')
+                    tic = time.time()
                     self.gripper.execute_grasp(bed_pick, self.whole_body, 'head_up')
+                    toc = time.time()
+                self.g_time_stats.append( toc-tic )
                 self.check_success_state()
 
 
@@ -247,10 +258,15 @@ class BedMaker():
         """
         use_d = BED_CFG.GRASP_CONFIG.USE_DEPTH
         if self.side == "BOTTOM":
-            success, data, c_img, d_img = self.sn.check_bottom_success(use_d)
+            result = self.sn.check_bottom_success(use_d)
         else:
-            success, data, c_img, d_img = self.sn.check_top_success(use_d)
-        self.record_stats(c_img, d_img, data, self.side, 'success')
+            result = self.sn.check_top_success(use_d)
+        success     = result['success']
+        data        = result['data']
+        c_img       = result['c_img']
+        d_img       = result['d_img']
+        s_predict_t = result['s_predict_t']
+        self.record_stats(c_img, d_img, data, self.side, s_predict_t, 'success')
 
         # Have user confirm that this makes sense.
         caption = "Success net saw this and thought: {}. Press any key".format(success)
@@ -263,9 +279,9 @@ class BedMaker():
         if success:
             if self.side == "BOTTOM":
                 self.transition_to_top()
+                self.side = 'TOP'
             else:
                 self.transition_to_start()
-            self.update_side()
         else:
             self.new_grasp = False
         self.grasp_count += 1
@@ -275,39 +291,72 @@ class BedMaker():
             self.transition_to_start()
 
 
-    def update_side(self):
-        """TODO: extend to multiple side switches?"""
-        if self.side == "BOTTOM":
-            self.side = "TOP"
-
-
     def transition_to_top(self):
         """Transition to top (not bottom)."""
+        tic = time.time()
         self.move_to_top_side()
+        toc = time.time()
+        self.move_time_stats.append( toc-tic )
 
 
     def transition_to_start(self):
-        """Transition to start=bottom, save rollout stats, exit program."""
-        self.com.save_stat(self.rollout_stats)
+        """Transition to start=bottom, SAVE ROLLOUT STATS, exit program.
+
+        The `rollout_stats` is a list with a bunch of stats recorded via the
+        class method `record_stats`.
+        
+        Now that I think about it, we should save the final images here, so that
+        we can evaluate sheet coverage before and after from the same view.
+        Unfortunately it won't be exact but probably fairer to do this? We can
+        also do this in addition to the top-down view.
+
+        Then we do a `sys.exit()` here. Best to just do one trajectory per call.
+        """
         self.move_to_start()
+        self.side = 'BOTTOM'
+        self.position_head()
+        time.sleep(3)
+        c_img = self.cam.read_color_data()
+
+        # Append some last-minute stuff to `self.rollout_stats` for saving.
+        final_stuff = {
+            'final_c_img': c_img,
+            'grasp_times': self.g_time_stats,
+            'move_times': self.move_time_stats,
+        }
+        self.rollout_stats.append(final_stuff)
+
+        self.com.save_stat(self.rollout_stats, target_path=BED_CFG.DEPLOY_NET_PATH)
         sys.exit()
 
 
-    def record_stats(self, c_img, d_img, data, side, typ):
-        """Adds a dictionary to the `rollout_stats` list."""
+    def record_stats(self, c_img, d_img, data, side, time, typ):
+        """Adds a dictionary to the `rollout_stats` list.
+        
+        We can tell it's a 'net' thing due to 'net_pose' and 'net_succ' keys.
+        """
+        assert side in ['BOTTOM', 'TOP']
         grasp_point = {}
         grasp_point['c_img'] = c_img
         grasp_point['d_img'] = d_img
         if typ == "grasp":
             grasp_point['net_pose'] = data
+            grasp_point['g_net_time'] = time
+        elif typ == "success":
+            grasp_point['net_succ'] = data
+            grasp_point['s_net_time'] = time
         else:
-            grasp_point['net_trans'] = data
+            raise ValueError(typ)
         grasp_point['side'] = side
         grasp_point['type'] = typ
         self.rollout_stats.append(grasp_point)
 
 
     def position_head(self):
+        """Position head for a grasp.
+        
+        Use lower_start_tmp so HSR looks 'sideways'; thus, hand is not in the way.
+        """
         self.whole_body.move_to_go()
         if self.side == "BOTTOM":
             self.tt.move_to_pose(self.omni_base,'lower_start_tmp')
@@ -320,19 +369,24 @@ class BedMaker():
     def move_to_top_side(self):
         """Assumes we're at the bottom and want to go to the top."""
         self.whole_body.move_to_go()
-        self.tt.move_to_pose(self.omni_base,'right_down')
-        self.tt.move_to_pose(self.omni_base,'right_mid')
-        self.tt.move_to_pose(self.omni_base,'right_up')
+        self.tt.move_to_pose(self.omni_base,'right_down_1')
+        self.tt.move_to_pose(self.omni_base,'right_mid_1')
+        self.tt.move_to_pose(self.omni_base,'right_up_1')
         self.tt.move_to_pose(self.omni_base,'top_mid_tmp')
 
 
     def move_to_start(self):
-        """Assumes we're at the top and we go back to the start."""
+        """Assumes we're at the top and we go back to the start.
+        
+        Go to lower_start_tmp to be at the same view as we started with, so that
+        we take a c_img and compare coverage.
+        """
         self.whole_body.move_to_go()
-        self.tt.move_to_pose(self.omni_base,'right_up')
-        self.tt.move_to_pose(self.omni_base,'right_mid')
-        self.tt.move_to_pose(self.omni_base,'right_down')
-        self.tt.move_to_pose(self.omni_base,'lower_mid')
+        self.tt.move_to_pose(self.omni_base,'right_up_2')
+        self.tt.move_to_pose(self.omni_base,'right_mid_2')
+        self.tt.move_to_pose(self.omni_base,'right_down_2')
+        #self.tt.move_to_pose(self.omni_base,'lower_mid')
+        self.tt.move_to_pose(self.omni_base,'lower_start_tmp')
 
 
     def check_card_found(self):
@@ -353,7 +407,12 @@ class BedMaker():
 
 
 if __name__ == "__main__":
-    cp = BedMaker()
+    pp = argparse.ArgumentParser()
+    pp.add_argument('--phase', type=int, help='1 for checking poses, 2 for deployment.')
+    args = pp.parse_args()
+    assert args.phase in [1,2]
+
+    cp = BedMaker(args)
     #cp._test_grasp()
     #cp._test_success()
     cp.bed_make()

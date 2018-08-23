@@ -1,4 +1,4 @@
-import tf, IPython, os, sys, cv2, time, thread, rospy, glob, hsrb_interface
+import tf, IPython, os, sys, cv2, time, thread, rospy, glob, hsrb_interface, argparse
 from tf import TransformListener
 from hsrb_interface import geometry
 from geometry_msgs.msg import PoseStamped, Point, WrenchStamped, Twist
@@ -22,7 +22,7 @@ from numpy.random import normal
 
 class BedMaker():
 
-    def __init__(self):
+    def __init__(self, args):
         """For data collection of bed-making, NOT the deployment.
 
         Assumes we roll out the robot's policy via code (not via human touch).
@@ -71,7 +71,9 @@ class BedMaker():
 
         # When we start, spin this so we can check the frames. Then un-comment,
         # etc. It's the current hack we have to get around crummy AR marker detection.
-        #rospy.spin()
+        if args.phase == 1:
+            print("Now doing rospy.spin() because phase = 1.")
+            rospy.spin()
 
 
     def bed_make(self):
@@ -236,6 +238,11 @@ class BedMaker():
 
 
 if __name__ == "__main__":
-    cp = BedMaker()
+    pp = argparse.ArgumentParser()
+    pp.add_argument('--phase', type=int, help='1 for checking poses, 2 for deployment.')
+    args = pp.parse_args()
+    assert args.phase in [1,2]
+
+    cp = BedMaker(args)
     cp.bed_make()
     rospy.spin()

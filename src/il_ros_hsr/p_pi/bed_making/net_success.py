@@ -43,8 +43,7 @@ class Success_Net:
 
         For the timing, avoid counting the time for processing images.
         
-        Returns: 3-element tuple: (boolean for success, the output from
-        predicting, and the camera image that was input).
+        Returns dictionary with a bunch of info for later.
         """
         self.whole_body.move_to_joint_positions({'arm_flex_joint': -np.pi/16.0})
         self.whole_body.move_to_joint_positions({'head_pan_joint':  np.pi/2.0})
@@ -72,7 +71,14 @@ class Success_Net:
         # The success net outputs a 2D result for a probability vector.
         ans = np.argmax(data)
         success = (ans == 0)
-        return (success, data, c_img, d_img)
+        result = {
+            'success': success,
+            'data': data,
+            'c_img': c_img,
+            'd_img': d_img,
+            's_predict_t': s_predict_t,
+        }
+        return result
 
 
 if __name__ == "__main__":

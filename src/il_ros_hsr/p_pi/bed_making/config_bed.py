@@ -25,8 +25,13 @@ def convert(s):
 ROOT_DIR = '/nfs/diskstation/seita/bed-make/'
 
 # If we are running the `collect_data_bed` scripts, we save rollouts here.
-DATA_PATH = join(ROOT_DIR, 'collect_data_bed/')
+DATA_PATH    = join(ROOT_DIR, 'collect_data_bed/')
 ROLLOUT_PATH = join(DATA_PATH, 'rollouts/')
+
+# Put data here for _results_, i.e., from deployment.
+RESULTS_PATH    = join(ROOT_DIR, 'results/')
+DEPLOY_NET_PATH = join(RESULTS_PATH, 'deploy_network/')
+DEPLOY_ANA_PATH = join(RESULTS_PATH, 'deploy_analytic/')
 
 # STANDARD (the way I was doing earlier), CLOSE (the way they want).
 # Update: change STANDARD to now use the CLOSE joints, but _original_ positions.
@@ -111,16 +116,22 @@ INS_SAMPLE = False
 GRIPPER_HEIGHT = 0.052
 
 # TODO: we should probably have this so we know if depth is in mm or meters?
+# Right now for data preprocessing I just use 'HSR' because the code has so many
+# HSR-dependent stuff, but might be worth using in the future.
 ROBOT = 'HSR'
 assert ROBOT in ['HSR', 'Fetch']
+
+# TODO: it's millimeters to meters but should understand code usage.
+# Michael needed this for computing grasp poses.
+MM_TO_M = 0.001
+
+# For the gripper code. Always keep at False for now.
+USE_DART = False
 
 # ------------------------------------------------------------------------------
 # OLDER STUFF I'LL RESOLVE LATER
 
 
-# TODO: it's millimeters to meters but should understand code usage.
-# Michael needed this for computing grasp poses.
-MM_TO_M = 0.001
 
 
 # CLASSES = ['success_bed','failure_bed']
@@ -128,7 +139,6 @@ MM_TO_M = 0.001
 # # path and dataset parameter
 # 
 
-USE_DART = False
 # if USE_DART: 
 # 	ROLLOUT_PATH = DATA_PATH+'rollouts_dart_cal/'
 # 	BC_HELD_OUT = DATA_PATH+'held_out_debugpython'
@@ -136,11 +146,7 @@ USE_DART = False
 # 	BC_HELD_OUT = DATA_PATH+'held_out_bc'
 # FAST_PATH = DATA_PATH+'fast_pic/'
 # 
-# #STAT_PATH = DATA_PATH+'stats_dart_adv/'
-# STAT_PATH = DATA_PATH+'stats_cal_debug/'
-# #STAT_PATH = DATA_PATH+'stats/'
-# #STAT_PATH = DATA_PATH+'stats_analytic_adv/'
-# 
+ 
 # GRASP_LABEL_PATH = DATA_PATH+'grasp_labels/'
 # SUCCESS_LABEL_PATH = DATA_PATH+'success_labels/'
 # 

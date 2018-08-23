@@ -21,7 +21,7 @@ from collections import defaultdict
 # ADJUST. HH is directory like: 'grasp_1_img_depth_opt_adam_lr_0.0001_{etc...}'
 # ------------------------------------------------------------------------------
 HEAD = '/nfs/diskstation/seita/bed-make/'
-DATA_NAME = 'cache_d_v01'
+DATA_NAME = 'cache_h_v03'
 HH = 'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_cv_True'
 
 # Sanity checks.
@@ -51,7 +51,7 @@ error_alpha = 0.3
 error_fc = 'blue'
 
 # Might as well make y-axis a bit more informative, if we know it.
-LOSS_YLIM = [0.0, 0.035]
+#LOSS_YLIM = [0.0, 0.035]
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 
@@ -80,6 +80,7 @@ def scatter_heat_final(ss):
         I = cv2.imread("scripts/imgs/image_example_close.png")
     elif VIEW_TYPE == 'standard':
         I = cv2.imread("scripts/imgs/daniel_data_example_file_15_idx_023_rgb.png")
+        #I = cv2.imread("scripts/imgs/example_image_h_v03.png")
     
     # Create a scatter plot of where the targets are located.
     ax[0,0].imshow(I, alpha=alpha)
@@ -163,6 +164,7 @@ def make_scatter(ss):
         I = cv2.imread("scripts/imgs/image_example_close.png")
     elif VIEW_TYPE == 'standard':
         I = cv2.imread("scripts/imgs/daniel_data_example_file_15_idx_023_rgb.png")
+        #I = cv2.imread("scripts/imgs/example_image_h_v03.png")
     
     # Create a scatter plot of where the targets are located.
     ax[0,0].imshow(I, alpha=alpha)
@@ -252,8 +254,8 @@ def make_plot(ss):
     # Bells and whistles
     for i in range(nrows):
         for j in range(ncols):
-            if LOSS_YLIM is not None:
-                ax[i,j].set_ylim(LOSS_YLIM)
+            #if LOSS_YLIM is not None:
+            #    ax[i,j].set_ylim(LOSS_YLIM)
             ax[i,j].legend(loc="best", ncol=2, prop={'size':legend_size})
             ax[i,j].set_xlabel('Epoch', fontsize=xsize)
             ax[i,j].set_ylabel('Average L2 Loss (Scaled)', fontsize=ysize)

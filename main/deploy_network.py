@@ -1,8 +1,7 @@
-import tf, IPython, os, sys, cv2, time, thread, rospy, glob, hsrb_interface
-from tf import TransformListener
+import IPython, os, sys, cv2, time, thread, rospy, glob, hsrb_interface
+from tf import TransformBroadcaster, TransformListener
 from hsrb_interface import geometry
 from geometry_msgs.msg import PoseStamped, Point, WrenchStamped, Twist
-from fast_grasp_detect.labelers.online_labeler import QueryLabeler
 import il_ros_hsr.p_pi.bed_making.config_bed as BED_CFG
 from il_ros_hsr.core.sensors import RGBD, Gripper_Torque, Joint_Positions
 from il_ros_hsr.core.joystick import JoyStick
@@ -15,13 +14,20 @@ from il_ros_hsr.p_pi.bed_making.table_top import TableTop
 from il_ros_hsr.p_pi.bed_making.check_success import Success_Check
 from il_ros_hsr.p_pi.bed_making.get_success import get_success
 from il_ros_hsr.p_pi.bed_making.initial_state_sampler import InitialSampler
+from fast_grasp_detect.labelers.online_labeler import QueryLabeler
+import tensorflow as tf
 import numpy as np
 import numpy.linalg as LA
 from numpy.random import normal
 
 # Grasping and success networks (success is a bit more 'roundabout' but w/e).
+# We also need the depth preprocessing code for before we feed image to detector.
+# And we need YOLO network to build the common shared weights beforehand.
+
 from fast_grasp_detect.detectors.grasp_detector import GDetector
 from il_ros_hsr.p_pi.bed_making.net_success import Success_Net
+from fast_grasp_detect.data_aug.depth_preprocess import depth_to_net_dim
+from fast_grasp_detect.core.yolo_conv_features_cs import YOLO_CONV
 
 
 class BedMaker():
@@ -31,20 +37,29 @@ class BedMaker():
 
         Uses the neural network, `GDetector`, not the analytic baseline.
         """
+        DEBUG = True
         self.robot = robot = hsrb_interface.Robot()
+        if DEBUG:
+            print("finished: hsrb_interface.Robot()...")
         self.rgbd_map = RGBD2Map()
         self.omni_base = self.robot.get('omni_base')
+        if DEBUG:
+            print("finished: robot.get(omni_base)...")
         self.whole_body = self.robot.get('whole_body')
+        if DEBUG:
+            print("finished: robot.get(whole_body)...")
         self.cam = RGBD()
         self.com = COM()
         self.wl = Python_Labeler(cam=self.cam)
 
-        # View mode: STANDARD (the way I was doing earlier), CLOSE (the way they want).
+        # Set up initial state, table, etc. Don't forget view mode!
         self.view_mode = BED_CFG.VIEW_MODE
-
-        # Set up initial state, table, etc.
         self.com.go_to_initial_state(self.whole_body)
+        if DEBUG:
+            print("finished: go_to_initial_state() ...")
         self.tt = TableTop()
+        if DEBUG:
+            print("finished: TableTop()...")
 
         # For now, a workaround. Ugly but it should do the job ...
         #self.tt.find_table(robot)
@@ -55,28 +70,39 @@ class BedMaker():
         self.side = 'BOTTOM'
         self.grasp_count = 0
 
+        # AH, build the YOLO network beforehand.
+        g_cfg = BED_CFG.GRASP_CONFIG
+        s_cfg = BED_CFG.SUCC_CONFIG
+        self.yc = YOLO_CONV(options=g_cfg)
+        self.yc.load_network()
+
         # Policy for grasp detection, using Deep Imitation Learning.
-        print("\nnow forming the GDetector")
-        self.g_detector = GDetector(fg_cfg=BED_CFG.GRASP_CONFIG, bed_cfg=BED_CFG)
+        if DEBUG:
+            self._test_variables()
+            print("\nnow forming the GDetector")
+        self.g_detector = GDetector(g_cfg, BED_CFG, yc=self.yc)
         self._test_detector()
-        print("finished with GDetector")
         
-        print("\nnow making success net")
+        if DEBUG:
+            self._test_variables()
+            print("\nnow making success net")
         self.sn = Success_Net(self.whole_body, self.tt, self.cam, self.omni_base,
-                fg_cfg=BED_CFG.SUCC_CONFIG, bed_cfg=BED_CFG)
+                fg_cfg=s_cfg, bed_cfg=BED_CFG, yc=self.yc)
         self._test_snet()
-        print("finished with success net")
 
         # Bells and whistles.
-        self.br = tf.TransformBroadcaster()
+        self.br = TransformBroadcaster()
         self.tl = TransformListener()
         self.gp = GraspPlanner()
         self.gripper = Bed_Gripper(self.gp, self.cam, self.com.Options, robot.get('gripper'))
 
-        # When we start, spin this so we can check the frames. Then un-comment,
-        # etc. It's the current hack we have to get around crummy AR marker detection.
+        # When we start, do rospy.spin() to check the frames. Then un-comment.
+        # The current hack we have to get around crummy AR marker detection.
+        if DEBUG:
+            self._test_variables()
+        print("Finished with init method")
         time.sleep(4)
-        rospy.spin()
+        #rospy.spin()
 
 
     def _test_detector(self):
@@ -88,6 +114,15 @@ class BedMaker():
         """Test to see if we loaded it."""
         c_img = self.cam.read_color_data()
         self.sn.sdect.predict(c_img)
+
+
+    def _test_variables(self):
+        """Test to see variable names."""
+        vars = tf.trainable_variables()
+        print("\ntf.trainable_variables:")
+        for vv in vars:
+            print("  {}".format(vv))
+        print("done\n")
 
 
     def bed_make(self):

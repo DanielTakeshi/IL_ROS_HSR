@@ -13,12 +13,12 @@ class Success_Net:
     Actual net is in `fast_grasp_detect.detectors.tran_detector`.
     """
 
-    def __init__(self, whole_body, tt, cam, base, fg_cfg, bed_cfg):
+    def __init__(self, whole_body, tt, cam, base, fg_cfg, bed_cfg, yc):
         self.whole_body = whole_body
         self.tt = tt
         self.cam = cam
         self.omni_base = base
-        self.sdect = SDetector(fg_cfg=fg_cfg, bed_cfg=bed_cfg)
+        self.sdect = SDetector(fg_cfg=fg_cfg, bed_cfg=bed_cfg, yc=yc)
 
 
     def check_bottom_success(self,wl):

@@ -26,7 +26,7 @@ total 1.1G
 -rw-rw-r-- 1 nobody nogroup 119M Aug 12 15:39 grasp_list_of_dicts_nodaug_cv_8_len_21.pkl
 -rw-rw-r-- 1 nobody nogroup 120M Aug 12 15:39 grasp_list_of_dicts_nodaug_cv_9_len_21.pkl
 
-so, a list of dicts, each dict of which has cimg, dimg, and label (all we need), no data
+so, a list of dicts, each dict of which has c_img, d_img, pose (i.e., label), type, no data
 augmentation, and we just load this into our code. _Should_ be easy ...
 """
 import cv2, os, pickle, sys

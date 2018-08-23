@@ -15,6 +15,7 @@ Data formatting:
   turn it from separate rollout directories into a series of 10 lists, for each CV fold. This script
   is flexible to handle different datasets.
 - Use `success_list_cache.py` for the equivalent version but for the success network's data.
+- `convert_to_list_combo_cache.py`: for combining datasets formed from `convert_to_list_cache`.
 
 Visualize the data and do quick checks:
 

@@ -205,6 +205,7 @@ class BedMaker():
         """Assumes we're at the bottom and want to go to the top."""
         self.whole_body.move_to_go()
         self.tt.move_to_pose(self.omni_base,'right_down')
+        self.tt.move_to_pose(self.omni_base,'right_mid')
         self.tt.move_to_pose(self.omni_base,'right_up')
         self.tt.move_to_pose(self.omni_base,'top_mid_tmp')
 
@@ -213,6 +214,7 @@ class BedMaker():
         """Assumes we're at the top and we go back to the start."""
         self.whole_body.move_to_go()
         self.tt.move_to_pose(self.omni_base,'right_up')
+        self.tt.move_to_pose(self.omni_base,'right_mid')
         self.tt.move_to_pose(self.omni_base,'right_down')
         self.tt.move_to_pose(self.omni_base,'lower_mid')
         

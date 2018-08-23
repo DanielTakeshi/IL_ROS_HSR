@@ -122,10 +122,11 @@ class Bed_Gripper(object):
         return pose
 
 
-    def plot_on_true(self,pose,true_img):
+    def plot_on_true(self, pose, true_img):
+        """Another debug helper method, shows the img with cross hair."""
         #pose = self.convert_crop(pose)
         dp = DrawPrediction()
-        image = dp.draw_prediction(np.copy(true_img),pose)
+        image = dp.draw_prediction(np.copy(true_img), pose)
         cv2.imshow('label_given',image)
         cv2.waitKey(30)
        
@@ -134,6 +135,7 @@ class Bed_Gripper(object):
         """Called during bed-making deployment w/neural network, creates a pose.
 
         It relies on the raw depth image! DO NOT PASS A PROCESSED DEPTH IMAGE!!!
+        Also, shows the image to the user via `plot_on_true`.
 
         Args:
             pose: (x,y) point as derived from the grasp detector network
@@ -155,6 +157,7 @@ class Bed_Gripper(object):
         if desired, but this may be slow.
 
         It relies on the raw depth image! DO NOT PASS A PROCESSED DEPTH IMAGE!!!
+        Also, shows the image to the user via `plot_on_true`.
 
         Args:
             results: List of dicts from QueryLabeler class (human supervisor).

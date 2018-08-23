@@ -6,11 +6,14 @@ from il_ros_hsr.p_pi.bed_making.gripper import Bed_Gripper
 from il_ros_hsr.p_pi.bed_making.table_top import TableTop
 from il_ros_hsr.core.sensors import  RGBD
 from fast_grasp_detect.detectors.tran_detector import SDetector
+from fast_grasp_detect.data_aug.depth_preprocess import depth_to_net_dim
 
 
 class Success_Net:
     """The success network policy, check success by calling network.
-    Actual net is in `fast_grasp_detect.detectors.tran_detector`.
+
+    It's similar to `check_success.py` except for the DNN version.
+    Actual net, btw, is in `fast_grasp_detect.detectors.tran_detector`.
     """
 
     def __init__(self, whole_body, tt, cam, base, fg_cfg, bed_cfg, yc):
@@ -21,45 +24,55 @@ class Success_Net:
         self.sdect = SDetector(fg_cfg=fg_cfg, bed_cfg=bed_cfg, yc=yc)
 
 
-    def check_bottom_success(self,wl):
+    def check_bottom_success(self, use_d):
         self.whole_body.move_to_go()
-        self.tt.move_to_pose(self.omni_base,'lower_start')
-        #self.whole_body.move_to_joint_positions({'head_pan_joint': 1.5})
-        self.whole_body.move_to_joint_positions({'head_tilt_joint':-0.8})
-        stranst = time.time()
-        query_res = self.query_net(wl) # calls network
-        etranst = time.time()
-        print("Success predict time: " + str(etranst-stranst))
-        return query_res
+        self.tt.move_to_pose(self.omni_base, 'lower_start_tmp')
+        result = self.shared_code(use_d)
+        return result
 
 
-    def check_top_success(self,wl):
+    def check_top_success(self, use_d):
         self.whole_body.move_to_go()
-        self.tt.move_to_pose(self.omni_base,'top_mid')
-        self.whole_body.move_to_joint_positions({'head_tilt_joint':-0.8})
-        stranst = time.time()
-        query_res = self.query_net(wl) # calls network
-        etranst = time.time()
-        print("Success predict time: " + str(etranst-stranst))
-        return query_res
+        self.tt.move_to_pose(self.omni_base, 'top_mid_tmp')
+        result = self.shared_code(use_d)
+        return result
 
 
-    def query_net(self,wl):
+    def shared_code(self, use_d):
+        """Shared code for calling the success network.
+
+        For the timing, avoid counting the time for processing images.
+        
+        Returns: 3-element tuple: (boolean for success, the output from
+        predicting, and the camera image that was input).
         """
-        Calls success network, returns 3-element tuple: (boolean for success,
-        the output from predicting, and the camera image that was input).
-        """
-        img = self.cam.read_color_data()
-        sup_data = None
-        time.sleep(4)
-        img = self.cam.read_color_data()
-        data = self.sdect.predict(np.copy(img))
-        print "NET OUTPUT ",data
-        ans = np.argmax(data)
-        if (ans == 0):
-            return True, data, img
+        self.whole_body.move_to_joint_positions({'arm_flex_joint': -np.pi/16.0})
+        self.whole_body.move_to_joint_positions({'head_pan_joint':  np.pi/2.0})
+        self.whole_body.move_to_joint_positions({'arm_lift_joint':  0.120})
+        self.whole_body.move_to_joint_positions({'head_tilt_joint': -np.pi/4.0})# -np.pi/36.0})
+
+        # Retrieve and (if necessary) process images.
+        time.sleep(3)
+        c_img = self.cam.read_color_data()
+        d_img = self.cam.read_depth_data()
+        if use_d:
+            d_img = depth_to_net_dim(d_img, robot='HSR')
+            img = np.copy(d_img)
         else:
-            return False, data, img
+            img = np.copy(c_img)
+
+        # Call network and record time.
+        stranst = time.time()
+        data = self.sdect.predict(img)
+        etranst = time.time()
+        s_predict_t = etranst - stranst
+        print("Success predict time: {:.2f}".format(s_predict_t))
+        print("Success net output: {}".format(data))
+
+        # The success net outputs a 2D result for a probability vector.
+        ans = np.argmax(data)
+        success = (ans == 0)
+        return (success, data, c_img, d_img)
 
 
 if __name__ == "__main__":

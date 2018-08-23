@@ -32,6 +32,14 @@ from fast_grasp_detect.data_aug.draw_cross_hair import DrawPrediction
 ESC_KEYS = [27, 1048603]
 
 
+def call_wait_key(nothing=None):
+    """Call this like: `call_wait_key( cv2.imshow(...) )`."""
+    key = cv2.waitKey(0)
+    if key in ESC_KEYS:
+        print("Pressed ESC key. Terminating program...")
+        sys.exit()
+
+
 class BedMaker():
 
     def __init__(self):
@@ -212,11 +220,7 @@ class BedMaker():
                 else:
                     img = self.dp.draw_prediction(c_img, data)
                 caption = 'Predicted: {} (ESC to abort, other key to proceed)'.format(data)
-                cv2.imshow(caption, img)
-                key = cv2.waitKey(0)
-                if key in ESC_KEYS:
-                    print("Pressed ESC key. Terminating program...")
-                    sys.exit()
+                call_wait_key( cv2.imshow(caption,img) )
 
                 # Broadcast grasp pose, execute the grasp, check for success.
                 self.gripper.find_pick_region_net(data, c_img, d_img_raw, self.grasp_count)
@@ -230,21 +234,30 @@ class BedMaker():
                     self.whole_body.move_to_go()
                     self.tt.move_to_pose(self.omni_base,'top_mid')
                     self.gripper.execute_grasp(bed_pick, self.whole_body, 'head_up')
-                self.check_success_state(c_img, d_img)
+                self.check_success_state()
 
 
-    def check_success_state(self,c_img,d_img):
+    def check_success_state(self):
         """
         Checks whether a single grasp in a bed-making trajectory succeeded.
         Depends on which side of the bed the HSR is at. Invokes the learned
         success network policy and transitions the HSR if successful.
+
+        When we record the data, c_img and d_img should be what success net saw.
         """
+        use_d = BED_CFG.GRASP_CONFIG.USE_DEPTH
         if self.side == "BOTTOM":
-            success, data, c_img = self.sn.check_bottom_success(self.wl)
+            success, data, c_img, d_img = self.sn.check_bottom_success(use_d)
         else:
-            success, data, c_img = self.sn.check_top_success(self.wl)
+            success, data, c_img, d_img = self.sn.check_top_success(use_d)
         self.record_stats(c_img, d_img, data, self.side, 'success')
-        print("WAS SUCCESFUL: {}".format(success))
+
+        # Have user confirm that this makes sense.
+        caption = "Success net saw this and thought: {}. Press any key".format(success)
+        if use_d:
+            call_wait_key( cv2.imshow(caption,d_img) )
+        else:
+            call_wait_key( cv2.imshow(caption,c_img) )
 
         # Handle transitioning to different side
         if success:
@@ -280,7 +293,7 @@ class BedMaker():
         sys.exit()
 
 
-    def record_stats(self,c_img,d_img,data,side,typ):
+    def record_stats(self, c_img, d_img, data, side, typ):
         """Adds a dictionary to the `rollout_stats` list."""
         grasp_point = {}
         grasp_point['c_img'] = c_img
@@ -306,7 +319,9 @@ class BedMaker():
 
     def move_to_top_side(self):
         """Assumes we're at the bottom and want to go to the top."""
+        self.whole_body.move_to_go()
         self.tt.move_to_pose(self.omni_base,'right_down')
+        self.tt.move_to_pose(self.omni_base,'right_mid')
         self.tt.move_to_pose(self.omni_base,'right_up')
         self.tt.move_to_pose(self.omni_base,'top_mid_tmp')
 
@@ -315,6 +330,7 @@ class BedMaker():
         """Assumes we're at the top and we go back to the start."""
         self.whole_body.move_to_go()
         self.tt.move_to_pose(self.omni_base,'right_up')
+        self.tt.move_to_pose(self.omni_base,'right_mid')
         self.tt.move_to_pose(self.omni_base,'right_down')
         self.tt.move_to_pose(self.omni_base,'lower_mid')
 

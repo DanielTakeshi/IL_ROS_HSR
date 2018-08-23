@@ -11,7 +11,10 @@ CANVAS_DIM = 420.0
 
 
 class Success_Check:
-    """Checking for success during the data collection."""
+    """Checking for success during the data collection.
+    
+    See `net_success.py` for the DNN version.
+    """
 
     def __init__(self,whole_body,tt,cam,base):
         self.cam = cam

@@ -133,13 +133,15 @@ class Bed_Gripper(object):
     def find_pick_region_net(self,pose,c_img,d_img,count):
         """Called during bed-making deployment w/neural network, creates a pose.
 
+        It relies on the raw depth image! DO NOT PASS A PROCESSED DEPTH IMAGE!!!
+
         Args:
             pose: (x,y) point as derived from the grasp detector network
         """
         poses = []
         p_list = []
         x,y = pose
-        print "PREDICTION ", pose
+        print("in bed_making.gripper, PREDICTION {}".format(pose))
         self.plot_on_true([x,y],c_img)
         #Crop D+img
         d_img_c = d_img[int(y-cfg.BOX):int(y+cfg.BOX),int(x-cfg.BOX):int(cfg.BOX+x)]
@@ -151,6 +153,8 @@ class Bed_Gripper(object):
     def find_pick_region_labeler(self,results,c_img,d_img,count):
         """Called during bed-making data collection, creates a pose. Apply DART
         if desired, but this may be slow.
+
+        It relies on the raw depth image! DO NOT PASS A PROCESSED DEPTH IMAGE!!!
 
         Args:
             results: List of dicts from QueryLabeler class (human supervisor).

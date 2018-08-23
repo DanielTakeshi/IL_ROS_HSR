@@ -28,6 +28,8 @@ from fast_grasp_detect.detectors.grasp_detector import GDetector
 from il_ros_hsr.p_pi.bed_making.net_success import Success_Net
 from fast_grasp_detect.data_aug.depth_preprocess import depth_to_net_dim
 from fast_grasp_detect.core.yolo_conv_features_cs import YOLO_CONV
+from fast_grasp_detect.data_aug.draw_cross_hair import DrawPrediction
+ESC_KEYS = [27, 1048603]
 
 
 class BedMaker():
@@ -81,20 +83,19 @@ class BedMaker():
             self._test_variables()
             print("\nnow forming the GDetector")
         self.g_detector = GDetector(g_cfg, BED_CFG, yc=self.yc)
-        self._test_detector()
         
         if DEBUG:
             self._test_variables()
             print("\nnow making success net")
-        self.sn = Success_Net(self.whole_body, self.tt, self.cam, self.omni_base,
-                fg_cfg=s_cfg, bed_cfg=BED_CFG, yc=self.yc)
-        self._test_snet()
+        self.sn = Success_Net(self.whole_body, self.tt, self.cam,
+                self.omni_base, fg_cfg=s_cfg, bed_cfg=BED_CFG, yc=self.yc)
 
         # Bells and whistles.
         self.br = TransformBroadcaster()
         self.tl = TransformListener()
         self.gp = GraspPlanner()
         self.gripper = Bed_Gripper(self.gp, self.cam, self.com.Options, robot.get('gripper'))
+        self.dp = DrawPrediction()
 
         # When we start, do rospy.spin() to check the frames. Then un-comment.
         # The current hack we have to get around crummy AR marker detection.
@@ -105,19 +106,62 @@ class BedMaker():
         #rospy.spin()
 
 
-    def _test_detector(self):
-        """Test to see if we loaded it."""
-        pass
+    def _test_grasp(self):
+        """Simple tests for grasping net. Don't forget to process depth images.
 
+        Do this independently of any rollout ...
+        """
+        print("\nNow in `test_grasp` to check grasping net...")
+        self.position_head()
+        time.sleep(3)
 
-    def _test_snet(self):
-        """Test to see if we loaded it."""
         c_img = self.cam.read_color_data()
-        self.sn.sdect.predict(c_img)
+        d_img = self.cam.read_depth_data()
+        if np.isnan(np.sum(d_img)):
+            cv2.patchNaNs(d_img, 0.0)
+        d_img = depth_to_net_dim(d_img, robot='HSR')
+        pred = self.g_detector.predict( np.copy(d_img) )
+        img = self.dp.draw_prediction(d_img, pred)
+
+        print("prediction: {}".format(pred))
+        caption = 'Predicted: {} (ESC to abort, other key to proceed)'.format(pred)
+        cv2.imshow(caption, img)
+        key = cv2.waitKey(0)
+        if key in ESC_KEYS:
+            print("Pressed ESC key. Terminating program...")
+            sys.exit()
+
+
+    def _test_success(self):
+        """Simple tests for success net. Don't forget to process depth images.
+
+        Should be done after a grasp test since I don't re-position...  Note: we
+        have access to `self.sn` but that isn't the actual net which has a
+        `predict`, but it's a wrapper (explained above), but we can access the
+        true network via `self.sn.sdect` and from there call `predict`.
+        """
+        print("\nNow in `test_success` to check success net...")
+        time.sleep(3)
+        c_img = self.cam.read_color_data()
+        d_img = self.cam.read_depth_data()
+        if np.isnan(np.sum(d_img)):
+            cv2.patchNaNs(d_img, 0.0)
+        d_img = depth_to_net_dim(d_img, robot='HSR')
+        result = self.sn.sdect.predict( np.copy(d_img) )
+        result = np.squeeze(result)
+
+        print("s-net pred: {} (if [0]<[1] failure, else success...)".format(result))
+        caption = 'Predicted: {} (ESC to abort, other key to proceed)'.format(result)
+        cv2.imshow(caption, d_img)
+        key = cv2.waitKey(0)
+        if key in ESC_KEYS:
+            print("Pressed ESC key. Terminating program...")
+            sys.exit()
 
 
     def _test_variables(self):
-        """Test to see variable names."""
+        """Test to see if TF variables were loaded correctly.
+        """
         vars = tf.trainable_variables()
         print("\ntf.trainable_variables:")
         for vv in vars:
@@ -144,22 +188,49 @@ class BedMaker():
                 time.sleep(3)
                 c_img = self.cam.read_color_data()
                 d_img = self.cam.read_depth_data()
+                d_img_raw = np.copy(d_img) # Needed for determining grasp pose
+
+                if BED_CFG.GRASP_CONFIG.USE_DEPTH:
+                    if np.isnan(np.sum(d_img)):
+                        cv2.patchNaNs(d_img, 0.0)
+                    d_img = depth_to_net_dim(d_img, robot='HSR')
 
                 # Run grasp detector to get data=(x,y) point for grasp target.
                 sgraspt = time.time()
-                data = self.g_detector.predict(np.copy(c_img))
+                if BED_CFG.GRASP_CONFIG.USE_DEPTH:
+                    data = self.g_detector.predict(np.copy(d_img))
+                else:
+                    data = self.g_detector.predict(np.copy(c_img))
                 egraspt = time.time()
-                print("Grasp predict time: {:.2f}".format(egraspt-sgraspt))
+                g_predict_t = egraspt - sgraspt
+                print("Grasp predict time: {:.2f}".format(g_predict_t))
                 self.record_stats(c_img, d_img, data, self.side, 'grasp')
 
+                # For safety, we can check image and abort as needed before execution.
+                if BED_CFG.GRASP_CONFIG.USE_DEPTH:
+                    img = self.dp.draw_prediction(d_img, data)
+                else:
+                    img = self.dp.draw_prediction(c_img, data)
+                caption = 'Predicted: {} (ESC to abort, other key to proceed)'.format(data)
+                cv2.imshow(caption, img)
+                key = cv2.waitKey(0)
+                if key in ESC_KEYS:
+                    print("Pressed ESC key. Terminating program...")
+                    sys.exit()
+
                 # Broadcast grasp pose, execute the grasp, check for success.
-                self.gripper.find_pick_region_net(data, c_img, d_img, self.grasp_count)
-                pick_found,bed_pick = self.check_card_found()
+                self.gripper.find_pick_region_net(data, c_img, d_img_raw, self.grasp_count)
+                pick_found, bed_pick = self.check_card_found()
+
                 if self.side == "BOTTOM":
+                    self.whole_body.move_to_go()
+                    self.tt.move_to_pose(self.omni_base,'lower_start')
                     self.gripper.execute_grasp(bed_pick, self.whole_body, 'head_down')
                 else:
+                    self.whole_body.move_to_go()
+                    self.tt.move_to_pose(self.omni_base,'top_mid')
                     self.gripper.execute_grasp(bed_pick, self.whole_body, 'head_up')
-                self.check_success_state(c_img,d_img)
+                self.check_success_state(c_img, d_img)
 
 
     def check_success_state(self,c_img,d_img):
@@ -267,5 +338,7 @@ class BedMaker():
 
 if __name__ == "__main__":
     cp = BedMaker()
+    #cp._test_grasp()
+    #cp._test_success()
     cp.bed_make()
     rospy.spin()

@@ -67,10 +67,10 @@ class Test():
             for idx,item in enumerate(data):
                 if BED_CFG.GRASP_CONFIG.USE_DEPTH:
                     d_img = np.copy(item['d_img'])
-                    result = self.g_detector.predict(d_img)
+                    result = self.g_detector.predict(d_img, draw_cross_hair=True)
                 else:
                     c_img = np.copy(item['c_img'])
-                    result = self.g_detector.predict(c_img)
+                    result = self.g_detector.predict(c_img, draw_cross_hair=True)
                 result = np.squeeze( np.array(result) ) # batch size is 1
                 targ = item['pose']
                 L2 = np.sqrt( (result[0]-targ[0])**2 + (result[1]-targ[1])**2 )

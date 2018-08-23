@@ -118,13 +118,17 @@ assert ROBOT in ['HSR', 'Fetch']
 # OLDER STUFF I'LL RESOLVE LATER
 
 
+# TODO: it's millimeters to meters but should understand code usage.
+# Michael needed this for computing grasp poses.
+MM_TO_M = 0.001
 
 
 # CLASSES = ['success_bed','failure_bed']
 # 
 # # path and dataset parameter
 # 
-# USE_DART = False
+
+USE_DART = False
 # if USE_DART: 
 # 	ROLLOUT_PATH = DATA_PATH+'rollouts_dart_cal/'
 # 	BC_HELD_OUT = DATA_PATH+'held_out_debugpython'
@@ -175,6 +179,4 @@ assert ROBOT in ['HSR', 'Fetch']
 # 
 # #DEBUG
 # DEBUG_MODE = False
-# 
-# MM_TO_M = 0.001
 # 

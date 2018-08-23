@@ -37,10 +37,10 @@ assert VIEW_MODE in ['standard', 'close']
 # --- GRASP NETWORK ---
 # ---------------------
 # When deploying, we need to load in a config (text) file and a network.
-g_data_name = 'cache_d_v01'
+g_data_name = 'cache_h_v03'
 g_head_name = 'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_cv_False'
-g_ckpt_name = '08_22_13_09_05_save.ckpt-3000'
-g_conf_name = 'config_2018_08_22_13_06.txt'
+g_ckpt_name = '08_22_19_12_59_save.ckpt-3000'
+g_conf_name = 'config_2018_08_22_19_10.txt'
 GRASP_NET_PATH  = join(ROOT_DIR, 'grasp', g_data_name, g_head_name, g_ckpt_name)
 GRASP_CONF_PATH = join(ROOT_DIR, 'grasp', g_data_name, g_head_name, g_conf_name)
 assert 'save.ckpt' in g_ckpt_name and 'config' in g_conf_name
@@ -62,33 +62,33 @@ for line in g_content:
     else:
         setattr(GRASP_CONFIG, attr, convert(value))
 
-# -----------------------
-# --- SUCCESS NETWORK ---
-# -----------------------
-s_data_name = 'cache_d_v01_success'
-s_head_name = 'success_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_cv_False'
-s_ckpt_name = '08_22_12_58_22_save.ckpt-1000'
-s_conf_name = 'config_2018_08_22_12_57.txt'
-SUCC_NET_PATH  = join(ROOT_DIR, 'success', s_data_name, s_head_name, s_ckpt_name)
-SUCC_CONF_PATH = join(ROOT_DIR, 'success', s_data_name, s_head_name, s_conf_name)
-assert 'save.ckpt' in s_ckpt_name and 'config' in s_conf_name
-
-# Set SUCC_CONFIG to be the same as what we had during neural net training.
-SUCC_CONFIG = BuildConfig()
-with open(SUCC_CONF_PATH, 'r') as f:
-    s_content = f.readlines()
-s_content = [x.strip() for x in s_content]
-for line in s_content:
-    line = line.split(':')
-    assert len(line) == 2
-    attr = line[0].strip()
-    value = line[1].strip()
-    if value == 'True':
-        setattr(SUCC_CONFIG, attr, True)
-    if value == 'False':
-        setattr(SUCC_CONFIG, attr, False)
-    else:
-        setattr(SUCC_CONFIG, attr, convert(value))
+### # -----------------------
+### # --- SUCCESS NETWORK ---
+### # -----------------------
+### s_data_name = 'cache_d_v01_success'
+### s_head_name = 'success_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_cv_False'
+### s_ckpt_name = '08_22_12_58_22_save.ckpt-1000'
+### s_conf_name = 'config_2018_08_22_12_57.txt'
+### SUCC_NET_PATH  = join(ROOT_DIR, 'success', s_data_name, s_head_name, s_ckpt_name)
+### SUCC_CONF_PATH = join(ROOT_DIR, 'success', s_data_name, s_head_name, s_conf_name)
+### assert 'save.ckpt' in s_ckpt_name and 'config' in s_conf_name
+### 
+### # Set SUCC_CONFIG to be the same as what we had during neural net training.
+### SUCC_CONFIG = BuildConfig()
+### with open(SUCC_CONF_PATH, 'r') as f:
+###     s_content = f.readlines()
+### s_content = [x.strip() for x in s_content]
+### for line in s_content:
+###     line = line.split(':')
+###     assert len(line) == 2
+###     attr = line[0].strip()
+###     value = line[1].strip()
+###     if value == 'True':
+###         setattr(SUCC_CONFIG, attr, True)
+###     if value == 'False':
+###         setattr(SUCC_CONFIG, attr, False)
+###     else:
+###         setattr(SUCC_CONFIG, attr, convert(value))
 
 
 # --- Other stuff which I don't need to look at often ---

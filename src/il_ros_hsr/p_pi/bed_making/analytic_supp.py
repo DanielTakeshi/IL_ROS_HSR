@@ -31,7 +31,13 @@ class Analytic_Supp:
         bools = np.apply_along_axis(condition, 2, img)
         mask = np.where(bools, 255, 0)
         mask = mask.astype(np.uint8)
-        (contours, _) = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+        # Bleh this was the old version ...
+        #(contours, _) = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+        # And I think newer version of cv2 has three items to return.
+        (_, contours, _) = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
         print("\n`Analytic_Supp.get_blob()`, len(contours): {}".format(len(contours)))
         largest = max(contours, key = lambda cnt: cv2.contourArea(cnt))
         return largest, cv2.contourArea(largest)

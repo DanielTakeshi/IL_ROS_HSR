@@ -12,6 +12,7 @@ import numpy as np
 np.set_printoptions(suppress=True, linewidth=200, precision=4)
 from fast_grasp_detect.data_aug.depth_preprocess import datum_to_net_dim
 from collections import defaultdict
+from il_ros_hsr.p_pi.bed_making.analytic_supp import Analytic_Supp
 
 # ------------------------------------------------------------------------------
 # ADJUST. HH is directory like: 'grasp_1_img_depth_opt_adam_lr_0.0001_{etc...}'
@@ -29,8 +30,17 @@ legend_size = 25
 alpha = 0.5
 error_alpha = 0.3
 error_fc = 'blue'
+
+ESC_KEYS = [27, 1048603]
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
+
+def call_wait_key(nothing=None):
+    """Use like: call_wait_key(cv2.imshow(...))"""
+    key = cv2.waitKey(0)
+    if key in ESC_KEYS:
+        print("Pressed ESC key. Terminating program ...")
+        sys.exit()
 
 
 def analyze_time(stats):
@@ -64,10 +74,10 @@ def analyze_time(stats):
         # ----------------------------------------------------------------------
         # Analyze one rollout (i.e., `stats[key]`) at a time.
         # This is a list, where at each index, result[i] is a dict w/relevant
-        # info. Also, I directly use length because I took the last dict, the
-        # 'final_dict', out before hand to analyze separately.
+        # info. Also, I ignore the last `final_dict` for this purpose.
         # ----------------------------------------------------------------------
-        result = stats[key]
+        result = (stats[key])[:-1]
+
         for i,info in enumerate(result):
             if result[i]['type'] == 'grasp':
                 grasp_net_t.append( result[i]['g_net_time'] )
@@ -97,11 +107,57 @@ def analyze_time(stats):
     print("lengths.max():  {}".format(np.max(lengths)))
 
 
-def analyze_preds(stats):
-    """For analyzing predictions.
-    """
-    result = stats['result_0']
-    # do something with the images, overlay them, etc.?
+
+
+# For `click_and_crop`.
+POINTS          = []
+CENTER_OF_BOXES = []
+
+BLACK  = (0,0,0)
+YELLOW = (0,255,0)
+WHITE  = (255,255,255)
+
+def click_and_crop(event, x, y, flags, param):
+    global POINTS, CENTER_OF_BOXES
+             
+    # If left mouse button clicked, record the starting (x,y) coordinates 
+    # and indicate that cropping is being performed
+    if event == cv2.EVENT_LBUTTONDOWN:
+        POINTS.append((x,y))
+                                                 
+    # Check to see if the left mouse button was released
+    elif event == cv2.EVENT_LBUTTONUP:
+        # Record ending (x,y) coordinates and indicate that cropping is finished AND save center!
+        POINTS.append((x,y))
+
+        upper_left = POINTS[-2]
+        lower_right = POINTS[-1]
+        assert upper_left[0] < lower_right[0]
+        assert upper_left[1] < lower_right[1]
+        center_x = int(upper_left[0] + (lower_right[0]-upper_left[0])/2)
+        center_y = int(upper_left[1] + (lower_right[1]-upper_left[1])/2)
+        CENTER_OF_BOXES.append( (center_x,center_y) )
+        
+        # Draw a rectangle around the region of interest, w/center point. Blue=Before, Red=AfteR.
+        cv2.rectangle(img=img_for_click, 
+                      pt1=POINTS[-2], 
+                      pt2=POINTS[-1], 
+                      color=(0,0,255), 
+                      thickness=2)
+        cv2.circle(img=img_for_click, 
+                   center=CENTER_OF_BOXES[-1], 
+                   radius=6, 
+                   color=(0,0,255), 
+                   thickness=-1)
+        #cv2.putText(img=img_for_click, 
+        #            text="{}".format(CENTER_OF_BOXES[-1]), 
+        #            org=CENTER_OF_BOXES[-1],  
+        #            fontFace=cv2.FONT_HERSHEY_SIMPLEX, 
+        #            fontScale=1, 
+        #            color=(0,0,255), 
+        #            thickness=2)
+        cv2.imshow("This is in the click and crop method AFTER the rectangle. "+
+                   "(Press any key, or ESC If I made a mistake.)", img_for_click)
 
 
 if __name__ == "__main__":
@@ -117,8 +173,9 @@ if __name__ == "__main__":
         print("loaded file #{} at {}".format(p_idx, p_file))
 
         # All items except last one should reflect some grasp or success nets.
+        # Actually let's pass in the full data, and ignore the last one elsewhere.
         key = 'result_{}'.format(p_idx)
-        stats[key] = data[:-1]
+        stats[key] = data
        
         # We know the final dict has some useful stuff in it
         final_dict = data[-1]
@@ -128,4 +185,71 @@ if __name__ == "__main__":
         stats['grasp_times'].append( final_dict['grasp_times'] )
 
     analyze_time(stats)
-    analyze_preds(stats)
+
+    # --------------------------------------------------------------------------
+    # For this I think it's easier to deal with global variables.
+    # Haven't been able to figure out why, honestly...
+    # Easier way is to assume we have bounding box and can crop there.
+    # But, we might as well support this 'slower way' where we manually hit the corners
+    # There is no easy solution since the viewpoints will differ slightly anyway.
+    # --------------------------------------------------------------------------
+    supp = Analytic_Supp()
+
+    print("\nNow analyzing _coverage_ ...")
+    idx = 0
+    key = 'result_{}'.format(idx)
+
+    while key in stats:
+        result = stats[key]
+        print("Just loaded: {}, with len {}".format(key, len(result)))
+        
+        # Extract relevant images
+        c_img_start = result[0]['c_img']
+        c_img_end_t = result[-2]['c_img']
+        c_img_end_s = result[-1]['final_c_img']
+        assert c_img_start.shape == c_img_end_t.shape == c_img_end_s.shape
+
+        # Analyze coverage.
+        start = np.copy(c_img_start)
+        end   = np.copy(c_img_end_s)
+
+        #  Coverage before
+        num_targ = len(CENTER_OF_BOXES) + 4
+        print("current points {}, target {}".format(len(CENTER_OF_BOXES), num_targ))
+        print("DRAW CLOCKWISE FROM UPPER LEFT CORNER")
+
+        while len(CENTER_OF_BOXES) < num_targ:
+            typ = 'start'
+            img_for_click = np.copy(start)
+            diff = num_targ - len(CENTER_OF_BOXES)
+            wn = 'idx {}, type: {}, num_p: {}'.format(idx, typ, diff)
+            cv2.namedWindow(wn, cv2.WINDOW_NORMAL)
+            cv2.setMouseCallback(wn, click_and_crop)
+            cv2.imshow(wn, img_for_click)
+            key = cv2.waitKey(0)
+        
+        # Now should be four points.
+        print("should now be four center points, let's close all windows...")
+        cv2.destroyAllWindows()
+
+        print("now do the cv contour detection ...")
+        print("last four points: {}".format(CENTER_OF_BOXES[-4:]))
+        image = np.copy(img_for_click)
+        largest, size = supp.get_blob( image, supp.is_white )
+        cv2.drawContours(image, [largest], -1, YELLOW, 2)
+        caption = 'contour. idx {}, type: {}'.format(idx, typ)
+        call_wait_key(cv2.imshow(caption, image))
+
+
+        # Save images, increment key, etc.
+        path_start = join(FIGURES, 'res_{}_c_start.png'.format(idx))
+        path_end_t = join(FIGURES, 'res_{}_c_end_t.png'.format(idx))
+        path_end_s = join(FIGURES, 'res_{}_c_end_s.png'.format(idx))
+        cv2.imwrite(path_start, c_img_start)
+        cv2.imwrite(path_end_t, c_img_end_t)
+        cv2.imwrite(path_end_s, c_img_end_s)
+        idx += 1
+        key = 'result_{}'.format(idx)
+
+    print("Look at: {}".format(FIGURES))
+

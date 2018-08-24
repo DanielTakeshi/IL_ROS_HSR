@@ -12,7 +12,6 @@ import numpy as np
 np.set_printoptions(suppress=True, linewidth=200, precision=4)
 from fast_grasp_detect.data_aug.depth_preprocess import datum_to_net_dim
 from collections import defaultdict
-from il_ros_hsr.p_pi.bed_making.analytic_supp import Analytic_Supp
 
 # ------------------------------------------------------------------------------
 # ADJUST. HH is directory like: 'grasp_1_img_depth_opt_adam_lr_0.0001_{etc...}'
@@ -107,6 +106,34 @@ def analyze_time(stats):
     print("lengths.max():  {}".format(np.max(lengths)))
 
 
+def is_blue(p):
+    b, g, r = p
+    return (b > 150 and (r < b - 40) and (g < b - 40)) or (r < b - 50) or (g < b - 50)
+
+
+def is_white(p):
+    b, g, r = p
+    return b > 200 and r > 200 and g > 200
+
+
+def get_blob(img, condition):
+    """
+    Find largest blob (contour) of some color. Return it, and the area.
+    Update: and the masking image.
+    """
+    bools = np.apply_along_axis(condition, 2, img)
+    mask = np.where(bools, 255, 0)
+    mask = mask.astype(np.uint8)
+
+    # Bleh this was the old version ...
+    #(contours, _) = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    # And newer version of cv2 has three items to return.
+    (_, contours, _) = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+    print("len(contours): {}".format(len(contours)))
+    largest = max(contours, key = lambda cnt: cv2.contourArea(cnt))
+    return largest, cv2.contourArea(largest), mask
+
 
 
 # For `click_and_crop`.
@@ -114,7 +141,8 @@ POINTS          = []
 CENTER_OF_BOXES = []
 
 BLACK  = (0,0,0)
-YELLOW = (0,255,0)
+YELLOW = (0,255,0) # well, green ...
+RED    = (255,0,0)
 WHITE  = (255,255,255)
 
 def click_and_crop(event, x, y, flags, param):
@@ -193,13 +221,15 @@ if __name__ == "__main__":
     # But, we might as well support this 'slower way' where we manually hit the corners
     # There is no easy solution since the viewpoints will differ slightly anyway.
     # --------------------------------------------------------------------------
-    supp = Analytic_Supp()
 
     print("\nNow analyzing _coverage_ ...")
     idx = 0
     key = 'result_{}'.format(idx)
+    beginning_coverage = []
+    ending_coverage = []
 
     while key in stats:
+        # This is ONE trajectory, so evaluate and add a data point here.
         result = stats[key]
         print("Just loaded: {}, with len {}".format(key, len(result)))
         
@@ -213,13 +243,15 @@ if __name__ == "__main__":
         start = np.copy(c_img_start)
         end   = np.copy(c_img_end_s)
 
-        #  Coverage before
+        # ----------------------------------------------------------------------
+        # Coverage before
+        # ----------------------------------------------------------------------
         num_targ = len(CENTER_OF_BOXES) + 4
         print("current points {}, target {}".format(len(CENTER_OF_BOXES), num_targ))
         print("DRAW CLOCKWISE FROM UPPER LEFT CORNER")
+        typ = 'start'
 
         while len(CENTER_OF_BOXES) < num_targ:
-            typ = 'start'
             img_for_click = np.copy(start)
             diff = num_targ - len(CENTER_OF_BOXES)
             wn = 'idx {}, type: {}, num_p: {}'.format(idx, typ, diff)
@@ -229,19 +261,70 @@ if __name__ == "__main__":
             key = cv2.waitKey(0)
         
         # Now should be four points.
-        print("should now be four center points, let's close all windows...")
+        print("should now be four center points, let's close all windows and draw....")
         cv2.destroyAllWindows()
-
-        print("now do the cv contour detection ...")
+        print("and also do the cv contour detection ...")
         print("last four points: {}".format(CENTER_OF_BOXES[-4:]))
         image = np.copy(img_for_click)
-        largest, size = supp.get_blob( image, supp.is_white )
-        cv2.drawContours(image, [largest], -1, YELLOW, 2)
-        caption = 'contour. idx {}, type: {}'.format(idx, typ)
-        call_wait_key(cv2.imshow(caption, image))
+        last4 = CENTER_OF_BOXES[-4:]
+        assert len(CENTER_OF_BOXES) % 4 == 0
+
+        # Experiment with detecting blobs. Note: mask.shape == (480,640), i.e., single channel.
+        #largest, size, mask = get_blob( image, is_white )
+        largest, size, mask = get_blob( image, is_blue )
+
+        # Find how much of 'largest' is inside the contained points.
+
+        # Draw stuff.
+        # Visualize. Once user presses key, go ahead and save. :-)
+        # You can make a line of the points here but better to just make it another contour.
+        # So we have `largest` and `human_ctr` as two contours.
+        # ----------------------------------------------------------------------
+        #cv2.line(image, last4[0], last4[1], YELLOW, 1)
+        #cv2.line(image, last4[1], last4[2], YELLOW, 1)
+        #cv2.line(image, last4[2], last4[3], YELLOW, 1)
+        #cv2.line(image, last4[3], last4[0], YELLOW, 1)
+        cv2.drawContours(image, [largest], -1, YELLOW, 1)
+        human_ctr = np.array(last4).reshape((-1,1,2)).astype(np.int32)
+        cv2.drawContours(image, [human_ctr], 0, RED , 1)
+        print("contour area of human_ctr: {}".format(cv2.contourArea(human_ctr)))
+        print("contour area of largest: {}".format(size))
+        cc = 'ESC abort, other key to save. Rollout: {}, at {}'.format(key, typ)
+        call_wait_key(cv2.imshow(cc, image))
 
 
-        # Save images, increment key, etc.
+        # draw contours, for 3rd argument its the index of the contour to draw (or -1 tod raw all).
+        # Remaining argument is color.
+        blank = np.zeros( (480,640) )
+        img1 = cv2.drawContours( blank.copy(), [human_ctr], contourIdx=0, color=1, thickness=-1 )
+        img2 = cv2.drawContours( blank.copy(), [largest], contourIdx=0, color=1, thickness=-1 )
+        # now AND the two together and save the intersection image if we scale 1 -> 255.
+        intersection = np.logical_and( img1, img2 ).astype(np.uint8) * 255.0
+        intersection = intersection.astype(np.uint8)
+        cv2.imwrite('intersection.png', intersection)
+
+        # find contour on that image, should be easy because it's intersection ....
+        (_, contours_intersection, _) = cv2.findContours(intersection.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        print("len(contours_intersection): {}".format(len(contours_intersection)))
+        largest_intersection = max(contours_intersection, key = lambda cnt: cv2.contourArea(cnt))
+        cv2.drawContours(intersection, [largest_intersection], 0, RED, -1)
+        cv2.imwrite('largest_intersection.png', intersection)
+
+
+        # finally, take the area ratio!
+        AA = float(cv2.contourArea(human_ctr))
+        BB = float(cv2.contourArea(largest_intersection))
+        print("area of full bed frame: {}".format(AA))
+        print("area of exposed blue:   {}".format(BB))
+        print("ratio (i.e., coverage): {}".format(BB / AA))
+        print("the original blue area was {} but includes other stuff in scene".format(size))
+        sys.exit()
+
+
+        # ----------------------------------------------------------------------
+        # Save images, record stats, etc. Some shenanigans to saving to ensuring
+        # that we don't waste time and effort on this...
+        # ----------------------------------------------------------------------
         path_start = join(FIGURES, 'res_{}_c_start.png'.format(idx))
         path_end_t = join(FIGURES, 'res_{}_c_end_t.png'.format(idx))
         path_end_s = join(FIGURES, 'res_{}_c_end_s.png'.format(idx))
@@ -250,6 +333,23 @@ if __name__ == "__main__":
         cv2.imwrite(path_end_s, c_img_end_s)
         idx += 1
         key = 'result_{}'.format(idx)
+        # Count coverage TODO
+        # start_coverage = ...
+        # end_coverage = ...
+        # beginning_coverage.append( start_coverage )
+        # ending_coverage.append( end_coverage )
+        # TODO: save intermediate runs due to high chance of error?
 
     print("Look at: {}".format(FIGURES))
-
+    print("beginning_coverage: {:.1f}\pm {:.1f}, range ({:.1f},{:.1f})".format(
+            np.mean(beginning_coverage),
+            np.std(beginning_coverage),
+            np.min(beginning_coverage),
+            np.max(beginning_coverage))
+    )
+    print("ending_coverage: {:.1f}\pm {:.1f}, range ({:.1f},{:.1f})".format(
+            np.mean(ending_coverage),
+            np.std(ending_coverage),
+            np.min(ending_coverage),
+            np.max(ending_coverage))
+    )

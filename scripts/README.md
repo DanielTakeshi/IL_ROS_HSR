@@ -36,7 +36,9 @@ Understanding grasping network performance after training:
 
 Evaluate bed-making results from deployment:
 
-- Use `bedmake_results.py`.
+- Use `bedmake_coverage.py`: for coverage. Be careful to avoid overwriting so I don't lose old
+  stats.
+- Use `bedmake_results.py`: for anything _but_ coverage.
 
 ## Other / Old
 

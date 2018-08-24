@@ -34,6 +34,10 @@ Understanding grasping network performance after training:
 - Can also run `stitch_results.py` for stitching together different dictionaries together in an
   ad-hoc way, e.g., net 1 and net 3 comparisons. This will probably be needed for a paper.
 
+Evaluate bed-making results from deployment:
+
+- Use `bedmake_results.py`.
+
 ## Other / Old
 
 Ron's scripts for data extraction (I have a few for visualizing his as well):

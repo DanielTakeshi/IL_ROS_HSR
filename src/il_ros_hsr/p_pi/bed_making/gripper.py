@@ -144,12 +144,14 @@ class Bed_Gripper(object):
         p_list = []
         x,y = pose
         print("in bed_making.gripper, PREDICTION {}".format(pose))
-        self.plot_on_true([x,y],c_img)
+        self.plot_on_true([x,y], c_img)
+
         #Crop D+img
-        d_img_c = d_img[int(y-cfg.BOX):int(y+cfg.BOX),int(x-cfg.BOX):int(cfg.BOX+x)]
+        d_img_c = d_img[int(y-cfg.BOX) : int(y+cfg.BOX) , int(x-cfg.BOX) : int(cfg.BOX+x)]
+
         depth = self.gp.find_mean_depth(d_img_c)
-        poses.append([1.0,[x,y,depth]])
-        self.broadcast_poses(poses,count)
+        poses.append( [1.0, [x,y,depth]] )
+        self.broadcast_poses(poses, count)
 
 
     def find_pick_region_labeler(self,results,c_img,d_img,count):

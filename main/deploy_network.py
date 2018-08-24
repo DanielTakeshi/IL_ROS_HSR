@@ -79,6 +79,8 @@ class BedMaker():
         #self.ins = InitialSampler(self.cam)
         self.side = 'BOTTOM'
         self.grasp_count = 0
+        self.b_grasp_count = 0
+        self.t_grasp_count = 0
 
         # AH, build the YOLO network beforehand.
         g_cfg = BED_CFG.GRASP_CONFIG
@@ -259,8 +261,13 @@ class BedMaker():
         use_d = BED_CFG.GRASP_CONFIG.USE_DEPTH
         if self.side == "BOTTOM":
             result = self.sn.check_bottom_success(use_d)
+            self.b_grasp_count += 1
         else:
             result = self.sn.check_top_success(use_d)
+            self.t_grasp_count += 1
+        self.grasp_count += 1
+        assert self.grasp_count == self.b_grasp_count + self.t_grasp_count
+
         success     = result['success']
         data        = result['data']
         c_img       = result['c_img']
@@ -275,6 +282,13 @@ class BedMaker():
         else:
             call_wait_key( cv2.imshow(caption,c_img) )
 
+        # Limit amount of grasp attempts per side, pretend 'success' anyway.
+        lim = BED_CFG.GRASP_ATTEMPTS_PER_SIDE
+        if (self.side == 'BOTTOM' and self.b_grasp_count >= lim) or \
+                (self.side == 'TOP' and self.t_grasp_count >= lim):
+            print("We've hit {} for this side so set success=True".format(lim))
+            success = True
+
         # Handle transitioning to different side
         if success:
             if self.side == "BOTTOM":
@@ -284,19 +298,12 @@ class BedMaker():
                 self.transition_to_start()
         else:
             self.new_grasp = False
-        self.grasp_count += 1
-
-        # Limit amount of grasp attempts to cfg.GRASP_OUT (was 8 by default).
-        if self.grasp_count > BED_CFG.GRASP_OUT:
-            self.transition_to_start()
 
 
     def transition_to_top(self):
         """Transition to top (not bottom)."""
-        tic = time.time()
-        self.move_to_top_side()
-        toc = time.time()
-        self.move_time_stats.append( toc-tic )
+        transition_time = self.move_to_top_side()
+        self.move_time_stats.append( transition_time )
 
 
     def transition_to_start(self):
@@ -312,7 +319,8 @@ class BedMaker():
 
         Then we do a `sys.exit()` here. Best to just do one trajectory per call.
         """
-        self.move_to_start()
+        transition_time = self.move_to_start()
+        self.move_time_stats.append( transition_time )
         self.side = 'BOTTOM'
         self.position_head()
         time.sleep(3)
@@ -369,10 +377,13 @@ class BedMaker():
     def move_to_top_side(self):
         """Assumes we're at the bottom and want to go to the top."""
         self.whole_body.move_to_go()
+        tic = time.time()
         self.tt.move_to_pose(self.omni_base,'right_down_1')
         self.tt.move_to_pose(self.omni_base,'right_mid_1')
         self.tt.move_to_pose(self.omni_base,'right_up_1')
         self.tt.move_to_pose(self.omni_base,'top_mid_tmp')
+        toc = time.time()
+        return toc-tic
 
 
     def move_to_start(self):
@@ -382,11 +393,14 @@ class BedMaker():
         we take a c_img and compare coverage.
         """
         self.whole_body.move_to_go()
+        tic = time.time()
         self.tt.move_to_pose(self.omni_base,'right_up_2')
         self.tt.move_to_pose(self.omni_base,'right_mid_2')
         self.tt.move_to_pose(self.omni_base,'right_down_2')
         #self.tt.move_to_pose(self.omni_base,'lower_mid')
         self.tt.move_to_pose(self.omni_base,'lower_start_tmp')
+        toc = time.time()
+        return toc-tic
 
 
     def check_card_found(self):

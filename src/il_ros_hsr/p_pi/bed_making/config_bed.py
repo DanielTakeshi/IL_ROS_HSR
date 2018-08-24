@@ -105,15 +105,19 @@ LOW_FORCE = 2.0
 MAX_PULLS = 3
 BOX = 10
 
-# Max number of grasps to attempt before exiting.
-GRASP_OUT = 8
+# Max number of grasps to attempt _per_side_ before exiting.
+GRASP_ATTEMPTS_PER_SIDE = 4
 
 # Whether we use a sampler which tells us how to adjust the bed. (Not really used now)
 INS_SAMPLE = False
 
 # Gripper height. If these are off try tuning it. Michael used 0.065 (m).
 # Update: hmm ... 0.055 still seems a bit off for our white sheet?
-GRIPPER_HEIGHT = 0.052
+# Ack, 0.052 is resulting in a lot of 'hard' grasps where the robot grabs the
+# sheet but also a bit of the blue surface underneath, so there's too much force.
+# If 0.055 result in the robot 'missing' the sheet then we better adjust it
+# dynamically?
+GRIPPER_HEIGHT = 0.054
 
 # TODO: we should probably have this so we know if depth is in mm or meters?
 # Right now for data preprocessing I just use 'HSR' because the code has so many

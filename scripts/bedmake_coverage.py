@@ -124,7 +124,7 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
 
     pp = argparse.ArgumentParser()
-    pp.add_argument('--path', type=str, help='Must include full path, i.e., `/nfs/disk...` etc')
+    pp.add_argument('path', type=str, help='Include FULL path, i.e., `/nfs/disk...` etc')
     args = pp.parse_args()
     assert '/nfs/diskstation/seita/bed-make/results/' in args.path
 
@@ -243,8 +243,9 @@ if __name__ == "__main__":
     # one and another one which has the contours ...
     # ----------------------------------------------------------------------
  
-    (_, contours_int, _) = cv2.findContours(intersection.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    print("\nChecked contours for 'intersection' image, has length {}".format(len(contours_int)))
+    (_, contours_int, _) = cv2.findContours(intersection.copy(),
+            cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    print("\nChecked contours for 'intersection', length {}".format(len(contours_int)))
     largest_int = max(contours_int, key = lambda cnt: cv2.contourArea(cnt))
 
     AA = float(cv2.contourArea(human_ctr))
@@ -268,4 +269,119 @@ if __name__ == "__main__":
     print("\nJust saved: {}".format(path_1))
     print("Just saved: {}\n".format(path_2))
 
+    # ----------------------------------------------------------------------
     # Repeat the process for the final image!
+    # ----------------------------------------------------------------------
+    # Change c_img_start --> c_img_end_s
+    # ----------------------------------------------------------------------
+
+    # Coverage.
+
+    num_targ = len(CENTER_OF_BOXES) + 4
+    print("current points {}, target {}".format(len(CENTER_OF_BOXES), num_targ))
+
+    while len(CENTER_OF_BOXES) < num_targ:
+        img_for_click = c_img_end_s.copy()
+        diff = num_targ - len(CENTER_OF_BOXES)
+        wn = 'image at start, num points {}'.format(diff)
+        cv2.namedWindow(wn, cv2.WINDOW_NORMAL)
+        cv2.setMouseCallback(wn, click_and_crop)
+        cv2.imshow(wn, img_for_click)
+        key = cv2.waitKey(0)
+
+    # After pressing anNow should be four points.
+    print("should now be four center points, let's close all windows and move forward ...")
+    cv2.destroyAllWindows()
+    print("here are the last four points btw: {}".format(CENTER_OF_BOXES[-4:]))
+    last4 = CENTER_OF_BOXES[-4:]
+    assert len(CENTER_OF_BOXES) % 4 == 0
+
+    # ----------------------------------------------------------------------
+    # Experiment with detecting blobs. Note: mask.shape == (480,640), i.e., 
+    # single channel.  For now I think detecting blue makes more sense ... and
+    # if it returns something like zero, we should have an exception handler?
+    # Though I think blue is often detected even if the blanket covers entirely.
+    # ----------------------------------------------------------------------
+
+    # TODO: we really need to tune the 'is_blue' part, unfortunately ...
+    image_viz = c_img_end_s.copy()
+    #largest_c, size, mask = get_blob( image_viz.copy(), is_white )
+    largest_c, size, mask = get_blob( image_viz.copy(), is_blue )
+
+    # ----------------------------------------------------------------------
+    # Next, visualize both human-made contour and the detected blue.
+    # Abort here by clicking the ESC key if things are messy.
+    # We have `largest` and `human_ctr` as two contours to double check.
+    # API for draw contours: (1) image, (2) _list_ of contours, (3) index of the
+    # contour to draw, or -1 for all of them, (4) color, (5) thickness. Whew!
+    # Use `image_viz` for visualization purposes.
+    # ----------------------------------------------------------------------
+
+    human_ctr = np.array(last4).reshape((-1,1,2)).astype(np.int32)
+    cv2.drawContours(image_viz, [human_ctr], 0, BLACK, 1)
+    cv2.drawContours(image_viz, [largest_c], 0, GREEN, 1)
+    human_ctr_area = cv2.contourArea(human_ctr)
+    largest_ctr_area = size
+    print("\ncontour area of human_ctr: {}".format(human_ctr_area))
+    print("contour area of largest: {}".format(largest_ctr_area))
+    cc = 'ESC to abort, any other key to continue'
+    call_wait_key(cv2.imshow(cc, image_viz))
+    cv2.destroyAllWindows()
+
+    # ----------------------------------------------------------------------
+    # Some tricky stuff. We're going to find the intersection of the two
+    # contours above. For this, make a blank image. Draw the two contours. Then
+    # take their logical and. Must ensure we have thickness=-1 to fill in.
+    # Don't forget that this results in 0s and 1s, and we want 0s and 255s.
+    # ----------------------------------------------------------------------
+
+    print("\nHere's the intersection of the above two")
+    blank = np.zeros( (480,640) )
+    img1 = cv2.drawContours( blank.copy(), [human_ctr], contourIdx=0, color=1, thickness=-1 )
+    img2 = cv2.drawContours( blank.copy(), [largest_c], contourIdx=0, color=1, thickness=-1 )
+    intersection = np.logical_and( img1, img2 ).astype(np.uint8) * 255.0
+    intersection = intersection.astype(np.uint8)
+    cc = 'Intersection between two previous contours'
+    call_wait_key(cv2.imshow(cc, intersection))
+    cv2.destroyAllWindows()
+
+    # ----------------------------------------------------------------------
+    # Find contour on the `intersection` image which should be easy! Visualize
+    # using the original `image_viz` which had the original two contours. Then
+    # take the area ratio and save images. Be careful to save both the original
+    # one and another one which has the contours ...
+    # ----------------------------------------------------------------------
+ 
+    (_, contours_int, _) = cv2.findContours(intersection.copy(),
+            cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    print("\nChecked contours for 'intersection', length {}".format(len(contours_int)))
+
+    if len(contours_int) == 0:
+        print("LENGTH 0, automatically assuming 100% coverage.")
+        AA = float(cv2.contourArea(human_ctr))
+        BB = 0.0
+        coverage = 100.0
+    else:
+        largest_int = max(contours_int, key = lambda cnt: cv2.contourArea(cnt))
+        AA = float(cv2.contourArea(human_ctr))
+        BB = float(cv2.contourArea(largest_int))
+        coverage = (1.0 - (BB / AA)) * 100.0
+
+    print("area of full bed frame: {}".format(AA))
+    print("area of exposed blue:   {}".format(BB))
+    print("coverage of sheet:      {:.4f}".format(coverage))
+    print("the original blue area was {} but includes other stuff in scene".format(size))
+
+    if len(contours_int) > 0:
+        cv2.drawContours(image_viz, [largest_int], 0, RED, thickness=1)
+    cc = 'Red indicates intersection'
+    call_wait_key(cv2.imshow(cc, image_viz))
+    cv2.destroyAllWindows()
+
+    # Original: c_img_end_s. Visualization: `image_viz`.
+    path_1 = join(HEAD, 'res_{}_c_end_raw.png'.format(rollout_index))
+    path_2 = join(HEAD, 'res_{}_c_end_{:.1f}.png'.format(rollout_index, coverage))
+    cv2.imwrite(path_1, c_img_end_s)
+    cv2.imwrite(path_2, image_viz)
+    print("\nJust saved: {}".format(path_1))
+    print("Just saved: {}\n".format(path_2))

@@ -1,4 +1,14 @@
 """Use this script for inspecting COVERAGE.
+
+So, here's my thinking. This is very unreliable. When doing rollouts:
+
+(1) ENSURE THAT THE BACK CURTAIN IS CLOSED, because from the bottom
+view we often see the top as blue and that is viewed as a contour.
+
+(2) If we use the top view, we also see the side of the table as blue, etc.
+
+So, it seems better to me to have a human dynamically write as many points
+for the contour, and then we just compute that. I think that's better.
 """
 import argparse, cv2, os, pickle, sys, matplotlib, utils
 from os.path import join
@@ -272,8 +282,14 @@ if __name__ == "__main__":
     # ----------------------------------------------------------------------
     # Repeat the process for the final image!
     # ----------------------------------------------------------------------
-    # Change c_img_start --> c_img_end_s
+    # Change c_img_start --> c_img_end_s (or c_img_end_t!)
     # ----------------------------------------------------------------------
+    # Recommend to use c_img_end_s, though. For both the ending ones, lighting
+    # poses a problem, unfortunately ...
+    # ----------------------------------------------------------------------
+
+    final_img = c_img_end_t
+    #final_img = c_img_end_s
 
     # Coverage.
 
@@ -281,7 +297,7 @@ if __name__ == "__main__":
     print("current points {}, target {}".format(len(CENTER_OF_BOXES), num_targ))
 
     while len(CENTER_OF_BOXES) < num_targ:
-        img_for_click = c_img_end_s.copy()
+        img_for_click = final_img.copy()
         diff = num_targ - len(CENTER_OF_BOXES)
         wn = 'image at start, num points {}'.format(diff)
         cv2.namedWindow(wn, cv2.WINDOW_NORMAL)
@@ -296,26 +312,13 @@ if __name__ == "__main__":
     last4 = CENTER_OF_BOXES[-4:]
     assert len(CENTER_OF_BOXES) % 4 == 0
 
-    # ----------------------------------------------------------------------
-    # Experiment with detecting blobs. Note: mask.shape == (480,640), i.e., 
-    # single channel.  For now I think detecting blue makes more sense ... and
-    # if it returns something like zero, we should have an exception handler?
-    # Though I think blue is often detected even if the blanket covers entirely.
-    # ----------------------------------------------------------------------
+    # blobs
 
-    # TODO: we really need to tune the 'is_blue' part, unfortunately ...
-    image_viz = c_img_end_s.copy()
+    image_viz = final_img.copy()
     #largest_c, size, mask = get_blob( image_viz.copy(), is_white )
     largest_c, size, mask = get_blob( image_viz.copy(), is_blue )
 
-    # ----------------------------------------------------------------------
-    # Next, visualize both human-made contour and the detected blue.
-    # Abort here by clicking the ESC key if things are messy.
-    # We have `largest` and `human_ctr` as two contours to double check.
-    # API for draw contours: (1) image, (2) _list_ of contours, (3) index of the
-    # contour to draw, or -1 for all of them, (4) color, (5) thickness. Whew!
-    # Use `image_viz` for visualization purposes.
-    # ----------------------------------------------------------------------
+    # visualize
 
     human_ctr = np.array(last4).reshape((-1,1,2)).astype(np.int32)
     cv2.drawContours(image_viz, [human_ctr], 0, BLACK, 1)
@@ -328,12 +331,9 @@ if __name__ == "__main__":
     call_wait_key(cv2.imshow(cc, image_viz))
     cv2.destroyAllWindows()
 
-    # ----------------------------------------------------------------------
-    # Some tricky stuff. We're going to find the intersection of the two
-    # contours above. For this, make a blank image. Draw the two contours. Then
-    # take their logical and. Must ensure we have thickness=-1 to fill in.
-    # Don't forget that this results in 0s and 1s, and we want 0s and 255s.
-    # ----------------------------------------------------------------------
+    # intersections
+    # note: if this is empty, usually perfect coverage or
+    # likely a problem we'd have to hand-tune anyway.
 
     print("\nHere's the intersection of the above two")
     blank = np.zeros( (480,640) )
@@ -345,12 +345,7 @@ if __name__ == "__main__":
     call_wait_key(cv2.imshow(cc, intersection))
     cv2.destroyAllWindows()
 
-    # ----------------------------------------------------------------------
-    # Find contour on the `intersection` image which should be easy! Visualize
-    # using the original `image_viz` which had the original two contours. Then
-    # take the area ratio and save images. Be careful to save both the original
-    # one and another one which has the contours ...
-    # ----------------------------------------------------------------------
+    # contour on intersection
  
     (_, contours_int, _) = cv2.findContours(intersection.copy(),
             cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -378,10 +373,11 @@ if __name__ == "__main__":
     call_wait_key(cv2.imshow(cc, image_viz))
     cv2.destroyAllWindows()
 
-    # Original: c_img_end_s. Visualization: `image_viz`.
+    # Original: c_img_end_s (final_img). Visualization: `image_viz`.
+
     path_1 = join(HEAD, 'res_{}_c_end_raw.png'.format(rollout_index))
     path_2 = join(HEAD, 'res_{}_c_end_{:.1f}.png'.format(rollout_index, coverage))
-    cv2.imwrite(path_1, c_img_end_s)
+    cv2.imwrite(path_1, final_img)
     cv2.imwrite(path_2, image_viz)
     print("\nJust saved: {}".format(path_1))
     print("Just saved: {}\n".format(path_2))

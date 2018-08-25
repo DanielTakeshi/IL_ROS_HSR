@@ -36,8 +36,16 @@ Understanding grasping network performance after training:
 
 Evaluate bed-making results from deployment:
 
-- Use `bedmake_coverage.py`: for coverage. Be careful to avoid overwriting so I don't lose old
-  stats.
+- Use `bedmake_coverage_{auto,manual}.py`: for _coverage_.
+    - Auto: will go through and detect blue automatically. Unfortunately I've found this isn't as
+      good as I'd like. It's reasonable for the starting configuration but is vulnerable to lighting
+      and thinking the floor is a contour.
+    - Manual: we click points to form the contour, then compute area from that. I think that's very
+      good, it's like we are tracing out our contours. Seems much better, and if it's 100% we
+      can just say that.
+    - Regardless, we have to click to form the table top. For saving, save the raw images AND the
+      image with the contours for visualization.  Keep the coverage percentage in the file name so
+      it's easier to inspect.
 - Use `bedmake_results.py`: for anything _but_ coverage.
 
 ## Other / Old

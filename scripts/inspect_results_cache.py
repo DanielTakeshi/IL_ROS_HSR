@@ -21,8 +21,9 @@ from collections import defaultdict
 # ADJUST. HH is directory like: 'grasp_1_img_depth_opt_adam_lr_0.0001_{etc...}'
 # ------------------------------------------------------------------------------
 HEAD = '/nfs/diskstation/seita/bed-make/'
-DATA_NAME = 'cache_h_v03'
+DATA_NAME = 'cache_combo_v01'
 HH = 'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_cv_True'
+DSOURCES = ['cache_d_v01', 'cache_h_v03']
 
 # Sanity checks.
 assert 'cache' in DATA_NAME
@@ -150,7 +151,7 @@ def make_scatter(ss):
         print("{}".format(all_names[indices[i]]))
     print("...")
     for i in range(num_pts-edge, num_pts):
-        print("{}".format(all_names[indices[i]]))   
+        print("{}".format(all_names[indices[i]]))
    
     # ------------------------------------------------------------------------------
     # Heat-map of the L2 losses. I was going to use the contour code but that
@@ -219,7 +220,8 @@ def make_plot(ss):
     # For all cross validation folds, we must have N be the same.
     assert all_test.shape == all_raw_test.shape
     K, N = all_train.shape
-    print("\nall_train.shape:  {}".format(all_train.shape))
+    print("\nInside make_plot for making some loss curves")
+    print("all_train.shape:  {}".format(all_train.shape))
     print("all_test.shape:   {}".format(all_test.shape))
     print("all_lrates.shape: {}".format(all_lrates.shape))
     print("epoch: {}\n".format(epochs))
@@ -267,6 +269,61 @@ def make_plot(ss):
     figname = osp.join(OUTPUT_PATH,"check_stats.png")
     plt.savefig(figname)
     print("Look at this figure:\n{}".format(figname))
+
+
+def plot_data_source(ss):
+    """Make plot w.r.t. data source, for combo data.
+    
+    Please modify DSOURCES at the top. Sorry for sloppy research code.
+    Actually we won't have a plot unfortunately, we just print some stuff ...
+    """
+    nrows, ncols = 1, 2
+    fig, ax = plt.subplots(nrows, ncols, figsize=(10*ncols,8*nrows), sharey=True)
+
+    # Global information
+    all_train = np.array(ss['train'])
+    all_test = np.array(ss['test'])
+    all_raw_test = np.array(ss['raw_test'])
+    all_lrates = np.array(ss['lrates'])
+    epochs = ss['epoch']
+
+    # Deal with individual points for data sources
+    all_d_sources = ss['data_sources']
+    all_L2s       = np.array(ss['all_L2s'])
+   
+    # {train, test, raw_test} = shape (K,N) where N is how often we recorded it.
+    # For plots, ideally N = E, where E is number of epochs, but usually N > E.
+    # For all cross validation folds, we must have N be the same.
+    assert all_test.shape == all_raw_test.shape
+    K, N = all_train.shape
+    print("\nInside plot_data_source for analysis of performance wrt individual data sources")
+    print("all_train.shape:  {}".format(all_train.shape))
+    print("all_test.shape:   {}".format(all_test.shape))
+    print("all_L2s.shape:    {}".format(all_L2s.shape))
+    print("len(all_d_sources):    {}".format(len(all_d_sources)))
+    for idx,val in enumerate(all_d_sources):
+        print("  len(all_d_sources[{}]): {}".format(idx,len(all_d_sources[idx])))
+    print("epoch: {}\n".format(epochs))
+
+    # Since N != E in general, try to get epochs to line up.
+    xs = np.arange(N) * (epochs[0] / float(N))
+
+    # Need to split data among the two data sources.
+    flat_data_list = [item for sublist in all_d_sources for item in sublist]
+    ds0 = []
+    ds1 = []
+    for idx,(ds,L2) in enumerate(zip(flat_data_list,all_L2s)):
+        if ds == DSOURCES[0]:
+            ds0.append(L2)
+        elif ds == DSOURCES[1]:
+            ds1.append(L2)
+        else:
+            raise ValueError(ds)
+    print("For {}:".format(DSOURCES[0]))
+    print("   avg: {:.1f}\pm {:.1f}".format( np.mean(ds0), np.std(ds0) ))
+    print("For {}:".format(DSOURCES[1]))
+    print("   avg: {:.1f}\pm {:.1f}".format( np.mean(ds1), np.std(ds1) ))
+
  
 
 if __name__ == "__main__":
@@ -288,6 +345,13 @@ if __name__ == "__main__":
         d_imgs = data_imgs['d_imgs_list']
         assert len(y_pred) == len(y_targ) == len(c_imgs) == len(d_imgs)
         K = len(c_imgs)
+
+        # Don't forget to split in case we use combo data.
+        # We also need to track some more stuff when we go through results individually.
+        if 'combo' in DATA_NAME:
+            data_sources = data_other['test_data_sources']
+            assert len(data_sources) == K
+            ss['data_sources'].append(data_sources)
     
         # Later, figure out what to do if not using cross validation ...
         if 'cv_indices' in data_other:
@@ -309,6 +373,10 @@ if __name__ == "__main__":
             L2 = np.sqrt( (pred[0]-targ[0])**2 + (pred[1]-targ[1])**2)
             c_suffix = 'r_cv_{}_grasp_{}_rgb_L2_{:.0f}.png'.format(cv_index, idx, L2)
             d_suffix = 'r_cv_{}_grasp_{}_depth_L2_{:.0f}.png'.format(cv_index, idx, L2)
+            if 'combo' in DATA_NAME:
+                data_s = data_sources[idx]
+                c_suffix = 'r_cv_{}_grasp_{}_rgb_L2_{:.0f}_{}.png'.format(cv_index, idx, L2, data_s)
+                d_suffix = 'r_cv_{}_grasp_{}_depth_L2_{:.0f}_{}.png'.format(cv_index, idx, L2, data_s)
             c_path = osp.join(OUTPUT_PATH, c_suffix)
             d_path = osp.join(OUTPUT_PATH, d_suffix)
     
@@ -348,6 +416,8 @@ if __name__ == "__main__":
 
     print("\nDone with creating overlays, look at:\n{}\nfor all the predictions".format(
             OUTPUT_PATH))
+    if 'combo' in DATA_NAME:
+        plot_data_source(ss)
     make_scatter(ss)
     make_plot(ss)
     scatter_heat_final(ss)

@@ -72,6 +72,10 @@ def get_blob(img, condition):
 # For `click_and_crop`.
 POINTS          = []
 CENTER_OF_BOXES = []
+# For `click_and_crop_v2`.
+POINTS_2  = []
+CENTERS_2 = []
+
 
 def click_and_crop(event, x, y, flags, param):
     global POINTS, CENTER_OF_BOXES
@@ -98,15 +102,51 @@ def click_and_crop(event, x, y, flags, param):
         cv2.rectangle(img=img_for_click, 
                       pt1=POINTS[-2], 
                       pt2=POINTS[-1], 
-                      color=(0,0,255), 
+                      color=RED, 
                       thickness=1)
         cv2.circle(img=img_for_click, 
                    center=CENTER_OF_BOXES[-1], 
                    radius=3, 
-                   color=(0,0,255), 
+                   color=RED, 
                    thickness=-1)
         cv2.imshow("This is in the click and crop method AFTER the rectangle. "+
                    "(Press any key, or ESC If I made a mistake.)", img_for_click)
+
+
+def click_and_crop_v2(event, x, y, flags, param):
+    global POINTS_2, CENTERS_2
+
+    # If left mouse button clicked, record the starting (x,y) coordinates 
+    # and indicate that cropping is being performed
+    if event == cv2.EVENT_LBUTTONDOWN:
+        POINTS_2.append((x,y))
+                                                 
+    # Check to see if the left mouse button was released
+    elif event == cv2.EVENT_LBUTTONUP:
+        # Record ending (x,y) coordinates and indicate that cropping is finished AND save center!
+        POINTS_2.append((x,y))
+
+        upper_left = POINTS_2[-2]
+        lower_right = POINTS_2[-1]
+        assert upper_left[0] < lower_right[0]
+        assert upper_left[1] < lower_right[1]
+        center_x = int(upper_left[0] + (lower_right[0]-upper_left[0])/2)
+        center_y = int(upper_left[1] + (lower_right[1]-upper_left[1])/2)
+        CENTERS_2.append( (center_x,center_y) )
+        
+        # Draw a rectangle around the region of interest, w/center point. Blue=Before, Red=AfteR.
+        cv2.rectangle(img=img_for_click, 
+                      pt1=POINTS_2[-2], 
+                      pt2=POINTS_2[-1], 
+                      color=GREEN,
+                      thickness=1)
+        cv2.circle(img=img_for_click, 
+                   center=CENTERS_2[-1], 
+                   radius=3,
+                   color=GREEN,
+                   thickness=-1)
+        cv2.imshow("CLICK ESC WHEN DONE.", img_for_click)
+
 
 
 if __name__ == "__main__":
@@ -176,7 +216,7 @@ if __name__ == "__main__":
         cv2.imshow(wn, img_for_click)
         key = cv2.waitKey(0)
 
-    # After pressing anNow should be four points.
+    # After pressing, CENTER_OF_BOXES has four points.
     print("should now be four center points, let's close all windows and move forward ...")
     cv2.destroyAllWindows()
     print("here are the last four points btw: {}".format(CENTER_OF_BOXES[-4:]))
@@ -184,33 +224,10 @@ if __name__ == "__main__":
     assert len(CENTER_OF_BOXES) % 4 == 0
 
     # ----------------------------------------------------------------------
-    # Experiment with detecting blobs. Note: mask.shape == (480,640), i.e., 
-    # single channel.  For now I think detecting blue makes more sense ... and
-    # if it returns something like zero, we should have an exception handler?
-    # Though I think blue is often detected even if the blanket covers entirely.
-    # UPDATE: we will have a user click manually as many times as is necessary
-    # to form an accurate rendering of the contour. Use same image_click?
-    # ----------------------------------------------------------------------
-
-    nump = 0
-    while key not in ESC_KEYS:
-        wn = 'image for human contour, num points {}'.format(nump)
-        cv2.namedWindow(wn, cv2.WINDOW_NORMAL)
-        cv2.setMouseCallback(wn, click_and_crop)
-        cv2.imshow(wn, img_for_click)
-        key = cv2.waitKey(0)
-        nump += 1
-
-    largest_c = np.array(CENTER_OF_BOXES[-nump:]).reshape((-1,1,2)).astype(np.int32)
-    size = cv2.contourArea(largest_c)
-    # once we hit esc we know to use the last few points...
-    # TODO: we really need to tune the 'is_blue' part, unfortunately ...
-    image_viz = c_img_start.copy()
-    #largest_c, size, mask = get_blob( image_viz.copy(), is_white )
-    #largest_c, size, mask = get_blob( image_viz.copy(), is_blue )
-
-    # ----------------------------------------------------------------------
-    # Next, visualize both human-made contour and the detected blue.
+    # We will have a user click manually as many times as is necessary to form
+    # an accurate rendering of the contour. But please remember to hit ESC ...
+    #
+    # And visualize both human-made contour and the detected blue.
     # Abort here by clicking the ESC key if things are messy.
     # We have `largest` and `human_ctr` as two contours to double check.
     # API for draw contours: (1) image, (2) _list_ of contours, (3) index of the
@@ -218,10 +235,25 @@ if __name__ == "__main__":
     # Use `image_viz` for visualization purposes.
     # ----------------------------------------------------------------------
 
+    while key not in ESC_KEYS:
+        wn = 'image for blue region, num points so far {}'.format(len(CENTERS_2))
+        cv2.namedWindow(wn, cv2.WINDOW_NORMAL)
+        cv2.setMouseCallback(wn, click_and_crop_v2)
+        cv2.imshow(wn, img_for_click)
+        key = cv2.waitKey(0)
+
+    print("Just hit ESC, have {} points for the blue contour".format(len(CENTERS_2)))
+
+    # human_ctr is the table top, largest_c is the exposed blue region (or nothing).
+    largest_c = np.array(CENTERS_2).reshape((-1,1,2)).astype(np.int32)
     human_ctr = np.array(last4).reshape((-1,1,2)).astype(np.int32)
-    cv2.drawContours(image_viz, [human_ctr], 0, BLACK, 1)
-    cv2.drawContours(image_viz, [largest_c], 0, GREEN, 1)
+
+    size           = cv2.contourArea(largest_c)
     human_ctr_area = cv2.contourArea(human_ctr)
+
+    image_viz = c_img_start.copy()
+    cv2.drawContours(image_viz, [human_ctr], 0, BLACK, 2)
+    cv2.drawContours(image_viz, [largest_c], 0, GREEN, 2)
     largest_ctr_area = size
     print("\ncontour area of human_ctr: {}".format(human_ctr_area))
     print("contour area of largest: {}".format(largest_ctr_area))
@@ -266,7 +298,7 @@ if __name__ == "__main__":
     print("coverage of sheet:      {:.4f}".format(coverage))
     print("the original blue area was {} but includes other stuff in scene".format(size))
 
-    cv2.drawContours(image_viz, [largest_int], 0, RED, thickness=1)
+    cv2.drawContours(image_viz, [largest_int], 0, RED, thickness=2)
     cc = 'Red indicates intersection'
     call_wait_key(cv2.imshow(cc, image_viz))
     cv2.destroyAllWindows()

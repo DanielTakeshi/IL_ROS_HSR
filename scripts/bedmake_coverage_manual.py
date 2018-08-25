@@ -3,6 +3,9 @@
 For this, we need the human to laboriously write a contour for the 'exposed'
 part of the table. If there is no contour, the human should make a contour that
 does not intersect with the table top. Then the intersection is zero, etc. :-)
+
+Note that it's important that the human contour be in order ... so be careful with
+labeling of the points!
 """
 import argparse, cv2, os, pickle, sys, matplotlib, utils
 from os.path import join
@@ -186,13 +189,25 @@ if __name__ == "__main__":
     # if it returns something like zero, we should have an exception handler?
     # Though I think blue is often detected even if the blanket covers entirely.
     # UPDATE: we will have a user click manually as many times as is necessary
-    # to form an accurate rendering of the contour.
+    # to form an accurate rendering of the contour. Use same image_click?
     # ----------------------------------------------------------------------
 
+    nump = 0
+    while key not in ESC_KEYS:
+        wn = 'image for human contour, num points {}'.format(nump)
+        cv2.namedWindow(wn, cv2.WINDOW_NORMAL)
+        cv2.setMouseCallback(wn, click_and_crop)
+        cv2.imshow(wn, img_for_click)
+        key = cv2.waitKey(0)
+        nump += 1
+
+    largest_c = np.array(CENTER_OF_BOXES[-nump:]).reshape((-1,1,2)).astype(np.int32)
+    size = cv2.contourArea(largest_c)
+    # once we hit esc we know to use the last few points...
     # TODO: we really need to tune the 'is_blue' part, unfortunately ...
     image_viz = c_img_start.copy()
     #largest_c, size, mask = get_blob( image_viz.copy(), is_white )
-    largest_c, size, mask = get_blob( image_viz.copy(), is_blue )
+    #largest_c, size, mask = get_blob( image_viz.copy(), is_blue )
 
     # ----------------------------------------------------------------------
     # Next, visualize both human-made contour and the detected blue.
@@ -263,6 +278,11 @@ if __name__ == "__main__":
     cv2.imwrite(path_2, image_viz)
     print("\nJust saved: {}".format(path_1))
     print("Just saved: {}\n".format(path_2))
+
+
+
+    sys.exit()
+
 
     # ----------------------------------------------------------------------
     # Repeat the process for the final image!

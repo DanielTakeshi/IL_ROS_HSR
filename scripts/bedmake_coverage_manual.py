@@ -4,11 +4,26 @@ For this, we need the human to laboriously write a contour for the 'exposed'
 part of the table. If there is no contour, the human should make a contour that
 does not intersect with the table top. Then the intersection is zero, etc. :-)
 
-Note that it's important that the human contour be in order ... so be careful with
-labeling of the points!
+It's important that the human contour be in order ... so be careful with labeling
+of the points! If something is wrong kill the program and delete any files created.
 
 THIS WILL SAVE A BUNCH OF IMAGES WITH CONTOURS BUT NOT MAKE PLOTS ... for that we
 need a separate script that goes through the directory and makes stats about it.
+
+We go one by one because due to lighting differences, nothing will be perfect and
+I think this is going to be the most accurate way to do this.
+
+To call, this, pass in the FULL path to the pickle file, for one rollout. Yes, I
+know, sorry. Like this:
+
+python scripts/bedmake_coveage_manual.py \
+    /nfs/diskstation/seita/bed-make/results/deploy_network/results_rollout_0_len_7.p
+
+And then that will handle reults for this rollout. The `deploy_network` needs to be
+adjusted or calibrated based on WHICH network/data we used, BTW. So it will be like:
+`deploy_network_combo_v01` or `deploy_human` for a human supervisor, or `deploy_analytic`
+for an analytic baseline, etc. Then in the `figures` sub-directory, we will have these
+file names as additional sub-directories, etc.
 """
 import argparse, cv2, os, pickle, sys, matplotlib, utils
 from os.path import join
@@ -82,12 +97,12 @@ CENTERS_2 = []
 
 def click_and_crop(event, x, y, flags, param):
     global POINTS, CENTER_OF_BOXES
-             
+
     # If left mouse button clicked, record the starting (x,y) coordinates 
     # and indicate that cropping is being performed
     if event == cv2.EVENT_LBUTTONDOWN:
         POINTS.append((x,y))
-                                                 
+
     # Check to see if the left mouse button was released
     elif event == cv2.EVENT_LBUTTONUP:
         # Record ending (x,y) coordinates and indicate that cropping is finished AND save center!
@@ -100,7 +115,7 @@ def click_and_crop(event, x, y, flags, param):
         center_x = int(upper_left[0] + (lower_right[0]-upper_left[0])/2)
         center_y = int(upper_left[1] + (lower_right[1]-upper_left[1])/2)
         CENTER_OF_BOXES.append( (center_x,center_y) )
-        
+
         # Draw a rectangle around the region of interest, w/center point. Blue=Before, Red=AfteR.
         cv2.rectangle(img=img_for_click, 
                       pt1=POINTS[-2], 
@@ -122,7 +137,7 @@ def click_and_crop_v2(event, x, y, flags, param):
     # and indicate that cropping is being performed
     if event == cv2.EVENT_LBUTTONDOWN:
         POINTS_2.append((x,y))
-                                                 
+
     # Check to see if the left mouse button was released
     elif event == cv2.EVENT_LBUTTONUP:
         # Record ending (x,y) coordinates and indicate that cropping is finished AND save center!
@@ -135,7 +150,7 @@ def click_and_crop_v2(event, x, y, flags, param):
         center_x = int(upper_left[0] + (lower_right[0]-upper_left[0])/2)
         center_y = int(upper_left[1] + (lower_right[1]-upper_left[1])/2)
         CENTERS_2.append( (center_x,center_y) )
-        
+
         # Draw a rectangle around the region of interest, w/center point. Blue=Before, Red=AfteR.
         cv2.rectangle(img=img_for_click, 
                       pt1=POINTS_2[-2], 
@@ -167,8 +182,12 @@ if __name__ == "__main__":
     assert '/nfs/diskstation/seita/bed-make/results/' in args.path
 
     # For saving later! Ignore the `deploy_network/results{...}.p` and go to the figures.
-    HEAD = (args.path).split('/')[:-2] 
+    # See later for prints to confirm ... a lot of manual work. :-(
+    HEAD = (args.path).split('/')[:-2]
     HEAD = join('/'.join(HEAD), 'figures/') # a bit roundabout lol
+    HEAD_last2 = (args.path).split('/')[-2:]
+    ROLLOUT_TYPE = HEAD_last2[0]
+    FIGDIR = join(HEAD, ROLLOUT_TYPE)
 
     # `tail` should be: 'results_rollout_N_len_K.p' where `N` is the rollout index.
     tail = (args.path).split('/')[-1]
@@ -189,15 +208,26 @@ if __name__ == "__main__":
     with open(args.path, 'r') as f:
         data = pickle.load(f)
     assert len(data) == length
-    print("Loaded data. Here's the dictionary:")
+    print("Loaded rollout data. Here's the dictionary we recorded:")
     for d_idx,d_item in enumerate(data):
         print('  {} {}'.format(d_idx, d_item.keys()))
+    print("\nHEAD:          {}".format(HEAD))
+    print("HEAD_last2:    {}".format(HEAD_last2))
+    print("ROLLOUT_TYPE:  {}".format(ROLLOUT_TYPE))
+    print("tail:          {}".format(tail))
+    print("FIGDIR:        {}".format(FIGDIR))
+    print("(the FIGDIR is where we save)\n")
+    if not os.path.exists(FIGDIR):
+        os.makedirs(FIGDIR)
+    #sys.exit()
 
     print("\nFor now we focus on the first and last c_img\n")
     c_img_start = data[0]['c_img']
     c_img_end_t = data[-2]['c_img']
     c_img_end_s = data[-1]['final_c_img']
     assert c_img_start.shape == c_img_end_t.shape == c_img_end_s.shape == (480,640,3)
+
+    # ------------------------- END OF PROCESSING ----------------------------
 
     # ----------------------------------------------------------------------
     # Coverage before. First, have user draw 4 bounding boxes by the bed edges.
@@ -285,7 +315,7 @@ if __name__ == "__main__":
     # take the area ratio and save images. Be careful to save both the original
     # one and another one which has the contours ...
     # ----------------------------------------------------------------------
- 
+
     (_, contours_int, _) = cv2.findContours(intersection.copy(),
             cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     print("\nChecked contours for 'intersection', length {}".format(len(contours_int)))
@@ -305,8 +335,8 @@ if __name__ == "__main__":
     cv2.destroyAllWindows()
 
     # Original: c_img_start. Visualization: `image_viz`.
-    path_1 = join(HEAD, 'res_{}_c_start_raw.png'.format(rollout_index))
-    path_2 = join(HEAD, 'res_{}_c_start_{:.1f}.png'.format(rollout_index, coverage))
+    path_1 = join(FIGDIR, 'res_{}_c_start_raw.png'.format(rollout_index))
+    path_2 = join(FIGDIR, 'res_{}_c_start_{:.2f}.png'.format(rollout_index, coverage))
     cv2.imwrite(path_1, c_img_start)
     cv2.imwrite(path_2, image_viz)
     print("\nJust saved: {}".format(path_1))
@@ -388,7 +418,7 @@ if __name__ == "__main__":
     cv2.destroyAllWindows()
 
     # Find contour on the `intersection` image which should be easy! Visualize.
- 
+
     (_, contours_int, _) = cv2.findContours(intersection.copy(),
             cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     print("\nChecked contours for 'intersection', length {}".format(len(contours_int)))
@@ -409,8 +439,8 @@ if __name__ == "__main__":
 
     # Original: c_img_end_s (final_img). Visualization: `image_viz`.
 
-    path_1 = join(HEAD, 'res_{}_c_end_raw.png'.format(rollout_index))
-    path_2 = join(HEAD, 'res_{}_c_end_{:.1f}.png'.format(rollout_index, coverage))
+    path_1 = join(FIGDIR, 'res_{}_c_end_raw.png'.format(rollout_index))
+    path_2 = join(FIGDIR, 'res_{}_c_end_{:.2f}.png'.format(rollout_index, coverage))
     cv2.imwrite(path_1, final_img)
     cv2.imwrite(path_2, image_viz)
     print("\nJust saved: {}".format(path_1))

@@ -6,6 +6,9 @@ does not intersect with the table top. Then the intersection is zero, etc. :-)
 
 Note that it's important that the human contour be in order ... so be careful with
 labeling of the points!
+
+THIS WILL SAVE A BUNCH OF IMAGES WITH CONTOURS BUT NOT MAKE PLOTS ... for that we
+need a separate script that goes through the directory and makes stats about it.
 """
 import argparse, cv2, os, pickle, sys, matplotlib, utils
 from os.path import join
@@ -109,8 +112,7 @@ def click_and_crop(event, x, y, flags, param):
                    radius=3, 
                    color=RED, 
                    thickness=-1)
-        cv2.imshow("This is in the click and crop method AFTER the rectangle. "+
-                   "(Press any key, or ESC If I made a mistake.)", img_for_click)
+        cv2.imshow("Press ESC if mistake, space to continue", img_for_click)
 
 
 def click_and_crop_v2(event, x, y, flags, param):
@@ -145,7 +147,7 @@ def click_and_crop_v2(event, x, y, flags, param):
                    radius=3,
                    color=GREEN,
                    thickness=-1)
-        cv2.imshow("CLICK ESC WHEN DONE.", img_for_click)
+        cv2.imshow("Click ESC when done filling exposed contour", img_for_click)
 
 
 
@@ -209,8 +211,7 @@ if __name__ == "__main__":
 
     while len(CENTER_OF_BOXES) < num_targ:
         img_for_click = c_img_start.copy()
-        diff = num_targ - len(CENTER_OF_BOXES)
-        wn = 'image at start, num points {}'.format(diff)
+        wn = 'Click for table frame border!'
         cv2.namedWindow(wn, cv2.WINDOW_NORMAL)
         cv2.setMouseCallback(wn, click_and_crop)
         cv2.imshow(wn, img_for_click)
@@ -236,7 +237,7 @@ if __name__ == "__main__":
     # ----------------------------------------------------------------------
 
     while key not in ESC_KEYS:
-        wn = 'image for blue region, num points so far {}'.format(len(CENTERS_2))
+        wn = 'Now click for blue/exposed region.'
         cv2.namedWindow(wn, cv2.WINDOW_NORMAL)
         cv2.setMouseCallback(wn, click_and_crop_v2)
         cv2.imshow(wn, img_for_click)
@@ -257,7 +258,7 @@ if __name__ == "__main__":
     largest_ctr_area = size
     print("\ncontour area of human_ctr: {}".format(human_ctr_area))
     print("contour area of largest: {}".format(largest_ctr_area))
-    cc = 'ESC to abort, any other key to continue'
+    cc = 'ESC to abort, SPACE to continue'
     call_wait_key(cv2.imshow(cc, image_viz))
     cv2.destroyAllWindows()
 
@@ -274,7 +275,7 @@ if __name__ == "__main__":
     img2 = cv2.drawContours( blank.copy(), [largest_c], contourIdx=0, color=1, thickness=-1 )
     intersection = np.logical_and( img1, img2 ).astype(np.uint8) * 255.0
     intersection = intersection.astype(np.uint8)
-    cc = 'Intersection between two previous contours'
+    cc = 'Intersection between two contours (press SPACE)'
     call_wait_key(cv2.imshow(cc, intersection))
     cv2.destroyAllWindows()
 
@@ -299,7 +300,7 @@ if __name__ == "__main__":
     print("the original blue area was {} but includes other stuff in scene".format(size))
 
     cv2.drawContours(image_viz, [largest_int], 0, RED, thickness=2)
-    cc = 'Red indicates intersection'
+    cc = 'Red indicates intersection (press SPACE)'
     call_wait_key(cv2.imshow(cc, image_viz))
     cv2.destroyAllWindows()
 
@@ -311,66 +312,70 @@ if __name__ == "__main__":
     print("\nJust saved: {}".format(path_1))
     print("Just saved: {}\n".format(path_2))
 
-
-
-    sys.exit()
-
-
+    # ----------------------------------------------------------------------
     # ----------------------------------------------------------------------
     # Repeat the process for the final image!
     # ----------------------------------------------------------------------
     # Change c_img_start --> c_img_end_s (or c_img_end_t!)
     # ----------------------------------------------------------------------
     # Recommend to use c_img_end_s, though. For both the ending ones, lighting
-    # poses a problem, unfortunately ...
+    # poses a problem, unfortunately ... which is why we hand-draw the contour!
+    # ----------------------------------------------------------------------
     # ----------------------------------------------------------------------
 
-    final_img = c_img_end_t
-    #final_img = c_img_end_s
-
-    # Coverage.
+    print("\nMOVING ON TO THE SECOND IMAGE\n")
+    #final_img = c_img_end_t
+    final_img = c_img_end_s
 
     num_targ = len(CENTER_OF_BOXES) + 4
     print("current points {}, target {}".format(len(CENTER_OF_BOXES), num_targ))
 
     while len(CENTER_OF_BOXES) < num_targ:
         img_for_click = final_img.copy()
-        diff = num_targ - len(CENTER_OF_BOXES)
-        wn = 'image at start, num points {}'.format(diff)
+        wn = 'Click for table frame border!'
         cv2.namedWindow(wn, cv2.WINDOW_NORMAL)
         cv2.setMouseCallback(wn, click_and_crop)
         cv2.imshow(wn, img_for_click)
         key = cv2.waitKey(0)
 
-    # After pressing anNow should be four points.
+    # After pressing, CENTER_OF_BOXES has four points.
     print("should now be four center points, let's close all windows and move forward ...")
     cv2.destroyAllWindows()
     print("here are the last four points btw: {}".format(CENTER_OF_BOXES[-4:]))
     last4 = CENTER_OF_BOXES[-4:]
     assert len(CENTER_OF_BOXES) % 4 == 0
 
-    # blobs
+    # We will have a user click manually as many times as is necessary to form
+    # an accurate rendering of the contour. But please remember to hit ESC ...
+
+    num_old_pts = len(CENTERS_2)
+    while key not in ESC_KEYS:
+        wn = 'Now click for blue/exposed region.'
+        cv2.namedWindow(wn, cv2.WINDOW_NORMAL)
+        cv2.setMouseCallback(wn, click_and_crop_v2)
+        cv2.imshow(wn, img_for_click)
+        key = cv2.waitKey(0)
+
+    print("Just hit ESC, have {} points for the blue contour".format(len(CENTERS_2) - num_old_pts))
+
+    # human_ctr is the table top, largest_c is the exposed blue region (or nothing).
+    largest_c = np.array( CENTERS_2[num_old_pts:] ).reshape((-1,1,2)).astype(np.int32)
+    human_ctr = np.array( last4 ).reshape((-1,1,2)).astype(np.int32)
+
+    size           = cv2.contourArea(largest_c)
+    human_ctr_area = cv2.contourArea(human_ctr)
 
     image_viz = final_img.copy()
-    #largest_c, size, mask = get_blob( image_viz.copy(), is_white )
-    largest_c, size, mask = get_blob( image_viz.copy(), is_blue )
-
-    # visualize
-
-    human_ctr = np.array(last4).reshape((-1,1,2)).astype(np.int32)
-    cv2.drawContours(image_viz, [human_ctr], 0, BLACK, 1)
-    cv2.drawContours(image_viz, [largest_c], 0, GREEN, 1)
-    human_ctr_area = cv2.contourArea(human_ctr)
+    cv2.drawContours(image_viz, [human_ctr], 0, BLACK, 2)
+    cv2.drawContours(image_viz, [largest_c], 0, GREEN, 2)
     largest_ctr_area = size
     print("\ncontour area of human_ctr: {}".format(human_ctr_area))
     print("contour area of largest: {}".format(largest_ctr_area))
-    cc = 'ESC to abort, any other key to continue'
+    cc = 'ESC to abort, SPACE to continue'
     call_wait_key(cv2.imshow(cc, image_viz))
     cv2.destroyAllWindows()
 
-    # intersections
-    # note: if this is empty, usually perfect coverage or
-    # likely a problem we'd have to hand-tune anyway.
+    # Some tricky stuff. We're going to find the intersection
 
     print("\nHere's the intersection of the above two")
     blank = np.zeros( (480,640) )
@@ -378,35 +383,27 @@ if __name__ == "__main__":
     img2 = cv2.drawContours( blank.copy(), [largest_c], contourIdx=0, color=1, thickness=-1 )
     intersection = np.logical_and( img1, img2 ).astype(np.uint8) * 255.0
     intersection = intersection.astype(np.uint8)
-    cc = 'Intersection between two previous contours'
+    cc = 'Intersection between two contours (press SPACE)'
     call_wait_key(cv2.imshow(cc, intersection))
     cv2.destroyAllWindows()
 
-    # contour on intersection
+    # Find contour on the `intersection` image which should be easy! Visualize.
  
     (_, contours_int, _) = cv2.findContours(intersection.copy(),
             cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     print("\nChecked contours for 'intersection', length {}".format(len(contours_int)))
+    largest_int = max(contours_int, key = lambda cnt: cv2.contourArea(cnt))
 
-    if len(contours_int) == 0:
-        print("LENGTH 0, automatically assuming 100% coverage.")
-        AA = float(cv2.contourArea(human_ctr))
-        BB = 0.0
-        coverage = 100.0
-    else:
-        largest_int = max(contours_int, key = lambda cnt: cv2.contourArea(cnt))
-        AA = float(cv2.contourArea(human_ctr))
-        BB = float(cv2.contourArea(largest_int))
-        coverage = (1.0 - (BB / AA)) * 100.0
-
+    AA = float(cv2.contourArea(human_ctr))
+    BB = float(cv2.contourArea(largest_int))
+    coverage = (1.0 - (BB / AA)) * 100.0
     print("area of full bed frame: {}".format(AA))
     print("area of exposed blue:   {}".format(BB))
     print("coverage of sheet:      {:.4f}".format(coverage))
     print("the original blue area was {} but includes other stuff in scene".format(size))
 
-    if len(contours_int) > 0:
-        cv2.drawContours(image_viz, [largest_int], 0, RED, thickness=1)
-    cc = 'Red indicates intersection'
+    cv2.drawContours(image_viz, [largest_int], 0, RED, thickness=2)
+    cc = 'Red indicates intersection (press SPACE)'
     call_wait_key(cv2.imshow(cc, image_viz))
     cv2.destroyAllWindows()
 

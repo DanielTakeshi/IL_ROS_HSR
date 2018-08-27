@@ -61,7 +61,7 @@ LOSS_YLIMS = [
 
 def make_plot_pixel_only(ss_list):
     """Make plot (w/subplots) of pixel losses only.
-    
+
     Hopefully this will be in the final paper.
     Adjust the 'names' for legends. Look at `HH_LIST` to see what the labels should be.
     """
@@ -74,7 +74,7 @@ def make_plot_pixel_only(ss_list):
         all_test_raw = np.array(ss['raw_test'])
         all_lrates = np.array(ss['lrates'])
         epochs = ss['epoch']
-        
+
         # {train, test, raw_test} = shape (K,N) where N is how often we recorded it.
         # For plots, ideally N = E, where E is number of epochs, but usually N > E.
         # For all cross validation folds, we must have N be the same.
@@ -128,7 +128,7 @@ def make_plot(ss_list):
         all_test_raw = np.array(ss['raw_test'])
         all_lrates = np.array(ss['lrates'])
         epochs = ss['epoch']
-        
+
         # {train, test, raw_test} = shape (K,N) where N is how often we recorded it.
         # For plots, ideally N = E, where E is number of epochs, but usually N > E.
         # For all cross validation folds, we must have N be the same.
@@ -180,7 +180,7 @@ def make_plot(ss_list):
     figname = osp.join("fig_stitch_results.png")
     plt.savefig(figname)
     print("Look at this figure:\n{}".format(figname))
- 
+
 
 if __name__ == "__main__":
     ss_list = []
@@ -189,7 +189,7 @@ if __name__ == "__main__":
         print("on RESULTS_PATH: {}".format(RESULTS_PATH))
         pfiles = sorted([x for x in os.listdir(RESULTS_PATH) if '_raw_imgs.p' in x])
         ss = defaultdict(list) # for plotting later
-    
+
         for cv_index,pf in enumerate(pfiles):
             # Now on one of the cross-validation splits (or a 'normal' training run).
             other_pf = pf.replace('_raw_imgs.p','.p')
@@ -199,24 +199,24 @@ if __name__ == "__main__":
             y_targ = data_other['targs']
             assert len(y_pred) == len(y_targ)
             K = len(y_pred)
-        
+
             # Later, figure out what to do if not using cross validation ...
             if 'cv_indices' in data_other:
                 cv_fname = data_other['cv_indices']
                 print("Now processing CV file name: {}, idx {}, with {} images".format(
                         cv_fname, cv_index, K))
-        
+
             # `idx` = index into y_pred, y_targ, etc., _within_ this CV test set.
             for idx in range(K):
                 pred = y_pred[idx]
                 targ = y_targ[idx]
                 L2 = np.sqrt( (pred[0]-targ[0])**2 + (pred[1]-targ[1])**2)
-        
+
                 # For plotting later. Note, `targ` is the ground truth.
                 ss['all_targs'].append(targ)
                 ss['all_preds'].append(pred)
                 ss['all_L2s'].append(L2)
-                
+
             # Add some more stuff about this cv set, e.g., loss curves.
             ss['train'].append(data_other['train'])
             ss['test'].append(data_other['test'])

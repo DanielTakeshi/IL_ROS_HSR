@@ -32,7 +32,9 @@ Understanding grasping network performance after training:
 - **The main thing we use for evaluating grasping performance**: `inspect_results_cache.py`.
     - For success net: `success_inspect_results.py`.
 - Can also run `stitch_results.py` for stitching together different dictionaries together in an
-  ad-hoc way, e.g., net 1 and net 3 comparisons. This will probably be needed for a paper.
+  ad-hoc way, e.g., net 1 and net 3 comparisons. This will probably be needed for a paper. In
+  general, anything starting with `stitch_results` requires manual tuning but is better for a final
+  figure to report.
 
 Evaluate bed-making results from deployment:
 
@@ -47,6 +49,7 @@ Evaluate bed-making results from deployment:
       image with the contours for visualization.  Keep the coverage percentage in the file name so
       it's easier to inspect.
 - Use `bedmake_results.py`: for anything _but_ coverage.
+- Use `bedmake_box_plots.py` for the actual bar or box plots. (I use bar for now.)
 
 ## Other / Old
 

@@ -104,12 +104,15 @@ def subplots_pixels(ss_dict):
     # Bells and whistles
     for cc in range(ncols):
         ax[0,cc].set_ylim([0,100]) # TUNE !!
-        ax[0,cc].legend(loc="best", ncol=1, prop={'size':legend_size})
         ax[0,cc].set_xlabel('Training Epochs Over Augmented Data', fontsize=xsize)
         ax[0,cc].tick_params(axis='x', labelsize=tick_size)
         ax[0,cc].tick_params(axis='y', labelsize=tick_size)
         ax[0,cc].set_ylabel('Average Test L2 Loss (Scaled)', fontsize=ysize)
         ax[0,cc].set_ylabel('Average Test L2 Loss (in Pixels)', fontsize=ysize)
+        # Increase legend line size w/out affecting plot. :-)
+        leg = ax[0,cc].legend(loc="best", ncol=1, prop={'size':legend_size})
+        for legobj in leg.legendHandles:
+            legobj.set_linewidth(5.0)
 
     # Hand-tuned titles!
     ax[0,0].set_title("Grasp Network, HSR Data", fontsize=tsize)

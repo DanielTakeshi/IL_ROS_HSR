@@ -22,7 +22,7 @@ from collections import defaultdict
 # ------------------------------------------------------------------------------
 HEAD = '/nfs/diskstation/seita/bed-make/'
 DATA_NAME = 'cache_combo_v01'
-HH = 'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_cv_True'
+HH = 'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_6000_cv_True'
 DSOURCES = ['cache_d_v01', 'cache_h_v03']
 
 # Sanity checks.
@@ -75,19 +75,19 @@ def scatter_heat_final(ss):
     all_names = ss['all_names']
     num_pts = len(ss['all_L2s'])
     # skipping over some of the debugging messages from the other method ...
-   
+
     # Heat-map of the L2 losses.
     if VIEW_TYPE == 'close':
         I = cv2.imread("scripts/imgs/image_example_close.png")
     elif VIEW_TYPE == 'standard':
         I = cv2.imread("scripts/imgs/daniel_data_example_file_15_idx_023_rgb.png")
         #I = cv2.imread("scripts/imgs/example_image_h_v03.png")
-    
+
     # Create a scatter plot of where the targets are located.
     ax[0,0].imshow(I, alpha=alpha)
     ax[0,0].scatter(all_targs[:,0], all_targs[:,1], color='black')
     ax[0,0].set_title("Ground Truth ({} Points)".format(num_pts), fontsize=tsize)
-    
+
     # Heat map now. To make color bars more equal:
     # https://stackoverflow.com/questions/18195758/set-matplotlib-colorbar-size-to-match-graph
     # Better than before but still not perfect ... but I'll take it!
@@ -104,7 +104,7 @@ def scatter_heat_final(ss):
     mean = np.mean(all_L2s)
     std = np.std(all_L2s)
     ax[0,1].set_title("Pixel L2 Loss Heat Map: {:.1f} +/- {:.1f}".format(mean, std), fontsize=tsize)
-    
+
     # Bells and whistles
     for i in range(nrows):
         for j in range(ncols):
@@ -113,12 +113,12 @@ def scatter_heat_final(ss):
             ax[i,j].set_ylim(ylim)
             ax[i,j].tick_params(axis='x', labelsize=tick_size)
             ax[i,j].tick_params(axis='y', labelsize=tick_size)
-    
+
     plt.tight_layout()
     figname = osp.join(OUTPUT_PATH,"check_predictions_scatter_map_final.png")
     plt.savefig(figname)
     print("Hopefully this figure can be in the paper:\n{}".format(figname))
- 
+
 
 def make_scatter(ss):
     """Make giant scatter plot image."""
@@ -142,7 +142,7 @@ def make_scatter(ss):
     print("all_preds.shape: {}".format(all_preds.shape))
     print("all_L2s.shape:   {}".format(all_L2s.shape))
     print("all_L2s (pixels): {:.1f} +/- {:.1f}".format(np.mean(all_L2s), np.std(all_L2s)))
-    
+
     # Print names of the images with highest L2 errors for inspection later.
     print("\nHere are file names with highest L2 errors.")
     indices = np.argsort(all_L2s)[::-1]
@@ -152,7 +152,7 @@ def make_scatter(ss):
     print("...")
     for i in range(num_pts-edge, num_pts):
         print("{}".format(all_names[indices[i]]))
-   
+
     # ------------------------------------------------------------------------------
     # Heat-map of the L2 losses. I was going to use the contour code but that
     # requires a value exists for every (x,y) pixel pair from our discretization.
@@ -166,17 +166,17 @@ def make_scatter(ss):
     elif VIEW_TYPE == 'standard':
         I = cv2.imread("scripts/imgs/daniel_data_example_file_15_idx_023_rgb.png")
         #I = cv2.imread("scripts/imgs/example_image_h_v03.png")
-    
+
     # Create a scatter plot of where the targets are located.
     ax[0,0].imshow(I, alpha=alpha)
     ax[0,0].scatter(all_targs[:,0], all_targs[:,1], color='black')
     ax[0,0].set_title("Ground Truth ({} Points)".format(num_pts), fontsize=tsize)
-    
+
     # Along with predictions.
     ax[0,1].imshow(I, alpha=alpha)
     ax[0,1].scatter(all_preds[:,0], all_preds[:,1], color='black')
     ax[0,1].set_title("Grasp Network Predictions (10-Fold CV)", fontsize=tsize)
-    
+
     # Heat map now.
     ax[1,0].imshow(I, alpha=alpha)
     cf = ax[1,0].tricontourf(all_x, all_y, all_L2s, cmap='YlOrRd', vmin=VMIN, vmax=VMAX)
@@ -188,7 +188,7 @@ def make_scatter(ss):
     # Original image.
     ax[1,1].imshow(I)
     ax[1,1].set_title("An *Example* Image of the Setup", fontsize=tsize)
-    
+
     # Bells and whistles
     for i in range(nrows):
         for j in range(ncols):
@@ -197,12 +197,12 @@ def make_scatter(ss):
             ax[i,j].set_ylim(ylim)
             ax[i,j].tick_params(axis='x', labelsize=tick_size)
             ax[i,j].tick_params(axis='y', labelsize=tick_size)
-    
+
     plt.tight_layout()
     figname = osp.join(OUTPUT_PATH,"check_predictions_scatter_map.png")
     plt.savefig(figname)
     print("Look at this figure:\n{}".format(figname))
-    
+
 
 def make_plot(ss):
     """Make plot (w/subplots) of losses, etc."""
@@ -214,7 +214,7 @@ def make_plot(ss):
     all_raw_test = np.array(ss['raw_test'])
     all_lrates = np.array(ss['lrates'])
     epochs = ss['epoch']
-    
+
     # {train, test, raw_test} = shape (K,N) where N is how often we recorded it.
     # For plots, ideally N = E, where E is number of epochs, but usually N > E.
     # For all cross validation folds, we must have N be the same.
@@ -264,7 +264,7 @@ def make_plot(ss):
             ax[i,j].set_ylabel('Average L2 Loss (Scaled)', fontsize=ysize)
             ax[i,j].tick_params(axis='x', labelsize=tick_size)
             ax[i,j].tick_params(axis='y', labelsize=tick_size)
-    
+
     plt.tight_layout()
     figname = osp.join(OUTPUT_PATH,"check_stats.png")
     plt.savefig(figname)
@@ -273,7 +273,7 @@ def make_plot(ss):
 
 def plot_data_source(ss):
     """Make plot w.r.t. data source, for combo data.
-    
+
     Please modify DSOURCES at the top. Sorry for sloppy research code.
     Actually we won't have a plot unfortunately, we just print some stuff ...
     """
@@ -290,7 +290,7 @@ def plot_data_source(ss):
     # Deal with individual points for data sources
     all_d_sources = ss['data_sources']
     all_L2s       = np.array(ss['all_L2s'])
-   
+
     # {train, test, raw_test} = shape (K,N) where N is how often we recorded it.
     # For plots, ideally N = E, where E is number of epochs, but usually N > E.
     # For all cross validation folds, we must have N be the same.
@@ -324,20 +324,20 @@ def plot_data_source(ss):
     print("For {}:".format(DSOURCES[1]))
     print("   avg: {:.1f}\pm {:.1f}".format( np.mean(ds1), np.std(ds1) ))
 
- 
+
 
 if __name__ == "__main__":
     print("RESULTS_PATH: {}".format(RESULTS_PATH))
     pfiles = sorted([x for x in os.listdir(RESULTS_PATH) if '_raw_imgs.p' in x])
     ss = defaultdict(list) # for plotting later
-    
+
     for cv_index,pf in enumerate(pfiles):
         # Now on one of the cross-validation splits (or a 'normal' training run).
         other_pf = pf.replace('_raw_imgs.p','.p')
         print("\n\n ----- Now on: {}\n ----- with:   {}".format(pf, other_pf))
         data_imgs  = pickle.load( open(osp.join(RESULTS_PATH,pf),'rb') )
         data_other = pickle.load( open(osp.join(RESULTS_PATH,other_pf),'rb') )
-    
+
         # Load predictions, targets, and images.
         y_pred = data_other['preds']
         y_targ = data_other['targs']
@@ -352,13 +352,13 @@ if __name__ == "__main__":
             data_sources = data_other['test_data_sources']
             assert len(data_sources) == K
             ss['data_sources'].append(data_sources)
-    
+
         # Later, figure out what to do if not using cross validation ...
         if 'cv_indices' in data_other:
             cv_fname = data_other['cv_indices']
             print("Now processing CV file name: {}, idx {}, with {} images".format(
                     cv_fname, cv_index, K))
-    
+
         # `idx` = index into y_pred, y_targ, c_imgs, d_imgs, _within_ this CV test set.
         # Get these from training run, stored from best iteration on validation set.
         # Unlike with the non-cache case, we can't really load in rollouts easily due
@@ -379,7 +379,7 @@ if __name__ == "__main__":
                 d_suffix = 'r_cv_{}_grasp_{}_depth_L2_{:.0f}_{}.png'.format(cv_index, idx, L2, data_s)
             c_path = osp.join(OUTPUT_PATH, c_suffix)
             d_path = osp.join(OUTPUT_PATH, d_suffix)
-    
+
             # For plotting later. Note, `targ` is the ground truth.
             ss['all_targs'].append(targ)
             ss['all_preds'].append(pred)
@@ -389,22 +389,22 @@ if __name__ == "__main__":
             ss['all_names'].append(d_path)
             targ  = (int(targ[0]), int(targ[1]))
             preds = (int(pred[0]), int(pred[1]))
-    
+
             # Overlay the pose to the image (red circle, black border).
             cv2.circle(cimg, center=targ, radius=INNER, color=(0,0,255), thickness=-1)
             cv2.circle(dimg, center=targ, radius=INNER, color=(0,0,255), thickness=-1)
             cv2.circle(cimg, center=targ, radius=OUTER, color=(0,0,0), thickness=1)
             cv2.circle(dimg, center=targ, radius=OUTER, color=(0,0,0), thickness=1)
-        
+
             # The PREDICTION, though, will be a large blue circle (yellow border?).
             cv2.circle(cimg, center=preds, radius=INNER, color=(255,0,0), thickness=-1)
             cv2.circle(dimg, center=preds, radius=INNER, color=(255,0,0), thickness=-1)
             cv2.circle(cimg, center=preds, radius=OUTER, color=(0,255,0), thickness=1)
             cv2.circle(dimg, center=preds, radius=OUTER, color=(0,255,0), thickness=1)
-        
+
             cv2.imwrite(c_path, cimg)
             cv2.imwrite(d_path, dimg)
-            
+
         # Add some more stuff about this cv set, e.g., loss curves.
         ss['train'].append(data_other['train'])
         ss['test'].append(data_other['test'])

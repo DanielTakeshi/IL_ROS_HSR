@@ -90,7 +90,7 @@ class Test():
                 print("  prediction {} for {}, pixel L2 {:.1f}".format(result, idx, L2))
                 L2_results.append(L2)
                 #time.sleep(0.5) # pause the 'video' of images :-)
-        
+
         print("L2s: {:.1f} +/- {:.1f}".format(np.mean(L2_results), np.std(L2_results)))
 
 
@@ -153,8 +153,8 @@ if __name__ == "__main__":
     TestBed = Test()
 
     # Get paths setup.
-    PATH_GRASP   = '/nfs/diskstation/seita/bed-make/cache_d_v01/'
-    PATH_SUCCESS = '/nfs/diskstation/seita/bed-make/cache_d_v01_success/'
+    PATH_GRASP   = '/nfs/diskstation/seita/bed-make/cache_combo_v01/'
+    PATH_SUCCESS = '/nfs/diskstation/seita/bed-make/cache_combo_v01_success/'
     all_cv_files_grasp   = sorted(
             [join(PATH_GRASP,x) for x in os.listdir(PATH_GRASP) if 'cv_' in x]
     )

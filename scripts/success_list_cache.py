@@ -113,8 +113,13 @@ elif is_d_format:
         print("\n=====================================================================")
         data = pickle.load(open(ff,'rb'))
         print("On grasp data: {}, len {}".format(ff,len(data)))
-       
+
         for (d_idx,datum) in enumerate(data):
+            # Files spaced out. Got this idea from processing H's data.
+            # In my case we skip here rather than the file index since I have a list here.
+            if d_idx % 4 != 0:
+                continue
+
             if datum['pose'][0] <= 56:
                 print("    NOTE: not considering this due to pose: {}".format(datum['pose']))
                 num_skipped += 1
@@ -152,7 +157,7 @@ for fold_indices in folds:
 for cv_idx, fold_indices in enumerate(folds):
     data_in_this_fold = [data_points[k] for k in range(N) if k in fold_indices]
     K = len(data_in_this_fold)
-    out = os.path.join(OUT_PATH, 'grasp_list_of_dicts_nodaug_cv_{}_len_{}.pkl'.format(cv_idx,K))
+    out = os.path.join(OUT_PATH, 'success_list_of_dicts_nodaug_cv_{}_len_{}.pkl'.format(cv_idx,K))
     with open(out, 'w') as f:
         pickle.dump(data_in_this_fold, f)
     print("Just saved: {}, w/len {} data".format(out, K))

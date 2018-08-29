@@ -1,6 +1,7 @@
 """Use this script for inspecting results after we run.
 
 The success net, that is. I don't think we'll have figures, but tables are helpful.
+We can just report correctness as a function of training epoch, in a table.
 """
 import argparse, cv2, os, pickle, sys, matplotlib, utils
 import os.path as osp
@@ -13,11 +14,11 @@ from fast_grasp_detect.data_aug.depth_preprocess import datum_to_net_dim
 from collections import defaultdict
 
 # ------------------------------------------------------------------------------
-# ADJUST. HH is directory like: 'grasp_1_img_depth_opt_adam_lr_0.0001_{etc...}'
+# ADJUST. HH is directory like: 'success_1_img_depth_opt_adam_lr_0.0001_{etc...}'
 # ------------------------------------------------------------------------------
 HEAD = '/nfs/diskstation/seita/bed-make/'
-DATA_NAME = 'cache_d_v01_success'
-HH = 'success_3_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_cv_True'
+DATA_NAME = 'cache_combo_v01_success'
+HH = 'success_4_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_3000_cv_True'
 
 # Sanity checks.
 net_type = utils.net_check(HH)
@@ -103,8 +104,11 @@ def plot(ss):
     plt.savefig(figname)
     print("Look at this figure:\n{}".format(figname))
 
-    # NOTE: can use this in a paper if we want to report correctness over a few epochs
+    # NOTE: use this in a paper if we want to report correctness over a few epochs
     # Of course, a plot might be good but it's a lower priority for the success net.
+    # Advantage of this approach is that we average over same, fixed epochs, so it's
+    # not 'cheating' by taking the best epoch independently for each CV fold.
+
     print("\nmaybe use to refer to quick epoch : accuracy numbers?\n")
     result = [(i1,i2) for (i1,i2) in zip(xs, np.sum(all_correctness, axis=0))]
     for item in result:
@@ -116,14 +120,14 @@ if __name__ == "__main__":
     pfiles = sorted([x for x in os.listdir(RESULTS_PATH) if '_raw_imgs.p' in x])
     ss = defaultdict(list) # for plotting later
     num_incorrect = 0
-    
+
     for cv_index,pf in enumerate(pfiles):
         # Now on one of the cross-validation splits (or a 'normal' training run).
         other_pf = pf.replace('_raw_imgs.p','.p')
         print("\n\n ----- Now on: {}\n ----- with:   {}".format(pf, other_pf))
         data_imgs  = pickle.load( open(osp.join(RESULTS_PATH,pf),'rb') )
         data_other = pickle.load( open(osp.join(RESULTS_PATH,other_pf),'rb') )
-    
+
         # Load various stuff we stored from training.
         correct = data_other['success_test_correct'] # list of total correct
         acc = data_other['best_snet_acc'] # best fraction (i.e., correct/total)
@@ -134,13 +138,13 @@ if __name__ == "__main__":
         d_imgs = data_imgs['d_imgs_list']
         K = len(c_imgs)
         assert len(correctness) == K
-    
+
         # Later, figure out what to do if not using cross validation ...
         if 'cv_indices' in data_other:
             cv_fname = data_other['cv_indices']
             print("Now processing CV file name: {}, idx {}, with {} images".format(
                     cv_fname, cv_index, K))
-    
+
         # `idx` = index into stuff _within_ this CV test set. Save images w/label.
         for idx in range(K):
             if idx % 10 == 0:
@@ -159,7 +163,7 @@ if __name__ == "__main__":
             d_path = osp.join(OUTPUT_PATH, d_suffix)
             cv2.imwrite(c_path, cimg)
             cv2.imwrite(d_path, dimg)
-    
+
         # For plotting, we might want some of this stuff.
         ss['all_correctness'].append(correct)
         ss['all_predictions'].append(preds)

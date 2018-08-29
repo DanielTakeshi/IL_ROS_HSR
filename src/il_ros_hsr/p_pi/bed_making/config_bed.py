@@ -28,10 +28,15 @@ ROOT_DIR = '/nfs/diskstation/seita/bed-make/'
 DATA_PATH    = join(ROOT_DIR, 'collect_data_bed/')
 ROLLOUT_PATH = join(DATA_PATH, 'rollouts/')
 
+# Which blanket are we using?
+BLANKET = 'white'
+assert BLANKET in ['white', 'teal', 'cal']
+
 # Put data here for _results_, i.e., from deployment.
 RESULTS_PATH    = join(ROOT_DIR, 'results/')
-DEPLOY_NET_PATH = join(RESULTS_PATH, 'deploy_network/')
-DEPLOY_ANA_PATH = join(RESULTS_PATH, 'deploy_analytic/')
+DEPLOY_NET_PATH = join(RESULTS_PATH, 'deploy_network_{}'.format(BLANKET))
+DEPLOY_ANA_PATH = join(RESULTS_PATH, 'deploy_analytic')
+DEPLOY_HUM_PATH = join(RESULTS_PATH, 'deploy_human')
 
 # STANDARD (the way I was doing earlier), CLOSE (the way they want).
 # Update: change STANDARD to now use the CLOSE joints, but _original_ positions.

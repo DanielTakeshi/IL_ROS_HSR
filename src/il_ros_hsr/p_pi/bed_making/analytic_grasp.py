@@ -13,6 +13,12 @@ class Analytic_Grasp:
         self.sheet = sheet
 
 
+    def predict(self, img):
+        """Should be the newer analytic way with blanket height.
+        """
+        raise NotImplementedError()
+
+
     def get_grasp(self, img, scale, fname=None, color=None):
         """Called during external bed deployment code to get the analytic grasp.
 

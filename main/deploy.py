@@ -23,12 +23,15 @@ from numpy.random import normal
 # Grasping and success networks (success is a bit more 'roundabout' but w/e).
 # We also need the depth preprocessing code for before we feed image to detector.
 # And we need YOLO network to build the common shared weights beforehand.
-
 from fast_grasp_detect.detectors.grasp_detector import GDetector
 from il_ros_hsr.p_pi.bed_making.net_success import Success_Net
 from fast_grasp_detect.data_aug.depth_preprocess import depth_to_net_dim
 from fast_grasp_detect.core.yolo_conv_features_cs import YOLO_CONV
 from fast_grasp_detect.data_aug.draw_cross_hair import DrawPrediction
+
+# Don't forget analytic versions, but we'll use the one for grasping.
+from il_ros_hsr.p_pi.bed_making.analytic_grasp import Analytic_Grasp
+from il_ros_hsr.p_pi.bed_making.analytic_success import Success_Net
 ESC_KEYS = [27, 1048603]
 
 
@@ -45,9 +48,13 @@ class BedMaker():
     def __init__(self, args):
         """For deploying the bed-making policy, not for data collection.
 
-        Uses the neural network, `GDetector`, not the analytic baseline.
+        We use all three variants (analytic, human, networks) here due to
+        similarities in code structure.
         """
+        self.args = args
         DEBUG = True
+
+        # Set up the robot.
         self.robot = robot = hsrb_interface.Robot()
         if DEBUG:
             print("finished: hsrb_interface.Robot()...")
@@ -85,14 +92,20 @@ class BedMaker():
         # AH, build the YOLO network beforehand.
         g_cfg = BED_CFG.GRASP_CONFIG
         s_cfg = BED_CFG.SUCC_CONFIG
-        self.yc = YOLO_CONV(options=g_cfg)
+        self.yc = YOLO_CONV(options=s_cfg)
         self.yc.load_network()
 
         # Policy for grasp detection, using Deep Imitation Learning.
+        # Or, actually, sometimes we will use humans or an analytic version.
         if DEBUG:
             self._test_variables()
-            print("\nnow forming the GDetector")
-        self.g_detector = GDetector(g_cfg, BED_CFG, yc=self.yc)
+        print("\nnow forming the GDetector with type {}".format(args.g_type))
+        if args.g_type == 'network':
+            self.g_detector = GDetector(g_cfg, BED_CFG, yc=self.yc)
+        elif args.g_type == 'analytic':
+            self.g_detector = Analytic_Grasp() # TODO not implemented!
+        elif args.g_type == 'human':
+            print("Using a human, don't need to have a `g_detector`. :-)")
         
         if DEBUG:
             self._test_variables()
@@ -117,9 +130,13 @@ class BedMaker():
             print("Now doing rospy.spin() because phase = 1.")
             rospy.spin()
 
+        # For evaluating coverage.
+        self.img_start = None
+        self.img_final = None
+
 
     def _test_grasp(self):
-        """Simple tests for grasping net. Don't forget to process depth images.
+        """Simple tests for grasping. Don't forget to process depth images.
 
         Do this independently of any rollout ...
         """
@@ -184,6 +201,8 @@ class BedMaker():
     def bed_make(self):
         """Runs the pipeline for deployment, testing out bed-making.
         """
+        args = self.args
+        use_d = BED_CFG.GRASP_CONFIG.USE_DEPTH
         self.get_new_grasp = True
         self.new_grasp = True
         self.rollout_stats = [] # What we actually save for analysis later
@@ -191,6 +210,12 @@ class BedMaker():
         # Add to self.rollout_stats at the end for more timing info
         self.g_time_stats = []      # for _execution_ of a grasp
         self.move_time_stats = []   # for moving to the other side
+
+        # Record the starting image for evaluation later.
+        cap = cv2.VideoCapture(0)
+        ret, frame = cap.read()
+        assert frame is not None
+        self.image_start = frame
 
         while True:
             c_img = self.cam.read_color_data()
@@ -206,24 +231,31 @@ class BedMaker():
                 d_img = self.cam.read_depth_data()
                 d_img_raw = np.copy(d_img) # Needed for determining grasp pose
 
-                if BED_CFG.GRASP_CONFIG.USE_DEPTH:
+                # Process depth images! Helps network, human, and (presumably) analytic.
+                # Obviously human can see the c_img as well ... hard to compare fairly.
+                if use_d:
                     if np.isnan(np.sum(d_img)):
                         cv2.patchNaNs(d_img, 0.0)
                     d_img = depth_to_net_dim(d_img, robot='HSR')
-                    net_input = np.copy(d_img)
+                    policy_input = np.copy(d_img)
                 else:
-                    net_input = np.copy(c_img)
+                    policy_input = np.copy(c_img)
 
-                # Run grasp detector to get data=(x,y) point for grasp target.
+                # Run grasp detector to get data=(x,y) point for target, record stats.
                 sgraspt = time.time()
-                data = self.g_detector.predict(net_input)
+                if args.g_type == 'network':
+                    data = self.g_detector.predict(policy_input)
+                elif args.g_type == 'analytic':
+                    data = self.g_detector.predict(policy_input)
+                elif args.g_type == 'human':
+                    data = self.wl.label_image(policy_input)
                 egraspt = time.time()
                 g_predict_t = egraspt - sgraspt
                 print("Grasp predict time: {:.2f}".format(g_predict_t))
                 self.record_stats(c_img, d_img, data, self.side, g_predict_t, 'grasp')
 
                 # For safety, we can check image and abort as needed before execution.
-                if BED_CFG.GRASP_CONFIG.USE_DEPTH:
+                if use_d:
                     img = self.dp.draw_prediction(d_img, data)
                 else:
                     img = self.dp.draw_prediction(c_img, data)
@@ -310,31 +342,27 @@ class BedMaker():
         """Transition to start=bottom, SAVE ROLLOUT STATS, exit program.
 
         The `rollout_stats` is a list with a bunch of stats recorded via the
-        class method `record_stats`.
-        
-        Now that I think about it, we should save the final images here, so that
-        we can evaluate sheet coverage before and after from the same view.
-        Unfortunately it won't be exact but probably fairer to do this? We can
-        also do this in addition to the top-down view.
-
-        Then we do a `sys.exit()` here. Best to just do one trajectory per call.
+        class method `record_stats`. We save with a top-down webcam and save
+        before moving back, since the HSR could disconnect.
         """
-        transition_time = self.move_to_start()
-        self.move_time_stats.append( transition_time )
-        self.side = 'BOTTOM'
-        self.position_head()
-        time.sleep(3)
-        c_img = self.cam.read_color_data()
+        # Record the final image for evaluation later.
+        cap = cv2.VideoCapture(0)
+        ret, frame = cap.read()
+        assert frame is not None
+        self.image_final = frame
 
         # Append some last-minute stuff to `self.rollout_stats` for saving.
         final_stuff = {
-            'final_c_img': c_img,
+            'image_start': self.image_start,
+            'image_final': self.image_final,
             'grasp_times': self.g_time_stats,
             'move_times': self.move_time_stats,
         }
         self.rollout_stats.append(final_stuff)
 
-        self.com.save_stat(self.rollout_stats, target_path=BED_CFG.DEPLOY_NET_PATH)
+        # SAVE, move to start, then exit.
+        self.com.save_stat(self.rollout_stats, target_path=self.args.save_path)
+        self.move_to_start()
         sys.exit()
 
 
@@ -397,7 +425,6 @@ class BedMaker():
         self.tt.move_to_pose(self.omni_base,'right_up_2')
         self.tt.move_to_pose(self.omni_base,'right_mid_2')
         self.tt.move_to_pose(self.omni_base,'right_down_2')
-        #self.tt.move_to_pose(self.omni_base,'lower_mid')
         self.tt.move_to_pose(self.omni_base,'lower_start_tmp')
         toc = time.time()
         return toc-tic
@@ -409,7 +436,6 @@ class BedMaker():
         cards = []
         try:
             for transform in transforms:
-                #print(transform)
                 current_grasp = 'bed_'+str(self.grasp_count)
                 if current_grasp in transform:
                     print('found {}'.format(current_grasp))
@@ -423,8 +449,20 @@ class BedMaker():
 if __name__ == "__main__":
     pp = argparse.ArgumentParser()
     pp.add_argument('--phase', type=int, help='1 for checking poses, 2 for deployment.')
+    pp.add_argument('--g_type', type=string, help='must be in [network, human, anlaytic]')
     args = pp.parse_args()
     assert args.phase in [1,2]
+
+    if args.g_type == 'network':
+        args.save_path = BED_CFG.DEPLOY_NET_PATH
+    elif args.g_type == 'human':
+        args.save_path = BED_CFG.DEPLOY_HUM_PATH
+    elif args.g_type == 'analytic':
+        args.save_path = BED_CFG.DEPLOY_ANA_PATH
+    else:
+        raise ValueError(args.g_type)
+    print("Note that we will be saving to: {}".format(args.save_path))
+    print("(double check the blanket type!)")
 
     cp = BedMaker(args)
     #cp._test_grasp()

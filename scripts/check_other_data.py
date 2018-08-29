@@ -15,9 +15,10 @@ np.set_printoptions(suppress=True, linewidth=200, precision=5)
 from fast_grasp_detect.data_aug.depth_preprocess import depth_to_net_dim
 
 # --- ADJUST PATHS ---
-# Note: for v03 (dataset_2) they saved as one-item (or zero-item) lists.
-ROLLOUTS = '/nfs/diskstation/seita/bed-make/rollouts_h_v03/'
-IMG_PATH = '/nfs/diskstation/seita/bed-make/images_h_v03/'
+# Note: for v03 (i.e., dataset_2) they saved as one-item (or zero-item) lists.
+# Note: for v03_success (i.e., dataset_3) they reverted back to just one item ...
+ROLLOUTS = '/nfs/diskstation/seita/bed-make/rollouts_h_v03_success/'
+IMG_PATH = '/nfs/diskstation/seita/bed-make/images_h_v03_success/'
 if not os.path.exists(IMG_PATH):
     os.makedirs(IMG_PATH)
 files = sorted([x for x in os.listdir(ROLLOUTS)])
@@ -43,6 +44,10 @@ RED = (0,0,255)
 total = 0
 
 
+total_class0 = 0
+total_class1 = 0
+
+
 for ff in files:
     # They saved in format: `rollout_TOP_Grasp_K/rollout.pkl` where `number=K`.
     pkl_f = os.path.join(ff,'rollout.pkl')
@@ -53,17 +58,27 @@ for ff in files:
     # Debug and accumulate statistics for plotting later.
     print("\nOn data: {}, number {}".format(file_path, number))
 
-    # Change from their dataset_1 (my v01) to dataset_2 (my v03).
+    # Change from their dataset_1 (I call cache_h_v01) to dataset_2 (I call cache_h_v03).
+    # Because they made things length-1 lists ...
     if len(data) == 0:
         print("length is 0, skipping...")
         continue
-    assert len(data) == 1
-    data = data[0]
+    
+    # Only needed for `dataset_2`.
+    #assert len(data) == 1
+    #data = data[0]
 
     # Back to normal ...
     print("    data['armState']:  {}".format(np.array(data['armState'])))
     print("    data['headState']: {}".format(np.array(data['headState'])))
     print("    data['pose']:      {}".format(np.array(data['pose'])))
+    print("    data['class']:     {}".format(np.array(data['class'])))
+    if data['class'] == 0:
+        total_class0 += 1
+    elif data['class'] == 1:
+        total_class1 += 1
+    else:
+        raise ValueError()
     assert data['c_img'].shape == (480, 640, 3)
     assert data['d_img'].shape == (480, 640)
 
@@ -89,4 +104,7 @@ for ff in files:
     cv2.imwrite(d_path, d_img)
     total += 1
 
-print("total images: {}".format(total))
+print("total images:  {}".format(total))
+print("total_class0:  {}".format(total_class0))
+print("total_class1:  {}".format(total_class1))
+print("see IMG_PATH:  {}".format(IMG_PATH))

@@ -132,7 +132,6 @@ class BedMaker():
             rospy.spin()
 
         # For evaluating coverage.
-        self.cap = cv2.VideoCapture(0)
         self.img_start = None
         self.img_final = None
 
@@ -203,6 +202,16 @@ class BedMaker():
     def bed_make(self):
         """Runs the pipeline for deployment, testing out bed-making.
         """
+        # Get the starting image (from USB webcam).
+        cap = cv2.VideoCapture(0)
+        frame = None
+        while frame is None:
+            ret, frame = cap.read()
+        self.image_start = frame
+        cv2.imwrite('image_start.png', self.image_start)
+        cap.release()
+        print("NOTE! Recorded `image_start` for coverage evaluation. Was it set up?")
+
         def get_pose(data_all):
             # See `find_pick_region_labeler` in `p_pi/bed_making/gripper.py`.
             # It's because from the web labeler, we get a bunch of objects.
@@ -236,13 +245,6 @@ class BedMaker():
                 else:
                     self.new_grasp = True
                 time.sleep(3)
-
-                frame = None
-                print("now reading from `self.cap` to get the webcam image ...")
-                while frame is None:
-                    ret, frame = self.cap.read()
-                self.image_start = frame
-                print("NOTE! Just recorded the image_start for evaluation later.")
 
                 c_img = self.cam.read_color_data()
                 d_img = self.cam.read_depth_data()
@@ -378,13 +380,15 @@ class BedMaker():
         class method `record_stats`. We save with a top-down webcam and save
         before moving back, since the HSR could disconnect.
         """
-        # Record the final image for evaluation later.
+        # Record the final image for evaluation later (from USB webcam).
+        cap = cv2.VideoCapture(0)
         frame = None
-        print("now reading from `self.cap` to get the webcam image ...")
         while frame is None:
-            ret, frame = self.cap.read()
+            ret, frame = cap.read()
         self.image_final = frame
-        print("NOTE: just recorded image_final for evaluation later")
+        cv2.imwrite('image_final.png', self.image_final)
+        cap.release()
+        print("NOTE! Recorded `image_final` for coverage evaluation.")
 
         # Append some last-minute stuff to `self.rollout_stats` for saving.
         final_stuff = {

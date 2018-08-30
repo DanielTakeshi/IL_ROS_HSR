@@ -131,7 +131,7 @@ class Bed_Gripper(object):
         cv2.waitKey(30)
        
 
-    def find_pick_region_net(self,pose,c_img,d_img,count):
+    def find_pick_region_net(self, pose, c_img, d_img, count):
         """Called during bed-making deployment w/neural network, creates a pose.
 
         It relies on the raw depth image! DO NOT PASS A PROCESSED DEPTH IMAGE!!!
@@ -154,15 +154,19 @@ class Bed_Gripper(object):
         self.broadcast_poses(poses, count)
 
 
-    def find_pick_region_labeler(self,results,c_img,d_img,count):
-        """Called during bed-making data collection, creates a pose. Apply DART
-        if desired, but this may be slow.
+    def find_pick_region_labeler(self, results, c_img, d_img, count):
+        """Called during bed-making data collection, only if we use the labeler.
 
         It relies on the raw depth image! DO NOT PASS A PROCESSED DEPTH IMAGE!!!
         Also, shows the image to the user via `plot_on_true`.
 
+        NOTE: main difference between this and the other method for the net is
+        that the `results` argument encodes the pose implicitly and we have to
+        compute it. Otherwise, though, the depth computation is the same, and
+        cropping is the same, so the methods do similar stuff.
+
         Args:
-            results: List of dicts from QueryLabeler class (human supervisor).
+            results: Dict from QueryLabeler class (human supervisor).
         """
         poses = []
         p_list = []
@@ -187,7 +191,7 @@ class Bed_Gripper(object):
             self.plot_on_true([x,y],c_img)
 
             #Crop D+img
-            d_img_c = d_img[int(y-cfg.BOX):int(y+cfg.BOX),int(x-cfg.BOX):int(cfg.BOX+x)]
+            d_img_c = d_img[int(y-cfg.BOX) : int(y+cfg.BOX) , int(x-cfg.BOX) : int(cfg.BOX+x)]
             depth = self.gp.find_mean_depth(d_img_c)
             # Note that `result['class']` is an integer (a class index).
             # 0=success, anything else indicates a grasping failure.

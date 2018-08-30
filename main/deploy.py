@@ -202,6 +202,19 @@ class BedMaker():
     def bed_make(self):
         """Runs the pipeline for deployment, testing out bed-making.
         """
+        def get_pose(data_all):
+            # See `find_pick_region_labeler` in `p_pi/bed_making/gripper.py`.
+            # It's because from the web labeler, we get a bunch of objects.
+            # So we have to compute the pose (x,y) from it.
+            res = data_all['objects'][0]
+            x_min = float(res['box'][0])
+            y_min = float(res['box'][1])
+            x_max = float(res['box'][2])
+            y_max = float(res['box'][3])
+            x = (x_max - x_min)/2.0 + x_min
+            y = (y_max - y_min)/2.0 + y_min
+            return (x,y)
+
         args = self.args
         use_d = BED_CFG.GRASP_CONFIG.USE_DEPTH
         self.get_new_grasp = True
@@ -232,8 +245,10 @@ class BedMaker():
                 d_img = self.cam.read_depth_data()
                 d_img_raw = np.copy(d_img) # Needed for determining grasp pose
 
+                # --------------------------------------------------------------
                 # Process depth images! Helps network, human, and (presumably) analytic.
                 # Obviously human can see the c_img as well ... hard to compare fairly.
+                # --------------------------------------------------------------
                 if use_d:
                     if np.isnan(np.sum(d_img)):
                         cv2.patchNaNs(d_img, 0.0)
@@ -242,15 +257,24 @@ class BedMaker():
                 else:
                     policy_input = np.copy(c_img)
 
+                # --------------------------------------------------------------
                 # Run grasp detector to get data=(x,y) point for target, record stats.
+                # Note that the web labeler returns a dictionary like this:
+                # {'objects': [{'box': (155, 187, 165, 194), 'class': 0}], 'num_labels': 1}
+                # but we really want just the 2D grasping point. So use `get_pose()`.
+                # Also, for the analytic one, we'll pick the highest point ourselves.
+                # --------------------------------------------------------------
                 sgraspt = time.time()
                 if args.g_type == 'network':
                     data = self.g_detector.predict(policy_input)
                 elif args.g_type == 'analytic':
-                    data = self.g_detector.predict(policy_input)
+                    data_all = self.wl.label_image(policy_input)
+                    data = get_pose(data_all) 
                 elif args.g_type == 'human':
-                    data = self.wl.label_image(policy_input)
+                    data_all = self.wl.label_image(policy_input)
+                    data = get_pose(data_all) 
                 egraspt = time.time()
+
                 g_predict_t = egraspt - sgraspt
                 print("Grasp predict time: {:.2f}".format(g_predict_t))
                 self.record_stats(c_img, d_img, data, self.side, g_predict_t, 'grasp')
@@ -263,7 +287,11 @@ class BedMaker():
                 caption = 'G Predicted: {} (ESC to abort, other key to proceed)'.format(data)
                 call_wait_key( cv2.imshow(caption,img) )
 
+                # --------------------------------------------------------------
                 # Broadcast grasp pose, execute the grasp, check for success.
+                # We'll use the `find_pick_region_net` since the `data` is the
+                # (x,y) pose, and not `find_pick_region_labeler`.
+                # --------------------------------------------------------------
                 self.gripper.find_pick_region_net(data, c_img, d_img_raw, self.grasp_count)
                 pick_found, bed_pick = self.check_card_found()
 

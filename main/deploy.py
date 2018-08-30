@@ -238,6 +238,7 @@ class BedMaker():
                 time.sleep(3)
 
                 frame = None
+                print("now reading from `self.cap` to get the webcam image ...")
                 while frame is None:
                     ret, frame = self.cap.read()
                 self.image_start = frame
@@ -379,8 +380,9 @@ class BedMaker():
         """
         # Record the final image for evaluation later.
         frame = None
-        while frame is not None:
-            ret, frame = cap.read()
+        print("now reading from `self.cap` to get the webcam image ...")
+        while frame is None:
+            ret, frame = self.cap.read()
         self.image_final = frame
         print("NOTE: just recorded image_final for evaluation later")
 

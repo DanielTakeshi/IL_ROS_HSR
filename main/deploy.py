@@ -31,7 +31,8 @@ from fast_grasp_detect.data_aug.draw_cross_hair import DrawPrediction
 
 # Don't forget analytic versions, but we'll use the one for grasping.
 from il_ros_hsr.p_pi.bed_making.analytic_grasp import Analytic_Grasp
-from il_ros_hsr.p_pi.bed_making.analytic_success import Success_Net
+# AH name clash!!
+#from il_ros_hsr.p_pi.bed_making.analytic_success import Success_Net
 ESC_KEYS = [27, 1048603]
 
 
@@ -449,7 +450,7 @@ class BedMaker():
 if __name__ == "__main__":
     pp = argparse.ArgumentParser()
     pp.add_argument('--phase', type=int, help='1 for checking poses, 2 for deployment.')
-    pp.add_argument('--g_type', type=string, help='must be in [network, human, anlaytic]')
+    pp.add_argument('--g_type', type=str, help='must be in [network, human, anlaytic]')
     args = pp.parse_args()
     assert args.phase in [1,2]
 
@@ -461,7 +462,7 @@ if __name__ == "__main__":
         args.save_path = BED_CFG.DEPLOY_ANA_PATH
     else:
         raise ValueError(args.g_type)
-    print("Note that we will be saving to: {}".format(args.save_path))
+    print("\nNote that we will be saving to: {}".format(args.save_path))
     print("(double check the blanket type!)")
 
     cp = BedMaker(args)

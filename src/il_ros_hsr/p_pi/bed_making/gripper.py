@@ -58,8 +58,12 @@ class Bed_Gripper(object):
         self.gripper = gripper
         self.options = options
         self.com = COM()
+
         # See paper for details, used to release grasp if too much force.
         self.tension = Tensioner()
+
+        # Side, need to change this.
+        self.side = 'BOTTOM'
 
 
     def compute_trans_to_map(self,norm_pose,rot):
@@ -76,8 +80,12 @@ class Bed_Gripper(object):
         return trans,quat
 
 
-    def loop_broadcast(self,norm_pose,rot,count):
-        norm_pose,rot = self.compute_trans_to_map(norm_pose,rot)
+    def loop_broadcast(self, norm_pose, rot, count):
+        norm_pose, rot = self.compute_trans_to_map(norm_pose, rot)
+        gripper_height = cfg.GRIPPER_HEIGHT
+        if self.side == 'TOP':
+            gripper_height -= 0.01
+
         while True:
             self.br.sendTransform((norm_pose[0], norm_pose[1], norm_pose[2]),
                     #tf.transformations.quaternion_from_euler(ai=0.0,aj=0.0,ak=0.0),
@@ -131,15 +139,23 @@ class Bed_Gripper(object):
         cv2.waitKey(30)
        
 
-    def find_pick_region_net(self, pose, c_img, d_img, count):
+    def find_pick_region_net(self, pose, c_img, d_img, count, side):
         """Called during bed-making deployment w/neural network, creates a pose.
 
         It relies on the raw depth image! DO NOT PASS A PROCESSED DEPTH IMAGE!!!
         Also, shows the image to the user via `plot_on_true`.
 
+        Update: pass in the 'side' as well, because I am getting some weird
+        cases where the plane formed by the four table 'corner' frames (head up,
+        head down, bottom up, bottom down) seem to be slightly at an angle. Ugh.
+        So pretend the gripper height has 'decreased' by 1cm for the other side
+        of the bed.
+
         Args:
             pose: (x,y) point as derived from the grasp detector network
         """
+        assert side in ['BOTTOM', 'TOP']
+        self.side = side
         poses = []
         p_list = []
         x,y = pose
@@ -217,7 +233,7 @@ class Bed_Gripper(object):
         self.broadcast_poses(poses)
 
 
-    def execute_grasp(self,cards,whole_body,direction):
+    def execute_grasp(self, cards, whole_body, direction):
         """ Executes grasp. Move to pose, squeeze, pull (w/tension), open. """
         whole_body.end_effector_frame = 'hand_palm_link'
         #self.whole_body.move_to_neutral()

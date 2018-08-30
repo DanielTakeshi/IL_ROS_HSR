@@ -132,6 +132,7 @@ class BedMaker():
             rospy.spin()
 
         # For evaluating coverage.
+        self.cap = cv2.VideoCapture(0)
         self.img_start = None
         self.img_final = None
 
@@ -225,12 +226,6 @@ class BedMaker():
         self.g_time_stats = []      # for _execution_ of a grasp
         self.move_time_stats = []   # for moving to the other side
 
-        # Record the starting image for evaluation later.
-        cap = cv2.VideoCapture(0)
-        ret, frame = cap.read()
-        assert frame is not None
-        self.image_start = frame
-
         while True:
             c_img = self.cam.read_color_data()
             d_img = self.cam.read_depth_data()
@@ -241,6 +236,13 @@ class BedMaker():
                 else:
                     self.new_grasp = True
                 time.sleep(3)
+
+                frame = None
+                while frame is None:
+                    ret, frame = self.cap.read()
+                self.image_start = frame
+                print("NOTE! Just recorded the image_start for evaluation later.")
+
                 c_img = self.cam.read_color_data()
                 d_img = self.cam.read_depth_data()
                 d_img_raw = np.copy(d_img) # Needed for determining grasp pose
@@ -292,7 +294,8 @@ class BedMaker():
                 # We'll use the `find_pick_region_net` since the `data` is the
                 # (x,y) pose, and not `find_pick_region_labeler`.
                 # --------------------------------------------------------------
-                self.gripper.find_pick_region_net(data, c_img, d_img_raw, self.grasp_count)
+                self.gripper.find_pick_region_net(data, c_img, d_img_raw,
+                        count=self.grasp_count, side=self.side)
                 pick_found, bed_pick = self.check_card_found()
 
                 if self.side == "BOTTOM":
@@ -375,10 +378,11 @@ class BedMaker():
         before moving back, since the HSR could disconnect.
         """
         # Record the final image for evaluation later.
-        cap = cv2.VideoCapture(0)
-        ret, frame = cap.read()
-        assert frame is not None
+        frame = None
+        while frame is not None:
+            ret, frame = cap.read()
         self.image_final = frame
+        print("NOTE: just recorded image_final for evaluation later")
 
         # Append some last-minute stuff to `self.rollout_stats` for saving.
         final_stuff = {

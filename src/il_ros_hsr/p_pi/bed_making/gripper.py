@@ -83,8 +83,11 @@ class Bed_Gripper(object):
     def loop_broadcast(self, norm_pose, rot, count):
         norm_pose, rot = self.compute_trans_to_map(norm_pose, rot)
         gripper_height = cfg.GRIPPER_HEIGHT
-        if self.side == 'TOP':
-            gripper_height -= 0.01
+
+        # Bleh ... :-(. Pretend gripper height is shorter.  UPDATE: let's not do
+        # this. It's a bad idea. Put tape under table legs for better balance.
+        #if self.side == 'TOP':
+        #    gripper_height -= 0.015
 
         while True:
             self.br.sendTransform((norm_pose[0], norm_pose[1], norm_pose[2]),

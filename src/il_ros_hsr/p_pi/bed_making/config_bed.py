@@ -121,8 +121,8 @@ INS_SAMPLE = False
 # Ack, 0.052 is resulting in a lot of 'hard' grasps where the robot grabs the
 # sheet but also a bit of the blue surface underneath, so there's too much force.
 # If 0.055 result in the robot 'missing' the sheet then we better adjust it
-# dynamically?
-GRIPPER_HEIGHT = 0.054
+# dynamically? (UPDATE: forget these just dynamically do it ...)
+GRIPPER_HEIGHT = 0.053
 
 # TODO: we should probably have this so we know if depth is in mm or meters?
 # Right now for data preprocessing I just use 'HSR' because the code has so many

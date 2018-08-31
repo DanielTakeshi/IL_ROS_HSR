@@ -54,6 +54,7 @@ class Success_Net:
         time.sleep(3)
         c_img = self.cam.read_color_data()
         d_img = self.cam.read_depth_data()
+        d_img_raw = np.copy(d_img)
         if use_d:
             d_img = depth_to_net_dim(d_img, robot='HSR')
             img = np.copy(d_img)
@@ -76,6 +77,7 @@ class Success_Net:
             'data': data,
             'c_img': c_img,
             'd_img': d_img,
+            'd_img_raw': d_img_raw,
             's_predict_t': s_predict_t,
         }
         return result

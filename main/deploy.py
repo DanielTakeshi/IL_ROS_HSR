@@ -282,7 +282,7 @@ class BedMaker():
 
                 g_predict_t = egraspt - sgraspt
                 print("Grasp predict time: {:.2f}".format(g_predict_t))
-                self.record_stats(c_img, d_img, data, self.side, g_predict_t, 'grasp')
+                self.record_stats(c_img, d_img_raw, data, self.side, g_predict_t, 'grasp')
 
                 # For safety, we can check image and abort as needed before execution.
                 if use_d:
@@ -339,8 +339,9 @@ class BedMaker():
         data        = result['data']
         c_img       = result['c_img']
         d_img       = result['d_img']
+        d_img_raw   = result['d_img_raw']
         s_predict_t = result['s_predict_t']
-        self.record_stats(c_img, d_img, data, self.side, s_predict_t, 'success')
+        self.record_stats(c_img, d_img_raw, data, self.side, s_predict_t, 'success')
 
         # Have user confirm that this makes sense.
         caption = "Success net saw this and thought: {}. Press any key".format(success)

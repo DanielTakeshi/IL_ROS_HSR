@@ -122,7 +122,7 @@ INS_SAMPLE = False
 # sheet but also a bit of the blue surface underneath, so there's too much force.
 # If 0.055 result in the robot 'missing' the sheet then we better adjust it
 # dynamically? (UPDATE: forget these just dynamically do it ...)
-GRIPPER_HEIGHT = 0.053
+GRIPPER_HEIGHT = 0.049
 
 # TODO: we should probably have this so we know if depth is in mm or meters?
 # Right now for data preprocessing I just use 'HSR' because the code has so many

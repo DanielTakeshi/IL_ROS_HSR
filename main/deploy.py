@@ -294,10 +294,10 @@ class BedMaker():
         self.record_stats(c_img, d_img_raw, data, self.side, s_predict_t, 'success')
         print("Difference between grasp and success net images: {}".format(img_diff))
         if img_diff < 95000:
-            print("APPLYING OFFSET!")
+            print("APPLYING OFFSET! (self.apply_offset = True)")
             self.apply_offset = True
         else:
-            print("no offset applied")
+            print("no offset applied (self.apply_offset = False)")
             self.apply_offset = False
 
         # Have user confirm that this makes sense.
@@ -321,7 +321,7 @@ class BedMaker():
                 self.side = 'TOP'
             else:
                 self.transition_to_start()
-            print("reverting offset to false")
+            print("We're moving to another side so revert self.apply_offset = False.")
             self.apply_offset = False
         else:
             self.new_grasp = False

@@ -64,7 +64,7 @@ class Bed_Gripper(object):
 
         # Side, need to change this.
         self.side = 'BOTTOM'
-        self.offset_x = 0.0 # positive means going towards window (if on bottom side!).
+        self.offset_x = 0.0 # positive means going to other side of bed (both sides!)
         self.offset_z = 0.0 # negative means going UP to ceiling
         self.apply_offset = False
 

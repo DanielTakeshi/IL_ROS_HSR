@@ -222,10 +222,13 @@ if __name__ == "__main__":
     #sys.exit()
 
     print("\nFor now we focus on the first and last c_img\n")
-    c_img_start = data[0]['c_img']
-    c_img_end_t = data[-2]['c_img']
-    c_img_end_s = data[-1]['final_c_img']
-    assert c_img_start.shape == c_img_end_t.shape == c_img_end_s.shape == (480,640,3)
+    image_start = data[-1]['image_start']
+    image_final = data[-1]['image_final']
+    #c_img_start = data[0]['c_img']
+    #c_img_end_t = data[-2]['c_img']
+    #c_img_end_s = data[-1]['final_c_img']
+    assert image_start.shape == image_final.shape == (480,640,3)
+    #assert image_start.shape == c_img_end_t.shape == c_img_end_s.shape == (480,640,3)
 
     # ------------------------- END OF PROCESSING ----------------------------
 
@@ -240,7 +243,7 @@ if __name__ == "__main__":
     print("current points {}, target {}".format(len(CENTER_OF_BOXES), num_targ))
 
     while len(CENTER_OF_BOXES) < num_targ:
-        img_for_click = c_img_start.copy()
+        img_for_click = image_start.copy()
         wn = 'Click for table frame border!'
         cv2.namedWindow(wn, cv2.WINDOW_NORMAL)
         cv2.setMouseCallback(wn, click_and_crop)
@@ -282,7 +285,7 @@ if __name__ == "__main__":
     size           = cv2.contourArea(largest_c)
     human_ctr_area = cv2.contourArea(human_ctr)
 
-    image_viz = c_img_start.copy()
+    image_viz = image_start.copy()
     cv2.drawContours(image_viz, [human_ctr], 0, BLACK, 2)
     cv2.drawContours(image_viz, [largest_c], 0, GREEN, 2)
     largest_ctr_area = size
@@ -334,10 +337,10 @@ if __name__ == "__main__":
     call_wait_key(cv2.imshow(cc, image_viz))
     cv2.destroyAllWindows()
 
-    # Original: c_img_start. Visualization: `image_viz`.
+    # Original: image_start. Visualization: `image_viz`.
     path_1 = join(FIGDIR, 'res_{}_c_start_raw.png'.format(rollout_index))
     path_2 = join(FIGDIR, 'res_{}_c_start_{:.2f}.png'.format(rollout_index, coverage))
-    cv2.imwrite(path_1, c_img_start)
+    cv2.imwrite(path_1, image_start)
     cv2.imwrite(path_2, image_viz)
     print("\nJust saved: {}".format(path_1))
     print("Just saved: {}\n".format(path_2))
@@ -346,16 +349,16 @@ if __name__ == "__main__":
     # ----------------------------------------------------------------------
     # Repeat the process for the final image!
     # ----------------------------------------------------------------------
-    # Change c_img_start --> c_img_end_s (or c_img_end_t!)
+    # Change image_start --> image_final
     # ----------------------------------------------------------------------
     # Recommend to use c_img_end_s, though. For both the ending ones, lighting
     # poses a problem, unfortunately ... which is why we hand-draw the contour!
+    # UPDATE: never mind, we have a top-down view now. :-)
     # ----------------------------------------------------------------------
     # ----------------------------------------------------------------------
 
     print("\nMOVING ON TO THE SECOND IMAGE\n")
-    #final_img = c_img_end_t
-    final_img = c_img_end_s
+    final_img = image_final
 
     num_targ = len(CENTER_OF_BOXES) + 4
     print("current points {}, target {}".format(len(CENTER_OF_BOXES), num_targ))

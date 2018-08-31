@@ -104,8 +104,8 @@ for line in s_content:
 # --- Other stuff which I don't need to look at often ---
 
 # Stuff for the tensioner.
-FORCE_LIMT = 25.0
-HIGH_FORCE = 25.0
+FORCE_LIMT = 20.0
+HIGH_FORCE = 20.0
 LOW_FORCE = 2.0
 MAX_PULLS = 3
 BOX = 10

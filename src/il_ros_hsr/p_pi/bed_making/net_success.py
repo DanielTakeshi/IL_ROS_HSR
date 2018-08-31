@@ -24,21 +24,21 @@ class Success_Net:
         self.sdect = SDetector(fg_cfg=fg_cfg, bed_cfg=bed_cfg, yc=yc)
 
 
-    def check_bottom_success(self, use_d):
+    def check_bottom_success(self, use_d, old_grasp_image):
         self.whole_body.move_to_go()
         self.tt.move_to_pose(self.omni_base, 'lower_start_tmp')
-        result = self.shared_code(use_d)
+        result = self.shared_code(use_d, old_grasp_image)
         return result
 
 
-    def check_top_success(self, use_d):
+    def check_top_success(self, use_d, old_grasp_image):
         self.whole_body.move_to_go()
         self.tt.move_to_pose(self.omni_base, 'top_mid_tmp')
-        result = self.shared_code(use_d)
+        result = self.shared_code(use_d, old_grasp_image)
         return result
 
 
-    def shared_code(self, use_d):
+    def shared_code(self, use_d, old_grasp_image):
         """Shared code for calling the success network.
 
         For the timing, avoid counting the time for processing images.
@@ -66,12 +66,16 @@ class Success_Net:
         data = self.sdect.predict(img)
         etranst = time.time()
         s_predict_t = etranst - stranst
-        print("Success predict time: {:.2f}".format(s_predict_t))
-        print("Success net output: {}".format(data))
+        print("\nSuccess predict time: {:.2f}".format(s_predict_t))
+        print("Success net output (i.e., logits): {}\n".format(data))
 
         # The success net outputs a 2D result for a probability vector.
         ans = np.argmax(data)
         success = (ans == 0)
+
+        # NEW! Can also tell us the difference between grasp and success imgs.
+        diff = np.linalg.norm( old_grasp_image - img )
+
         result = {
             'success': success,
             'data': data,
@@ -79,6 +83,7 @@ class Success_Net:
             'd_img': d_img,
             'd_img_raw': d_img_raw,
             's_predict_t': s_predict_t,
+            'diff_l2': diff,
         }
         return result
 

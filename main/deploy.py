@@ -135,68 +135,8 @@ class BedMaker():
         self.img_start = None
         self.img_final = None
 
-
-    def _test_grasp(self):
-        """Simple tests for grasping. Don't forget to process depth images.
-
-        Do this independently of any rollout ...
-        """
-        print("\nNow in `test_grasp` to check grasping net...")
-        self.position_head()
-        time.sleep(3)
-
-        c_img = self.cam.read_color_data()
-        d_img = self.cam.read_depth_data()
-        if np.isnan(np.sum(d_img)):
-            cv2.patchNaNs(d_img, 0.0)
-        d_img = depth_to_net_dim(d_img, robot='HSR')
-        pred = self.g_detector.predict( np.copy(d_img) )
-        img = self.dp.draw_prediction(d_img, pred)
-
-        print("prediction: {}".format(pred))
-        caption = 'G Predicted: {} (ESC to abort, other key to proceed)'.format(pred)
-        cv2.imshow(caption, img)
-        key = cv2.waitKey(0)
-        if key in ESC_KEYS:
-            print("Pressed ESC key. Terminating program...")
-            sys.exit()
-
-
-    def _test_success(self):
-        """Simple tests for success net. Don't forget to process depth images.
-
-        Should be done after a grasp test since I don't re-position...  Note: we
-        have access to `self.sn` but that isn't the actual net which has a
-        `predict`, but it's a wrapper (explained above), but we can access the
-        true network via `self.sn.sdect` and from there call `predict`.
-        """
-        print("\nNow in `test_success` to check success net...")
-        time.sleep(3)
-        c_img = self.cam.read_color_data()
-        d_img = self.cam.read_depth_data()
-        if np.isnan(np.sum(d_img)):
-            cv2.patchNaNs(d_img, 0.0)
-        d_img = depth_to_net_dim(d_img, robot='HSR')
-        result = self.sn.sdect.predict( np.copy(d_img) )
-        result = np.squeeze(result)
-
-        print("s-net pred: {} (if [0]<[1] failure, else success...)".format(result))
-        caption = 'S Predicted: {} (ESC to abort, other key to proceed)'.format(result)
-        cv2.imshow(caption, d_img)
-        key = cv2.waitKey(0)
-        if key in ESC_KEYS:
-            print("Pressed ESC key. Terminating program...")
-            sys.exit()
-
-
-    def _test_variables(self):
-        """Test to see if TF variables were loaded correctly.
-        """
-        vars = tf.trainable_variables()
-        print("\ntf.trainable_variables:")
-        for vv in vars:
-            print("  {}".format(vv))
-        print("done\n")
+        # For grasp offsets.
+        self.apply_offset = False
 
 
     def bed_make(self):
@@ -297,8 +237,12 @@ class BedMaker():
                 # We'll use the `find_pick_region_net` since the `data` is the
                 # (x,y) pose, and not `find_pick_region_labeler`.
                 # --------------------------------------------------------------
-                self.gripper.find_pick_region_net(data, c_img, d_img_raw,
-                        count=self.grasp_count, side=self.side)
+                self.gripper.find_pick_region_net(pose=data,
+                                                  c_img=c_img,
+                                                  d_img=d_img_raw,
+                                                  count=self.grasp_count,
+                                                  side=self.side,
+                                                  apply_offset=self.apply_offset)
                 pick_found, bed_pick = self.check_card_found()
 
                 if self.side == "BOTTOM":
@@ -314,23 +258,27 @@ class BedMaker():
                     self.gripper.execute_grasp(bed_pick, self.whole_body, 'head_up')
                     toc = time.time()
                 self.g_time_stats.append( toc-tic )
-                self.check_success_state()
+                self.check_success_state(policy_input)
 
 
-    def check_success_state(self):
+    def check_success_state(self, old_grasp_image):
         """
         Checks whether a single grasp in a bed-making trajectory succeeded.
         Depends on which side of the bed the HSR is at. Invokes the learned
         success network policy and transitions the HSR if successful.
 
         When we record the data, c_img and d_img should be what success net saw.
+
+        UPDATE: now we can pass in the previous `d_img` from the grasping to
+        compare the difference. Well, technically the `policy_input` so it can
+        handle either case.
         """
         use_d = BED_CFG.GRASP_CONFIG.USE_DEPTH
         if self.side == "BOTTOM":
-            result = self.sn.check_bottom_success(use_d)
+            result = self.sn.check_bottom_success(use_d, old_grasp_image)
             self.b_grasp_count += 1
         else:
-            result = self.sn.check_top_success(use_d)
+            result = self.sn.check_top_success(use_d, old_grasp_image)
             self.t_grasp_count += 1
         self.grasp_count += 1
         assert self.grasp_count == self.b_grasp_count + self.t_grasp_count
@@ -341,7 +289,16 @@ class BedMaker():
         d_img       = result['d_img']
         d_img_raw   = result['d_img_raw']
         s_predict_t = result['s_predict_t']
+        img_diff    = result['diff_l2']
+
         self.record_stats(c_img, d_img_raw, data, self.side, s_predict_t, 'success')
+        print("Difference between grasp and success net images: {}".format(img_diff))
+        if img_diff < 95000:
+            print("APPLYING OFFSET!")
+            self.apply_offset = True
+        else:
+            print("no offset applied")
+            self.apply_offset = False
 
         # Have user confirm that this makes sense.
         caption = "Success net saw this and thought: {}. Press any key".format(success)
@@ -364,6 +321,8 @@ class BedMaker():
                 self.side = 'TOP'
             else:
                 self.transition_to_start()
+            print("reverting offset to false")
+            self.apply_offset = False
         else:
             self.new_grasp = False
 
@@ -484,6 +443,69 @@ class BedMaker():
         except:
             rospy.logerr('bed pick not found yet')
         return True, cards
+
+
+    def _test_grasp(self):
+        """Simple tests for grasping. Don't forget to process depth images.
+
+        Do this independently of any rollout ...
+        """
+        print("\nNow in `test_grasp` to check grasping net...")
+        self.position_head()
+        time.sleep(3)
+
+        c_img = self.cam.read_color_data()
+        d_img = self.cam.read_depth_data()
+        if np.isnan(np.sum(d_img)):
+            cv2.patchNaNs(d_img, 0.0)
+        d_img = depth_to_net_dim(d_img, robot='HSR')
+        pred = self.g_detector.predict( np.copy(d_img) )
+        img = self.dp.draw_prediction(d_img, pred)
+
+        print("prediction: {}".format(pred))
+        caption = 'G Predicted: {} (ESC to abort, other key to proceed)'.format(pred)
+        cv2.imshow(caption, img)
+        key = cv2.waitKey(0)
+        if key in ESC_KEYS:
+            print("Pressed ESC key. Terminating program...")
+            sys.exit()
+
+
+    def _test_success(self):
+        """Simple tests for success net. Don't forget to process depth images.
+
+        Should be done after a grasp test since I don't re-position...  Note: we
+        have access to `self.sn` but that isn't the actual net which has a
+        `predict`, but it's a wrapper (explained above), but we can access the
+        true network via `self.sn.sdect` and from there call `predict`.
+        """
+        print("\nNow in `test_success` to check success net...")
+        time.sleep(3)
+        c_img = self.cam.read_color_data()
+        d_img = self.cam.read_depth_data()
+        if np.isnan(np.sum(d_img)):
+            cv2.patchNaNs(d_img, 0.0)
+        d_img = depth_to_net_dim(d_img, robot='HSR')
+        result = self.sn.sdect.predict( np.copy(d_img) )
+        result = np.squeeze(result)
+
+        print("s-net pred: {} (if [0]<[1] failure, else success...)".format(result))
+        caption = 'S Predicted: {} (ESC to abort, other key to proceed)'.format(result)
+        cv2.imshow(caption, d_img)
+        key = cv2.waitKey(0)
+        if key in ESC_KEYS:
+            print("Pressed ESC key. Terminating program...")
+            sys.exit()
+
+
+    def _test_variables(self):
+        """Test to see if TF variables were loaded correctly.
+        """
+        vars = tf.trainable_variables()
+        print("\ntf.trainable_variables:")
+        for vv in vars:
+            print("  {}".format(vv))
+        print("done\n")
 
 
 if __name__ == "__main__":

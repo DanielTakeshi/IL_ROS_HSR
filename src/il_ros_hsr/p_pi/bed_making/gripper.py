@@ -64,6 +64,9 @@ class Bed_Gripper(object):
 
         # Side, need to change this.
         self.side = 'BOTTOM'
+        self.offset_x = 0.0 # positive means going towards window (if on bottom side!).
+        self.offset_z = 0.0 # negative means going UP to ceiling
+        self.apply_offset = False
 
 
     def compute_trans_to_map(self,norm_pose,rot):
@@ -89,6 +92,16 @@ class Bed_Gripper(object):
         #if self.side == 'TOP':
         #    gripper_height -= 0.015
 
+        # But we may want some extra offset in the x and z directions.
+        if self.apply_offset:
+            print("self.apply_offset = True")
+            self.offset_x = 0.010
+            self.offset_z = 0.010
+        else:
+            print("self.apply_offset = False")
+            self.offset_x = 0.0
+            self.offset_z = 0.0
+
         while True:
             self.br.sendTransform((norm_pose[0], norm_pose[1], norm_pose[2]),
                     #tf.transformations.quaternion_from_euler(ai=0.0,aj=0.0,ak=0.0),
@@ -97,7 +110,7 @@ class Bed_Gripper(object):
                     'bed_i_'+str(count),
                     #'head_rgbd_sensor_link')
                     'map')
-            self.br.sendTransform((0.0, 0.0, -cfg.GRIPPER_HEIGHT),
+            self.br.sendTransform((self.offset_x, 0.0, -gripper_height + self.offset_z),
                     tf.transformations.quaternion_from_euler(ai=0.0,aj=0.0,ak=0.0),
                     rospy.Time.now(),
                     'bed_'+str(count),
@@ -142,7 +155,7 @@ class Bed_Gripper(object):
         cv2.waitKey(30)
        
 
-    def find_pick_region_net(self, pose, c_img, d_img, count, side):
+    def find_pick_region_net(self, pose, c_img, d_img, count, side, apply_offset=None):
         """Called during bed-making deployment w/neural network, creates a pose.
 
         It relies on the raw depth image! DO NOT PASS A PROCESSED DEPTH IMAGE!!!
@@ -159,6 +172,8 @@ class Bed_Gripper(object):
         """
         assert side in ['BOTTOM', 'TOP']
         self.side = side
+        self.apply_offset = apply_offset
+
         poses = []
         p_list = []
         x,y = pose

@@ -21,3 +21,8 @@ Notes:
   ```
 
   that way we avoid an obvious source of bias.
+
+  When we do the analytic one, we should also count how many attempts had the
+  grasp point (i.e., highest point) on the opposite side of the bed, since we do
+  _not_ use a similar cutoff for the neural networks, so we are strengthening
+  the baseline.

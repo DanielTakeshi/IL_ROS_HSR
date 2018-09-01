@@ -293,7 +293,7 @@ class BedMaker():
 
         self.record_stats(c_img, d_img_raw, data, self.side, s_predict_t, 'success')
         print("Difference between grasp and success net images: {}".format(img_diff))
-        if img_diff < 95000:
+        if img_diff < 98000:
             print("APPLYING OFFSET! (self.apply_offset = True)")
             self.apply_offset = True
         else:

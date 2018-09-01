@@ -103,11 +103,13 @@ for line in s_content:
 
 # --- Other stuff which I don't need to look at often ---
 
-# Stuff for the tensioner.
+# Stuff for the tensioner. MAX_PULLS =/= GRASP_ATTEMPTS_PER_SIDE.
 FORCE_LIMT = 20.0
 HIGH_FORCE = 20.0
 LOW_FORCE = 2.0
 MAX_PULLS = 3
+
+# For projecting a 2D pixel point into the 3D scene.
 BOX = 10
 
 # Max number of grasps to attempt _per_side_ before exiting.

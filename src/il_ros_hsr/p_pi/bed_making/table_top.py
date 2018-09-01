@@ -66,27 +66,34 @@ class TableTop():
         base.move(geometry.pose(), 500.0, ref_frame_id=label)
 
 
-    def cal_transform(self,offsets,rot = None):
+    def cal_transform(self, offsets, rot=None):
+        """
+        Make translation (L_t_trans) and rotation (L_t_rot) matrices from
+        the offsets and rotations we created wrt the AR MARKER pose. However, we
+        have to then map that back to the map frame.
+
+        This will give us a final RBT, which we return separately.
+        """
         L_t_trans = tf.transformations.translation_matrix(offsets)
-        M_t_L = np.matmul(self.M_t_A,L_t_trans)
+        M_t_L = np.matmul(self.M_t_A, L_t_trans)
 
         if not (rot is None):
             q_rot = tf.transformations.quaternion_from_euler(ai=rot[0],aj=rot[1],ak=rot[2])
             L_t_rot = tf.transformations.quaternion_matrix(q_rot)
             L_t_rot[:,3] = L_t_trans[:,3]
-            M_t_L = np.matmul(self.M_t_A,L_t_rot)
+            M_t_L = np.matmul(self.M_t_A, L_t_rot)
 
         trans = tf.transformations.translation_from_matrix(M_t_L)
         quat = tf.transformations.quaternion_from_matrix(M_t_L)
         return trans, quat
 
 
-    def make_new_pose(self,offsets,label,rot = None):
-        t,q = self.cal_transform(offsets,rot = rot)
+    def make_new_pose(self, offsets, label, rot=None):
+        t,q = self.cal_transform(offsets, rot=rot)
         pose = {}
         pose['trans'] = t
         pose['quat'] = q
-        thread.start_new_thread(self.broadcast_pose,(pose,label))
+        thread.start_new_thread(self.broadcast_pose, (pose,label))
 
 
     def calculat_ar_in_map(self, obj):
@@ -95,6 +102,9 @@ class TableTop():
         Make the frames wrt the AR marker, but need a transformation involving
         `map` because I think the latter will stay fixed throughout but the AR
         marker will move as the two stereo cameras move.
+
+        Update: no, pretty sure the AR marker should stay fixed? I think this
+        was my code where I was pretending to find the AR marker...
         """
         ar_pose = obj.get_pose(ref_frame_id = 'ar_marker/11')
         marker_pose = obj.get_pose(ref_frame_id='map')

@@ -122,7 +122,7 @@ class Bed_Gripper(object):
         #while True: 
         count = 0
         for pose in poses:
-            num_pose = pose[1]
+            num_pose = pose[1] # this is [x,y,depth]
             label = pose[0]
             td_points = self.pcm.projectPixelTo3dRay((num_pose[0],num_pose[1]))
             print("\nIn `bed_making.gripper.broadcast_poses()`")

@@ -245,9 +245,11 @@ class TableTop():
         # If this is zero, then the four corners should have y-axis that are roughly coinciding with
         # the bed's boundaries. (It's tricky for the opposite side which we can't see easily.)
         # Increase this to make corners (grasp targets) slightly outside. Also applies to the bottom
-        # frames. I think values of 0.06 or so will work...
+        # frames. I think values of 0.06 or so will work... For cal sheet it is a bit wider.
         # ------------------------------------------------------------------------------------------
-        HY_OFF = 0.06
+        HY_OFF = 0.07
+        if cfg.BLANKET == 'cal':
+            HY_OFF += 0.02
 
         # By default, the z-axis for the head_up & head_down poses will be 15cm ABOVE the actual
         # table height. Thus, add this offset to DECREASE the height (since z-axis is pointing

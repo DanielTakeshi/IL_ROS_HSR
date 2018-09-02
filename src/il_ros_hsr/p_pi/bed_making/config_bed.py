@@ -29,7 +29,7 @@ DATA_PATH    = join(ROOT_DIR, 'collect_data_bed/')
 ROLLOUT_PATH = join(DATA_PATH, 'rollouts/')
 
 # Which blanket are we using?
-BLANKET = 'white'
+BLANKET = 'cal'
 assert BLANKET in ['white', 'teal', 'cal']
 
 # Put data here for _results_, i.e., from deployment.
@@ -104,8 +104,8 @@ for line in s_content:
 # --- Other stuff which I don't need to look at often ---
 
 # Stuff for the tensioner. MAX_PULLS =/= GRASP_ATTEMPTS_PER_SIDE.
-FORCE_LIMT = 20.0
-HIGH_FORCE = 20.0
+FORCE_LIMT = 15.0
+HIGH_FORCE = 15.0
 LOW_FORCE = 2.0
 MAX_PULLS = 3
 
@@ -124,7 +124,11 @@ INS_SAMPLE = False
 # sheet but also a bit of the blue surface underneath, so there's too much force.
 # If 0.055 result in the robot 'missing' the sheet then we better adjust it
 # dynamically? (UPDATE: forget these just dynamically do it ...)
-GRIPPER_HEIGHT = 0.049
+
+GRIPPER_HEIGHT = 0.050
+if BLANKET == 'cal':
+    GRIPPER_HEIGHT += 0.003 # I think the sheet is thinner
+
 
 # TODO: we should probably have this so we know if depth is in mm or meters?
 # Right now for data preprocessing I just use 'HSR' because the code has so many

@@ -125,7 +125,7 @@ INS_SAMPLE = False
 # If 0.055 result in the robot 'missing' the sheet then we better adjust it
 # dynamically? (UPDATE: forget these just dynamically do it ...)
 
-GRIPPER_HEIGHT = 0.051
+GRIPPER_HEIGHT = 0.050
 if BLANKET == 'cal':
     GRIPPER_HEIGHT += 0.003 # I think the sheet is thinner
 

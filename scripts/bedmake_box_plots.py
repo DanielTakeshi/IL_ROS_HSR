@@ -1,7 +1,7 @@
 """Use this script for forming the box/bar plots of coverage results.
 
 We should have had another script which computes coverage. This script just
-collects the results.
+collects the results and plots.
 
 I'm thinking, since it can be tricky to describe via a legend we could just write
 down groups A, B, C, etc., and in the caption describe what those are.
@@ -20,7 +20,9 @@ from collections import defaultdict
 # ADJUST.
 # ------------------------------------------------------------------------------
 HEAD     = '/nfs/diskstation/seita/bed-make/results/'
-RESULTS  = join(HEAD, 'deploy_network')
+RESULTS  = [
+        join(HEAD, 'deploy_network'),
+]
 FIGURES  = join(HEAD, 'figures')
 BLACK    = (0, 0, 0)
 GREEN    = (0, 255, 0)
@@ -28,7 +30,6 @@ RED      = (0, 0, 255)
 WHITE    = (255, 255, 255)
 
 # Convert from file name to readable legend label
-# TODO: not using this now since we don't have the data ...
 RTYPE_TO_NAME = {
     'deploy_network': 'HSR Data Only',
 }
@@ -55,7 +56,7 @@ def convert(s):
         return s
 
 
-def bar_plot(coverage_per_data):
+def bar_plot(coverage_hsr):
     """
     See: https://matplotlib.org/gallery/statistics/barchart_demo.html
     """
@@ -63,35 +64,40 @@ def bar_plot(coverage_per_data):
     fig, ax = plt.subplots(nrows, ncols, figsize=(11*ncols,9*nrows), squeeze=False)
 
     # Two robots but have six experimental conditions for them.
-    n_groups = 6
-    groups_hsr = ['hsr_human_white',
-                  'hsr_anal_white',
-                  'hsr_only_white',
-                  'hsr_combo_white',
-                  'hsr_combo_teal',
-                  'hsr_combo_cal',]
+    # Update: do five, ignoring the case when it's trained on the network by itself.
+    n_groups = 5
+    groups_hsr = ['deploy_human',
+                  'deploy_analytic',
+                  'deploy_network_white',
+                  'deploy_network_cal',
+                  'deploy_network_teal',]
     groups_fetch = ['fetch_human_white',
                     'fetch_anal_white',
-                    'fetch_only_white',
                     'fetch_combo_white',
                     'fetch_combo_teal',
                     'fetch_combo_cal',]
 
-    means_hsr   = [np.mean(coverage_per_data[x]) for x in groups_hsr]
-    std_hsr     = [np.std(coverage_per_data[x]) for x in groups_hsr]
-    means_fetch = [np.mean(coverage_per_data[x]) for x in groups_fetch]
-    std_fetch   = [np.std(coverage_per_data[x]) for x in groups_fetch]
-
+    # Collect all data for the plots.
+    hsr_avg_start = [np.mean(coverage_hsr[x+'_start']) for x in groups_hsr]
+    hsr_std_start = [np.std(coverage_hsr[x+'_start']) for x in groups_hsr]
+    hsr_avg_final = [np.mean(coverage_hsr[x+'_final']) for x in groups_hsr]
+    hsr_std_final = [np.std(coverage_hsr[x+'_final']) for x in groups_hsr]
+    #print(hsr_avg_start)
+    #print(hsr_std_start)
+    #print(hsr_avg_final)
+    #print(hsr_std_final)
     index = np.arange(n_groups)
 
     # For plotting, we need to set ax.bar with `bar_width` offset for second group.
-    rects1 = ax[0,0].bar(index, means_hsr, bar_width, alpha=opacity, color='b',
-            yerr=std_hsr, error_kw=error_config, label='HSR')
-    rects2 = ax[0,0].bar(index+bar_width, means_fetch, bar_width, alpha=opacity, color='r',
-            yerr=std_fetch, error_kw=error_config, label='Fetch')
+    rects1 = ax[0,0].bar(index, hsr_avg_final, bar_width, alpha=opacity, color='b',
+            yerr=hsr_std_final, error_kw=error_config, label='HSR')
+    rects1 = ax[0,0].bar(index, hsr_avg_start, bar_width, alpha=opacity, color='b',
+            yerr=hsr_std_start, error_kw=error_config)
+    #rects2 = ax[0,0].bar(index+bar_width, means_fetch, bar_width, alpha=opacity, color='r',
+    #        yerr=std_fetch, error_kw=error_config, label='Fetch')
 
     # Get labeling right.
-    ax[0,0].set_xticklabels(('Human', 'Analy', 'Only', 'Comb-W', 'Comb-T', 'Comb-C'))
+    ax[0,0].set_xticklabels(('Human', 'Analy', 'Comb-W', 'Comb-C', 'Comb-T'))
 
     # Bells and whistles
     ax[0,0].set_xlabel('Group', fontsize=xsize)
@@ -100,8 +106,10 @@ def bar_plot(coverage_per_data):
     ax[0,0].set_xticks(index + bar_width / 2)
     ax[0,0].tick_params(axis='x', labelsize=tick_size)
     ax[0,0].tick_params(axis='y', labelsize=tick_size)
-    ax[0,0].set_ylim([0,100]) # it's coverage, makes sense to start from zero
     ax[0,0].legend(loc="best", ncol=1, prop={'size':legend_size})
+
+    # It's coverage, but most values are high so might not make sense to start from zero.
+    ax[0,0].set_ylim([40,100]) # tune this?
 
     plt.tight_layout()
     figname = join(FIGURES, 'plot_bars_coverage_v01.png')
@@ -113,40 +121,41 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------
     # Let's manually go through the files. If we want to compute averages, we can
     # do an `os.listdir()` and parse the file names (be CAREFUL with file names!).
+    # All of this is with the HSR. I don't have the Fetch's data, unfortunately.
     # --------------------------------------------------------------------------
+    print("Searching in path: {}".format(FIGURES))
     PATHS = sorted([x for x in os.listdir(FIGURES) if '.png' not in x])
-    coverage_per_data = defaultdict(list)
+    coverage_hsr = defaultdict(list)
 
     for result_type in PATHS:
         print("\nresult type: {}".format(result_type))
         pp = join(FIGURES, result_type)
-        images = sorted([x for x in os.listdir(pp) if 'end' in x and 'raw' not in x])
+        images_start = sorted([x for x in os.listdir(pp) if 'start' in x and 'raw' not in x])
+        images_final = sorted([x for x in os.listdir(pp) if 'end' in x and 'raw' not in x])
 
-        for i_idx,img in enumerate(images):
-            print("on image {} (index {})".format(img,i_idx))
-            img = img.replace('.png','')
-            fsplit = img.split('_')
-            coverage = convert( fsplit[-1] )
-            print("  coverage: {}".format(coverage))
-            coverage_per_data[result_type].append( coverage )
+        for i_idx,(img_s,img_f) in enumerate(zip(images_start,images_final)):
+            print("on (final) image {} (index {})".format(img_f,i_idx))
+            img_s = img_s.replace('.png','')
+            img_f = img_f.replace('.png','')
+            fsplit_s = img_s.split('_')
+            fsplit_f = img_f.split('_')
+            coverage_s = convert( fsplit_s[-1] )
+            coverage_f = convert( fsplit_f[-1] )
+            print("  coverage, start -> final: {} -> {}".format(coverage_s, coverage_f))
+            coverage_hsr[result_type+'_start'].append( coverage_s )
+            coverage_hsr[result_type+'_final'].append( coverage_f )
 
-    # add some fake data for now (TODO: have to get these lol).
-    coverage_per_data['hsr_human_white']   = [100, 90, 95, 100, 88]
-    coverage_per_data['fetch_human_white'] = [100, 90, 95, 100, 99]
+    # FAKE DATA FOR NOW, I haven't done the Teal blanket.
+    coverage_hsr['deploy_network_teal_start'].append(0.0)
+    coverage_hsr['deploy_network_teal_final'].append(0.0)
 
-    coverage_per_data['hsr_combo_white']   = [99, 98, 91, 90, 88]
-    coverage_per_data['fetch_combo_white'] = [88, 90, 85, 90, 91]
+    # Quick debugging/listing.
+    keys = sorted(list(coverage_hsr.keys()))
+    print("\nHere are the keys in `coverage_hsr`:\n{}".format(keys))
+    print("(All of these are with the HSR)\n")
+    for key in keys:
+        mean, std = np.mean(coverage_hsr[key]), np.std(coverage_hsr[key])
+        print("  coverage[{}]:\n({:.2f} \pm {:.1f})  {}".format(key, mean, std, coverage_hsr[key]))
+    print("")
 
-    coverage_per_data['hsr_combo_teal']    = [100, 90, 93, 81, 87]
-    coverage_per_data['fetch_combo_teal']  = [88, 91, 95, 93, 81]
-
-    coverage_per_data['hsr_combo_cal']     = [90, 80, 93, 91, 97]
-    coverage_per_data['fetch_combo_cal']   = [98, 81, 95, 83, 91]
-
-    coverage_per_data['hsr_only_white']    = [80, 80, 83, 81, 94]
-    coverage_per_data['fetch_only_white']  = [98, 71, 85, 93, 93]
-
-    coverage_per_data['hsr_anal_white']    = [50, 60, 70, 80, 81]
-    coverage_per_data['fetch_anal_white']  = [55, 59, 66, 77, 81]
-
-    bar_plot(coverage_per_data)
+    bar_plot(coverage_hsr)

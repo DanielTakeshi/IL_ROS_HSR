@@ -254,8 +254,10 @@ class Bed_Gripper(object):
     def execute_grasp(self, cards, whole_body, direction):
         """ Executes grasp. Move to pose, squeeze, pull (w/tension), open. """
         whole_body.end_effector_frame = 'hand_palm_link'
-        #self.whole_body.move_to_neutral()
+
+        # Hmmm ... might help with frequent table bumping?
         #whole_body.linear_weight = 99.0
+
         whole_body.move_end_effector_pose(geometry.pose(),cards[0])
         self.com.grip_squeeze(self.gripper)
         self.tension.force_pull(whole_body,direction)

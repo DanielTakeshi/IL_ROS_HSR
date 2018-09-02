@@ -134,6 +134,9 @@ class BedMaker():
         # For evaluating coverage.
         self.img_start = None
         self.img_final = None
+        self.img_start2 = None
+        self.img_final2 = None
+
 
         # For grasp offsets.
         self.apply_offset = False
@@ -142,13 +145,19 @@ class BedMaker():
     def bed_make(self):
         """Runs the pipeline for deployment, testing out bed-making.
         """
-        # Get the starting image (from USB webcam).
+        # Get the starting image (from USB webcam). Try a second as well.
         cap = cv2.VideoCapture(0)
         frame = None
         while frame is None:
             ret, frame = cap.read()
+            cv2.waitKey(50)
         self.image_start = frame
         cv2.imwrite('image_start.png', self.image_start)
+
+        _, frame = cap.read()
+        self.image_start2 = frame
+        cv2.imwrite('image_start2.png', self.image_start2)
+
         cap.release()
         print("NOTE! Recorded `image_start` for coverage evaluation. Was it set up?")
 
@@ -290,8 +299,9 @@ class BedMaker():
         d_img_raw   = result['d_img_raw']
         s_predict_t = result['s_predict_t']
         img_diff    = result['diff_l2']
-
         self.record_stats(c_img, d_img_raw, data, self.side, s_predict_t, 'success')
+
+        # We really need a better metric, such as 'structural similarity'.
         print("Difference between grasp and success net images: {}".format(img_diff))
         if img_diff < 98000:
             print("APPLYING OFFSET! (self.apply_offset = True)")
@@ -347,6 +357,11 @@ class BedMaker():
             ret, frame = cap.read()
         self.image_final = frame
         cv2.imwrite('image_final.png', self.image_final)
+
+        _, frame = cap.read()
+        self.image_final2 = frame
+        cv2.imwrite('image_final2.png', self.image_final2)
+
         cap.release()
         print("NOTE! Recorded `image_final` for coverage evaluation.")
 
@@ -354,6 +369,8 @@ class BedMaker():
         final_stuff = {
             'image_start': self.image_start,
             'image_final': self.image_final,
+            'image_start2': self.image_start2,
+            'image_final2': self.image_final2,
             'grasp_times': self.g_time_stats,
             'move_times': self.move_time_stats,
         }

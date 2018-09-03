@@ -14,13 +14,10 @@ from fast_grasp_detect.data_aug.depth_preprocess import datum_to_net_dim
 from collections import defaultdict
 
 # ------------------------------------------------------------------------------
-# ADJUST. HH is directory like: 'grasp_1_img_depth_opt_adam_lr_0.0001_{etc...}'
+# ADJUST.
 # ------------------------------------------------------------------------------
-HEAD = '/nfs/diskstation/seita/bed-make/results/'
-RESULTS = join(HEAD, 'deploy_network')
-FIGURES = join(HEAD, 'figures')
+RESULTS = '/nfs/diskstation/seita/bed-make/results/'
 
-# For the plot(s). There are a few plot-specific parameters, though.
 tsize = 30
 xsize = 25
 ysize = 25
@@ -33,91 +30,105 @@ error_fc = 'blue'
 # ------------------------------------------------------------------------------
 
 
-def analyze_time(stats):
-    """For analyzing time. These should be in seconds unless otherwise stated.
-    """
-    # Robot motion to another side. Very slow. Should include both sides.
+if __name__ == "__main__":
+    print("Searching in path: {}".format(RESULTS))
+    PATHS = sorted(
+        [join(RESULTS,x) for x in os.listdir(RESULTS) 
+         if 'deploy_' in x and 'old' not in x]
+    )
+    print("Looking at these paths:")
+    for item in PATHS:
+        print('  '+item)
+    print("")
+
+    # Move times, should be pretty slow. Measured for all.
     move_t = []
-    for stats_l in stats['move_times']:
-        for tt in stats_l:
-            move_t.append(tt)
+
+    # Robot grasp execution. Also slow, can be highly variable, measured for all.
+    grasp_t = []
+
+    # Now times for grasping and success net. These are quick. Only for networks.
+    # Actually for now, I just combine them.
+    grasp_net_t = []
+    success_net_t = []
+ 
+    for pth in PATHS:
+        # The `pth` is `deploy_network_white`, `deploy_human`, etc.
+        print("\n=========================================================================")
+        print("Now on: {}".format(pth))
+        rollouts = sorted([join(pth,x) for x in os.listdir(pth) if 'results_rollout' in x])
+        if len(rollouts) == 0:
+            print("len(rollouts) == 0, thus skipping this ...")
+            continue
+
+        stats = defaultdict(list)
+        num_grasps = []
+
+        for r_idx,rollout_pfile in enumerate(rollouts):
+            with open(rollout_pfile, 'r') as f:
+                data = pickle.load(f)
+
+            # All items except last one should reflect some grasp or success nets.
+            # We know the final dict has some useful stuff in it for timing.
+
+            final_dict = data[-1]
+            assert 'move_times' in final_dict and 'grasp_times' in final_dict \
+                    and 'image_start' in final_dict and 'image_final' in final_dict
+            stats['move_times'].append( final_dict['move_times'] )
+            stats['grasp_times'].append( final_dict['grasp_times'] )
+
+            # Debugging
+            gtimes = final_dict['grasp_times']
+            mtimes = final_dict['move_times']
+            print("{}".format(rollout_pfile))
+            print("    g-times:  {}".format(np.array(gtimes)))
+            print("    m-times:  {}".format(np.array(mtimes)))
+            num_grasps.append( len(gtimes) )
+
+            # Add statistics about grasping times.
+            if '_network_' in pth:
+                g_net = []
+                s_net = []
+
+                # Go up to the last one, which has the timing data we just collected.
+                # Here we are only interested in the network forward pass times.
+                for i,datum in enumerate(data[:-1]):
+                    if datum['type'] == 'grasp':
+                        grasp_net_t.append( datum['g_net_time'] )
+                        g_net.append( datum['g_net_time'] )
+                    else:
+                        assert datum['type'] == 'success'
+                        success_net_t.append( datum['s_net_time'] )
+                        s_net.append( datum['s_net_time'] )
+
+                print("    g-net-times:  {}".format(np.array(g_net)))
+                print("    s-net-times:  {}".format(np.array(s_net)))
+
+        print("num grasps: {:.1f} \pm {:.1f}".format(np.mean(num_grasps),np.std(num_grasps)))
+
+        # Add these to the global lists.
+        for stats_l in stats['move_times']:
+            for tt in stats_l:
+                move_t.append(tt)
+        for stats_l in stats['grasp_times']:
+            for tt in stats_l:
+                grasp_t.append(tt)
+
+    # Analyze the statistics globally.
+    print("\n================== NOW RELEVANT STATISTICS ==================")
+
     print("\nTimes for moving to other side, length: {}".format(len(move_t)))
     print("{:.3f}\pm {:.1f}".format(np.mean(move_t), np.std(move_t)))
 
-    # Robot grasp execution. Also slow, can be highly variable.
-    grasp_t = []
-    for stats_l in stats['grasp_times']:
-        for tt in stats_l:
-            grasp_t.append(tt)
     print("\nTimes for executing grasps, length: {}".format(len(grasp_t)))
     print("{:.3f}\pm {:.1f}".format(np.mean(grasp_t), np.std(grasp_t)))
 
-    # Now times for grasping and success net. These are quick.
-    grasp_net_t = []
-    success_net_t = []
-    lengths = []
-    idx = 0
-    key = 'result_{}'.format(idx)
+    print("\nTimes for neural net forward pass")
+    print("len(grasp): {}".format(len(grasp_net_t)))
+    print("len(success): {}".format(len(success_net_t)))
 
-    while key in stats:
-        # ----------------------------------------------------------------------
-        # Analyze one rollout (i.e., `stats[key]`) at a time.
-        # This is a list, where at each index, result[i] is a dict w/relevant
-        # info. Also, I ignore the last `final_dict` for this purpose.
-        # ----------------------------------------------------------------------
-        result = (stats[key])[:-1]
-
-        for i,info in enumerate(result):
-            if result[i]['type'] == 'grasp':
-                grasp_net_t.append( result[i]['g_net_time'] )
-            else:
-                assert result[i]['type'] == 'success'
-                success_net_t.append( result[i]['s_net_time'] )
-        idx += 1
-        key = 'result_{}'.format(idx)
-        lengths.append(len(result))
-    assert len(grasp_net_t) == len(grasp_net_t)
-
-    # For the grasp/success nets, if they're the same architecture, prob combine them
-    grasp_net_t = np.array(grasp_net_t)
-    success_net_t = np.array(success_net_t)
-    print("\ngrasp_net_t.shape: {}".format(grasp_net_t.shape))
     print("{:.3f}\pm {:.1f}".format(np.mean(grasp_net_t), np.std(grasp_net_t)))
-    print("\nsuccess_net_t.shape: {}".format(success_net_t.shape))
     print("{:.3f}\pm {:.1f}".format(np.mean(success_net_t), np.std(success_net_t)))
-    all_net_t = np.concatenate((grasp_net_t,success_net_t))
-    print("\nboth networks, data shape: {}".format(all_net_t.shape))
-    print("{:.3f}\pm {:.1f}".format(np.mean(all_net_t), np.std(all_net_t)))
-
-    # Another thing, trajectory _lengths_.
-    print("\nlengths.mean(): {}".format(np.mean(lengths)))
-    print("lengths.std():  {}".format(np.std(lengths)))
-    print("lengths.min():  {}".format(np.min(lengths)))
-    print("lengths.max():  {}".format(np.max(lengths)))
-
-
-if __name__ == "__main__":
-    p_files = sorted([join(RESULTS,x) for x in os.listdir(RESULTS) if 'results_rollout' in x])
-
-    # stuff info here for plotting, etc.
-    stats = defaultdict(list)
-
-    for p_idx, p_file in enumerate(p_files):
-        with open(p_file, 'r') as f:
-            data = pickle.load(f)
-        print("\n==============================================================")
-        print("loaded file #{} at {}".format(p_idx, p_file))
-
-        # All items except last one should reflect some grasp or success nets.
-        # Actually let's pass in the full data, and ignore the last one elsewhere.
-        key = 'result_{}'.format(p_idx)
-        stats[key] = data
-       
-        # We know the final dict has some useful stuff in it
-        final_dict = data[-1]
-        assert 'move_times' in final_dict and 'grasp_times' in final_dict \
-                and 'final_c_img' in final_dict
-        stats['move_times'].append( final_dict['move_times'] )
-        stats['grasp_times'].append( final_dict['grasp_times'] )
-
-    analyze_time(stats)
+    combo = np.concatenate((grasp_net_t,success_net_t))
+    print("The combined version, with numpy shape {}".format(combo.shape))
+    print("{:.3f}\pm {:.1f}".format(np.mean(combo), np.std(combo)))

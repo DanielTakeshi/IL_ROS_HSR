@@ -299,11 +299,16 @@ class BedMaker():
         d_img_raw   = result['d_img_raw']
         s_predict_t = result['s_predict_t']
         img_diff    = result['diff_l2']
+        img_ssim    = result['diff_ssim']
         self.record_stats(c_img, d_img_raw, data, self.side, s_predict_t, 'success')
 
         # We really need a better metric, such as 'structural similarity'.
-        print("Difference between grasp and success net images: {}".format(img_diff))
-        if img_diff < 98000:
+        # Edit: well, it's probably marginally better, I think.
+        # I use an L2 threshold of 98k, and an SSIM threshold of 0.88.
+
+        print("L2 and SSIM btwn grasp & next image: {:.1f} and {:.3f}".format(
+                img_diff, img_ssim))
+        if img_ssim > 0.88:
             print("APPLYING OFFSET! (self.apply_offset = True)")
             self.apply_offset = True
         else:

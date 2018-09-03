@@ -7,6 +7,7 @@ from il_ros_hsr.p_pi.bed_making.table_top import TableTop
 from il_ros_hsr.core.sensors import  RGBD
 from fast_grasp_detect.detectors.tran_detector import SDetector
 from fast_grasp_detect.data_aug.depth_preprocess import depth_to_net_dim
+from skimage.measure import compare_ssim
 
 
 class Success_Net:
@@ -75,6 +76,7 @@ class Success_Net:
 
         # NEW! Can also tell us the difference between grasp and success imgs.
         diff = np.linalg.norm( old_grasp_image - img )
+        score = compare_ssim( old_grasp_image[:,:,0], img[:,:,0] )
 
         result = {
             'success': success,
@@ -84,6 +86,7 @@ class Success_Net:
             'd_img_raw': d_img_raw,
             's_predict_t': s_predict_t,
             'diff_l2': diff,
+            'diff_ssim': score,
         }
         return result
 

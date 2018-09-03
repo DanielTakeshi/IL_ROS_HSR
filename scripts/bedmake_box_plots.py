@@ -114,7 +114,7 @@ def bar_plot(coverage_hsr):
 
     # Bells and whistles
     ax[0,0].set_xlabel('Initial and Final Coverage Per Group (Mean +/- Std)', fontsize=xsize)
-    ax[0,0].set_ylabel('Final Table Top Coverage', fontsize=ysize)
+    ax[0,0].set_ylabel('Blanket Coverage', fontsize=ysize)
     ax[0,0].set_title('HSR and Fetch Coverage Results', fontsize=tsize)
     ax[0,0].set_xticks(index + bar_width / 2)
     ax[0,0].tick_params(axis='x', labelsize=tick_size)
@@ -168,7 +168,8 @@ if __name__ == "__main__":
     print("(All of these are with the HSR)\n")
     for key in keys:
         mean, std = np.mean(coverage_hsr[key]), np.std(coverage_hsr[key])
-        print("  coverage[{}]:\n({:.2f} \pm {:.1f})  {}".format(key, mean, std, coverage_hsr[key]))
+        print("  coverage[{}], len {}\n({:.2f} \pm {:.1f})  {}".format(key,
+                len(coverage_hsr[key]), mean, std, coverage_hsr[key]))
     print("")
 
     bar_plot(coverage_hsr)

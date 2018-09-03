@@ -36,9 +36,9 @@ RTYPE_TO_NAME = {
 
 # Other matplotlib
 tsize = 35
-xsize = 30
-ysize = 30
-tick_size = 25
+xsize = 28
+ysize = 28
+tick_size = 22
 legend_size = 30
 
 # For bar chart in particular
@@ -86,6 +86,7 @@ def bar_plot(coverage_hsr):
     #print(hsr_std_start)
     #print(hsr_avg_final)
     #print(hsr_std_final)
+    #sys.exit()
     index = np.arange(n_groups)
 
     # For plotting, we need to set ax.bar with `bar_width` offset for second group.
@@ -97,10 +98,22 @@ def bar_plot(coverage_hsr):
     #        yerr=std_fetch, error_kw=error_config, label='Fetch')
 
     # Get labeling right.
-    ax[0,0].set_xticklabels(('Human', 'Analy', 'Comb-W', 'Comb-C', 'Comb-T'))
+    ax[0,0].set_xticklabels(
+        ('Human\n{:.1f} +/- {:.1f}'.format(
+                hsr_avg_final[0], hsr_std_final[0]),
+         'Analytic\n{:.1f} +/- {:.1f}'.format(
+                hsr_avg_final[1], hsr_std_final[1]),
+         'Combo-W\n{:.1f} +/- {:.1f}'.format(
+                hsr_avg_final[2], hsr_std_final[2]),
+         'Combo-C\n{:.1f} +/- {:.1f}'.format(
+                hsr_avg_final[3], hsr_std_final[3]),
+         'Combo-T\n{:.1f} +/- {:.1f}'.format(
+                hsr_avg_final[4], hsr_std_final[4]),
+        )
+    )
 
     # Bells and whistles
-    ax[0,0].set_xlabel('Group', fontsize=xsize)
+    ax[0,0].set_xlabel('Initial and Final Coverage Per Group (Mean +/- Std)', fontsize=xsize)
     ax[0,0].set_ylabel('Final Table Top Coverage', fontsize=ysize)
     ax[0,0].set_title('HSR and Fetch Coverage Results', fontsize=tsize)
     ax[0,0].set_xticks(index + bar_width / 2)

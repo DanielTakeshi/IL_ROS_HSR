@@ -28,8 +28,8 @@ DATA_TO_LISTS = {
         'grasp_4_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_4000_cv_True',
     ],
     'cache_combo_v01': [
-        'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_6000_cv_True',
-        'grasp_4_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_6000_cv_True',
+        'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_8000_cv_True',
+        'grasp_4_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_8000_cv_True',
     ],
 }
 

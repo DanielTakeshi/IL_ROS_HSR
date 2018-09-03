@@ -99,22 +99,22 @@ def bar_plot(coverage_hsr):
 
     # Get labeling right.
     ax[0,0].set_xticklabels(
-        ('Human\n{:.1f} +/- {:.1f}'.format(
+        ('Human-S-W\n{:.1f} +/- {:.1f}'.format(
                 hsr_avg_final[0], hsr_std_final[0]),
-         'Analytic\n{:.1f} +/- {:.1f}'.format(
+         'Analy-S-W\n{:.1f} +/- {:.1f}'.format(
                 hsr_avg_final[1], hsr_std_final[1]),
-         'Combo-W\n{:.1f} +/- {:.1f}'.format(
+         'Net-S-W\n{:.1f} +/- {:.1f}'.format(
                 hsr_avg_final[2], hsr_std_final[2]),
-         'Combo-C\n{:.1f} +/- {:.1f}'.format(
+         'Net-S-C\n{:.1f} +/- {:.1f}'.format(
                 hsr_avg_final[3], hsr_std_final[3]),
-         'Combo-T\n{:.1f} +/- {:.1f}'.format(
+         'Net-S-T\n{:.1f} +/- {:.1f}'.format(
                 hsr_avg_final[4], hsr_std_final[4]),
         )
     )
 
     # Bells and whistles
     ax[0,0].set_xlabel('Initial and Final Coverage Per Group (Mean +/- Std)', fontsize=xsize)
-    ax[0,0].set_ylabel('Blanket Coverage', fontsize=ysize)
+    ax[0,0].set_ylabel('Coverage', fontsize=ysize)
     ax[0,0].set_title('HSR and Fetch Coverage Results', fontsize=tsize)
     ax[0,0].set_xticks(index + bar_width / 2)
     ax[0,0].tick_params(axis='x', labelsize=tick_size)

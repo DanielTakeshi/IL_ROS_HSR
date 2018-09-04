@@ -99,15 +99,15 @@ def bar_plot(coverage_hsr):
 
     # Get labeling right.
     ax[0,0].set_xticklabels(
-        ('Human-S-W\n{:.1f} +/- {:.1f}'.format(
+        ('Human\n{:.1f} +/- {:.1f}'.format(
                 hsr_avg_final[0], hsr_std_final[0]),
-         'Analy-S-W\n{:.1f} +/- {:.1f}'.format(
+         'Analytic\n{:.1f} +/- {:.1f}'.format(
                 hsr_avg_final[1], hsr_std_final[1]),
-         'Net-S-W\n{:.1f} +/- {:.1f}'.format(
+         'Net-W\n{:.1f} +/- {:.1f}'.format(
                 hsr_avg_final[2], hsr_std_final[2]),
-         'Net-S-C\n{:.1f} +/- {:.1f}'.format(
+         'Net-C\n{:.1f} +/- {:.1f}'.format(
                 hsr_avg_final[3], hsr_std_final[3]),
-         'Net-S-T\n{:.1f} +/- {:.1f}'.format(
+         'Net-T\n{:.1f} +/- {:.1f}'.format(
                 hsr_avg_final[4], hsr_std_final[4]),
         )
     )
@@ -157,10 +157,6 @@ if __name__ == "__main__":
             print("  coverage, start -> final: {} -> {}".format(coverage_s, coverage_f))
             coverage_hsr[result_type+'_start'].append( coverage_s )
             coverage_hsr[result_type+'_final'].append( coverage_f )
-
-    # FAKE DATA FOR NOW, I haven't done the Teal blanket.
-    coverage_hsr['deploy_network_teal_start'].append(0.0)
-    coverage_hsr['deploy_network_teal_final'].append(0.0)
 
     # Quick debugging/listing.
     keys = sorted(list(coverage_hsr.keys()))

@@ -29,7 +29,7 @@ DATA_PATH    = join(ROOT_DIR, 'collect_data_bed/')
 ROLLOUT_PATH = join(DATA_PATH, 'rollouts/')
 
 # Which blanket are we using?
-BLANKET = 'white'
+BLANKET = 'teal'
 assert BLANKET in ['white', 'teal', 'cal']
 
 # Put data here for _results_, i.e., from deployment.

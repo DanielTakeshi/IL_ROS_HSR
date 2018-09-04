@@ -43,7 +43,7 @@ class Success_Net:
         """Shared code for calling the success network.
 
         For the timing, avoid counting the time for processing images.
-        
+
         Returns dictionary with a bunch of info for later.
         """
         self.whole_body.move_to_joint_positions({'arm_flex_joint': -np.pi/16.0})

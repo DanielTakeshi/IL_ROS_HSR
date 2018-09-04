@@ -107,7 +107,7 @@ class BedMaker():
             self.g_detector = Analytic_Grasp() # TODO not implemented!
         elif args.g_type == 'human':
             print("Using a human, don't need to have a `g_detector`. :-)")
-        
+
         if DEBUG:
             self._test_variables()
             print("\nnow making success net")
@@ -223,10 +223,10 @@ class BedMaker():
                     data = self.g_detector.predict(policy_input)
                 elif args.g_type == 'analytic':
                     data_all = self.wl.label_image(policy_input)
-                    data = get_pose(data_all) 
+                    data = get_pose(data_all)
                 elif args.g_type == 'human':
                     data_all = self.wl.label_image(policy_input)
-                    data = get_pose(data_all) 
+                    data = get_pose(data_all)
                 egraspt = time.time()
 
                 g_predict_t = egraspt - sgraspt
@@ -282,7 +282,7 @@ class BedMaker():
         compare the difference. Well, technically the `policy_input` so it can
         handle either case.
         """
-        use_d = BED_CFG.GRASP_CONFIG.USE_DEPTH
+        use_d = BED_CFG.SUCC_CONFIG.USE_DEPTH
         if self.side == "BOTTOM":
             result = self.sn.check_bottom_success(use_d, old_grasp_image)
             self.b_grasp_count += 1
@@ -306,14 +306,18 @@ class BedMaker():
         # Edit: well, it's probably marginally better, I think.
         # I use an L2 threshold of 98k, and an SSIM threshold of 0.88.
 
-        print("L2 and SSIM btwn grasp & next image: {:.1f} and {:.3f}".format(
-                img_diff, img_ssim))
-        if img_ssim > 0.88:
-            print("APPLYING OFFSET! (self.apply_offset = True)")
-            self.apply_offset = True
+        if BED_CFG.GRASP_CONFIG.USE_DEPTH != BED_CFG.SUCC_CONFIG.USE_DEPTH:
+            print("grasp vs success for using depth differ")
+            print("for now we'll ignore the offset issue.")
         else:
-            print("no offset applied (self.apply_offset = False)")
-            self.apply_offset = False
+            print("L2 and SSIM btwn grasp & next image: {:.1f} and {:.3f}".format(
+                    img_diff, img_ssim))
+            if img_ssim > 0.88:
+                print("APPLYING OFFSET! (self.apply_offset = True)")
+                self.apply_offset = True
+            else:
+                print("no offset applied (self.apply_offset = False)")
+                self.apply_offset = False
 
         # Have user confirm that this makes sense.
         caption = "Success net saw this and thought: {}. Press any key".format(success)
@@ -389,7 +393,7 @@ class BedMaker():
 
     def record_stats(self, c_img, d_img, data, side, time, typ):
         """Adds a dictionary to the `rollout_stats` list.
-        
+
         We can tell it's a 'net' thing due to 'net_pose' and 'net_succ' keys.
         """
         assert side in ['BOTTOM', 'TOP']
@@ -411,7 +415,7 @@ class BedMaker():
 
     def position_head(self):
         """Position head for a grasp.
-        
+
         Use lower_start_tmp so HSR looks 'sideways'; thus, hand is not in the way.
         """
         self.whole_body.move_to_go()
@@ -437,7 +441,7 @@ class BedMaker():
 
     def move_to_start(self):
         """Assumes we're at the top and we go back to the start.
-        
+
         Go to lower_start_tmp to be at the same view as we started with, so that
         we take a c_img and compare coverage.
         """

@@ -122,18 +122,18 @@ def bar_plots(coverage_hsr):
 def bar_plots_v2(coverage_hsr):
     """I split into two so that the second one is for transfer.
     """
-    nrows, ncols = 1, 2
-    fig, ax = plt.subplots(nrows, ncols, squeeze=False,
-            figsize=(13*ncols,9*nrows),
-            gridspec_kw={'width_ratios':[0.6, 0.4]}
-    )
-
     # Two robots but have six experimental conditions for them.
     # Update: do five, ignoring the case when it's trained on the network by itself.
     n_groups_1 = 6
-    n_groups_2 = 4
+    n_groups_2 = 5
     index_1 = np.arange(n_groups_1)
     index_2 = np.arange(n_groups_2)
+
+    nrows, ncols = 1, 2
+    fig, ax = plt.subplots(nrows, ncols, squeeze=False,
+            figsize=(13*ncols,9*nrows),
+            gridspec_kw={'width_ratios':[n_groups_1, n_groups_2]}
+    )
 
     # These are all with the white blanket.
     groups_hsr_1 = ['deploy_human',
@@ -147,9 +147,10 @@ def bar_plots_v2(coverage_hsr):
 
     # The HSR also did some transfer learning. And trained with RGB.
     groups_hsr_2 = ['deploy_network_cal',
+                    'deploy_network_cal_rgb',
                     'deploy_network_teal',
-                    'deploy_network_rgb_white',
-                    'deploy_network_rgb_cal']
+                    'deploy_network_teal_rgb',
+                    'deploy_network_white_rgb',]
 
     # Collect all data for the plots.
     hsr_avg_start_1 = [np.mean(coverage_hsr[x+'_start']) for x in groups_hsr_1]
@@ -163,10 +164,10 @@ def bar_plots_v2(coverage_hsr):
     fetch_std_start = [0, 0, 0]
     fetch_avg_final = [50, 50, 50]
     fetch_std_final = [0, 0, 0]
-    coverage_hsr['deploy_network_rgb_white_start'] = [50, 50, 50]
-    coverage_hsr['deploy_network_rgb_white_final'] = [50, 50, 50]
-    coverage_hsr['deploy_network_rgb_cal_start'] = [50, 50, 50]
-    coverage_hsr['deploy_network_rgb_cal_final'] = [50, 50, 50]
+    coverage_hsr['deploy_network_white_rgb_start'] = [50, 50, 50]
+    coverage_hsr['deploy_network_white_rgb_final'] = [50, 50, 50]
+    coverage_hsr['deploy_network_cal_rgb_start'] = [50, 50, 50]
+    coverage_hsr['deploy_network_cal_rgb_final'] = [50, 50, 50]
     # --- end of fake data ---
 
     hsr_avg_start_2 = [np.mean(coverage_hsr[x+'_start']) for x in groups_hsr_2]
@@ -258,15 +259,17 @@ def bar_plots_v2(coverage_hsr):
 
     # For second subplot. The start/end shouldn't matter.
     len1 = len(coverage_hsr['deploy_network_cal_start'])
-    len2 = len(coverage_hsr['deploy_network_teal_start'])
-    len3 = 0 #len(coverage_hsr['deploy_network_rgb_white_start'])
-    len4 = 0 #len(coverage_hsr['deploy_network_rgb_cal_start'])
+    len2 = 0 #len(coverage_hsr['deploy_network_cal_rgb_start'])
+    len3 = len(coverage_hsr['deploy_network_teal_start'])
+    len4 = len(coverage_hsr['deploy_network_teal_rgb_start'])
+    len5 = 0 #len(coverage_hsr['deploy_network_white_rgb_start'])
 
     ax[0,1].set_xticklabels(
         ('Net-Cal\n{:.1f} +/- {:.1f}\n{} Rollouts'.format(  hsr_avg_final_2[0], hsr_std_final_2[0], len1),
-         'Net-Teal\n{:.1f} +/- {:.1f}\n{} Rollouts'.format( hsr_avg_final_2[1], hsr_std_final_2[1], len2),
-         'RGB-White\n{:.1f} +/- {:.1f}\n{} Rollouts'.format(hsr_avg_final_2[2], hsr_std_final_2[2], len3),
-         'RGB-Cal\n{:.1f} +/- {:.1f}\n{} Rollouts'.format(  hsr_avg_final_2[3], hsr_std_final_2[3], len4),
+         'RGB-Cal\n{:.1f} +/- {:.1f}\n{} Rollouts'.format(  hsr_avg_final_2[1], hsr_std_final_2[1], len2),
+         'Net-Teal\n{:.1f} +/- {:.1f}\n{} Rollouts'.format( hsr_avg_final_2[2], hsr_std_final_2[2], len3),
+         'RGB-Teal\n{:.1f} +/- {:.1f}\n{} Rollouts'.format( hsr_avg_final_2[3], hsr_std_final_2[3], len4),
+         'RGB-White\n{:.1f} +/- {:.1f}\n{} Rollouts'.format(hsr_avg_final_2[4], hsr_std_final_2[4], len5),
         )
     )
 
@@ -276,8 +279,8 @@ def bar_plots_v2(coverage_hsr):
 
     # Bells and whistles
     for i in range(2):
-        ax[0,i].set_ylabel('Coverage', fontsize=ysize)
-        ax[0,i].set_xlabel('Initial and Final Coverage Per Group (Mean +/- Std)', fontsize=xsize)
+        ax[0,i].set_ylabel('Coverage (Mean +/- Std)', fontsize=ysize)
+        ax[0,i].set_xlabel('Experimental Condition', fontsize=xsize)
         ax[0,i].tick_params(axis='x', labelsize=tick_size)
         ax[0,i].tick_params(axis='y', labelsize=tick_size)
         ax[0,i].legend(loc="best", ncol=2, prop={'size':legend_size})

@@ -36,7 +36,7 @@ tsize = 35
 xsize = 28
 ysize = 28
 tick_size = 22
-legend_size = 30
+legend_size = 28
 
 # For bar chart in particular
 bar_width = 0.35

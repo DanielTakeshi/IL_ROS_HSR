@@ -18,7 +18,7 @@ from fast_grasp_detect.data_aug.data_augment import augment_data
 HEAD = '/nfs/diskstation/seita/bed-make/'
 DATA_TO_COMBINE_NOHEAD = ['cache_d_v01_success', 'cache_h_v03_success']
 DATA_TO_COMBINE = [join(HEAD, x) for x in DATA_TO_COMBINE_NOHEAD]
-OUT_PATH = join(HEAD, 'cache_combo_v01_success')
+OUT_PATH = join(HEAD, 'cache_combo_v01_success_tmp')
 
 for item in DATA_TO_COMBINE:
     assert 'cache_' in item
@@ -44,11 +44,19 @@ for fidx, (files, dhead, dtail) in enumerate(zip(FILES, DATA_TO_COMBINE, DATA_TO
         full_pkl_file = join(dhead, pkl_file)
         data = pickle.load(open(full_pkl_file,'rb'))
         print("    loaded: {} (has len {})".format(full_pkl_file, len(data)))
-        for datum in data:
+        for didx,datum in enumerate(data):
             assert 'c_img' in datum and 'd_img' in datum and 'type' in datum \
                     and 'class' in datum, "here are keys: {}".format(datum.keys())
             datum['data_source'] = dtail
             data_points.append(datum)
+
+            # temporary sticking here for saving images. bleh
+            # comment these sequences of lines if I dont' need them
+            img_name1 = 'tmp/{}_{}_{}_d_img.png'.format(fidx, pkl_file, didx)
+            img_name2 = 'tmp/{}_{}_{}_r_img.png'.format(fidx, pkl_file, didx)
+            cv2.imwrite(img_name1, datum['d_img'])
+            cv2.imwrite(img_name2, datum['c_img'])
+
         print("    finished this pickle file, len(data_points): {}".format(len(data_points)))
 
 # ----------------------------------------------------------------------------------------

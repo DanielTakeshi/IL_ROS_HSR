@@ -22,11 +22,21 @@ def inspect(roll_path, fighead):
         print("On: {}".format(roll))
         with open(roll, 'r') as f:
             data = pickle.load(f)
+
         rgb   = data[0]['c_img']
         depth = depth_to_net_dim( data[0]['d_img'], robot='HSR' )
-
         f_rgb   = '{}_rgb.png'.format(idx)
         f_depth = '{}_depth.png'.format(idx)
+        out1 = join(fighead, f_rgb)
+        out2 = join(fighead, f_depth)
+        cv2.imwrite(out1, rgb)
+        cv2.imwrite(out2, depth)
+
+        # also do the next one ...
+        rgb   = data[-2]['c_img']
+        depth = depth_to_net_dim( data[-2]['d_img'], robot='HSR' )
+        f_rgb   = '{}_next_rgb.png'.format(idx)
+        f_depth = '{}_next_depth.png'.format(idx)
         out1 = join(fighead, f_rgb)
         out2 = join(fighead, f_depth)
         cv2.imwrite(out1, rgb)

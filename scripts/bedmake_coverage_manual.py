@@ -222,8 +222,8 @@ if __name__ == "__main__":
     #sys.exit()
 
     print("\nFor now we focus on the first and last c_img\n")
-    image_start = data[-1]['image_start2']  # or do image_start2
-    image_final = data[-1]['image_final2']  # or do image_final2
+    image_start = data[-1]['image_start']  # or do image_start2
+    image_final = data[-1]['image_final']  # or do image_final2
     #c_img_start = data[0]['c_img']
     #c_img_end_t = data[-2]['c_img']
     #c_img_end_s = data[-1]['final_c_img']

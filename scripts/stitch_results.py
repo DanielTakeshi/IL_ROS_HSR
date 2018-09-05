@@ -18,11 +18,10 @@ from collections import defaultdict
 # We'll just put the figure in the same directory this code is called.
 # ------------------------------------------------------------------------------
 HEAD = '/nfs/diskstation/seita/bed-make/'
-DATA_NAME = 'cache_d_v01'
+DATA_NAME = 'cache_combo_v01'
 HH_LIST = [
-    'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_cv_True',
-    'grasp_3_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_cv_True',
-    #'grasp_3_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_cv_True_init_TrNorm',
+    'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_8000_cv_True',
+    'grasp_4_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_8000_cv_True',
 ]
 
 RESULTS_PATHS = []
@@ -35,7 +34,6 @@ for HH  in HH_LIST:
 NAMES = [
     'YOLO Pre-Trained',
     'Augmented AlexNet', # xavier + ReLU
-    #'Augmented AlexNet TrNorm+LReLU',
 ]
 assert len(NAMES) == len(HH_LIST)
 
@@ -59,11 +57,13 @@ LOSS_YLIMS = [
 # ------------------------------------------------------------------------------
 
 
-def make_plot_pixel_only(ss_list):
-    """Make plot (w/subplots) of pixel losses only.
+def make_plot_pixel_only(ss_list, with_min_value):
+    """Make plot (w/subplots) of pixel losses only, hopefully for the final paper.
 
-    Hopefully this will be in the final paper.
-    Adjust the 'names' for legends. Look at `HH_LIST` to see what the labels should be.
+    Adjust the 'names' for legends. Look at `HH_LIST` to see the labels.
+    This can go in an appendix to overlay performance of different methods.
+    But in the main part of the paper, we might just do only one curve of
+    the architecture we actually use.
     """
     nrows, ncols = 1, 1
     fig, ax = plt.subplots(nrows, ncols, figsize=(10*ncols,8*nrows), squeeze=False)
@@ -92,13 +92,15 @@ def make_plot_pixel_only(ss_list):
         mean_scaled = np.mean(all_test, axis=0)
         std_scaled  = np.std(all_test, axis=0)
 
-        label_raw  = '{}; min {:.1f}'.format(name, np.min(mean_raw))
+        label_raw  = '{}'.format(name)
+        if with_min_value:
+            label_raw  = '{}; min {:.1f}'.format(name, np.min(mean_raw))
         ax[0,0].plot(xs, mean_raw, lw=2, color=colors[idx], label=label_raw)
         ax[0,0].fill_between(xs, mean_raw-std_raw, mean_raw+std_raw,
                 alpha=error_alpha, facecolor=colors[idx])
 
     # Bells and whistles
-    ax[0,0].set_ylim([0,100]) # TUNE !!
+    ax[0,0].set_ylim([0,90]) # TUNE !!
     ax[0,0].legend(loc="best", ncol=1, prop={'size':legend_size})
     ax[0,0].set_xlabel('Training Epochs Over Augmented Data', fontsize=xsize)
     ax[0,0].tick_params(axis='x', labelsize=tick_size)
@@ -108,7 +110,8 @@ def make_plot_pixel_only(ss_list):
     ax[0,0].set_title("Grasp Point Cross-Validation Predictions", fontsize=tsize)
 
     plt.tight_layout()
-    figname = osp.join("fig_stitch_results_only_pixel.png")
+    suffix = "fig_stitch_results_pixels_{}_curves_v01.png".format(len(ss_list))
+    figname = osp.join(suffix)
     plt.savefig(figname)
     print("Look at this figure:\n{}".format(figname))
 
@@ -227,4 +230,10 @@ if __name__ == "__main__":
 
     print("\nDone with data loading. Now making the plots ...")
     #make_plot(ss_list)
-    make_plot_pixel_only(ss_list)
+
+    # We can do this with the full ss_list.
+    # OR with only the first item, which is what we actually use!!
+    print("\nMaking a plot with all curves overlaid.")
+    make_plot_pixel_only(ss_list, with_min_value=True)
+    print("\nMaking a plot with only one curve (should be YOLO PreTrained).")
+    make_plot_pixel_only( [ss_list[0]], with_min_value=True)

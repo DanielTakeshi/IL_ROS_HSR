@@ -9,6 +9,8 @@ are dicts, w/keys c_img, d_img, pose (i.e., the label), and type (needed for aug
 
 BUT ... since it may be interesting to see performance based on the particular dataset, we
 will add that as another key, 'data_source'.
+
+UPDATE Sept 05: use to get a smaller dataset.
 """
 import cv2, os, pickle, sys
 import numpy as np
@@ -21,7 +23,7 @@ from fast_grasp_detect.data_aug.data_augment import augment_data
 HEAD = '/nfs/diskstation/seita/bed-make/'
 DATA_TO_COMBINE_NOHEAD = ['cache_d_v01', 'cache_h_v03']
 DATA_TO_COMBINE = [join(HEAD, x) for x in DATA_TO_COMBINE_NOHEAD]
-OUT_PATH = join(HEAD, 'cache_combo_v01')
+OUT_PATH = join(HEAD, 'cache_combo_v02')
 
 for item in DATA_TO_COMBINE:
     assert 'cache_' in item
@@ -34,6 +36,8 @@ NUM_CV = 10
 FILES = []
 for pth in DATA_TO_COMBINE:
     FILES.append( sorted([x for x in os.listdir(pth)]) )
+
+IGNORE_FRAC = 0.75 # for smaller data
 # ----------------------------------------------------------------------------------------
 
 # List of dictionaries we'll split later for CV.
@@ -51,7 +55,8 @@ for fidx, (files, dhead, dtail) in enumerate(zip(FILES, DATA_TO_COMBINE, DATA_TO
             assert 'c_img' in datum and 'd_img' in datum and 'type' in datum \
                     and 'pose' in datum, "here are keys: {}".format(datum.keys())
             datum['data_source'] = dtail
-            data_points.append(datum)
+            if np.random.rand() > IGNORE_FRAC:
+                data_points.append(datum)
         print("    finished this pickle file, len(data_points): {}".format(len(data_points)))
 
 # ----------------------------------------------------------------------------------------

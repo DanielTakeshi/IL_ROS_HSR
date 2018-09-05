@@ -312,7 +312,7 @@ class BedMaker():
         else:
             print("L2 and SSIM btwn grasp & next image: {:.1f} and {:.3f}".format(
                     img_diff, img_ssim))
-            if img_ssim > 0.88:
+            if img_ssim >= 0.875 or img_diff < 85000:
                 print("APPLYING OFFSET! (self.apply_offset = True)")
                 self.apply_offset = True
             else:
@@ -382,6 +382,7 @@ class BedMaker():
             'image_final2': self.image_final2,
             'grasp_times': self.g_time_stats,
             'move_times': self.move_time_stats,
+            'args': self.args, # ADDING THIS! Now we can 'retrace' our steps.
         }
         self.rollout_stats.append(final_stuff)
 
@@ -537,18 +538,27 @@ class BedMaker():
 if __name__ == "__main__":
     pp = argparse.ArgumentParser()
     pp.add_argument('--phase', type=int, help='1 for checking poses, 2 for deployment.')
-    pp.add_argument('--g_type', type=str, help='must be in [network, human, anlaytic]')
+    pp.add_argument('--g_type', type=str, help='must be in [network, human, analytic]')
+    pp.add_argument('--use_rgb', action='store_true', default=False,
+        help='If doing this, we need to use the rgb network.')
     args = pp.parse_args()
+
     assert args.phase in [1,2]
 
-    if args.g_type == 'network':
-        args.save_path = BED_CFG.DEPLOY_NET_PATH
-    elif args.g_type == 'human':
-        args.save_path = BED_CFG.DEPLOY_HUM_PATH
-    elif args.g_type == 'analytic':
-        args.save_path = BED_CFG.DEPLOY_ANA_PATH
+    if args.use_rgb:
+        assert not BED_CFG.GRASP_CONFIG.USE_DEPTH
+        assert args.g_type == 'network'
+        args.save_path = BED_CFG.DEPLOY_NET_PATH+'_rgb'
     else:
-        raise ValueError(args.g_type)
+        assert BED_CFG.GRASP_CONFIG.USE_DEPTH
+        if args.g_type == 'network':
+            args.save_path = BED_CFG.DEPLOY_NET_PATH
+        elif args.g_type == 'human':
+            args.save_path = BED_CFG.DEPLOY_HUM_PATH
+        elif args.g_type == 'analytic':
+            args.save_path = BED_CFG.DEPLOY_ANA_PATH
+        else:
+            raise ValueError(args.g_type)
     print("\nNote that we will be saving to: {}".format(args.save_path))
     print("(double check the blanket type!)")
 

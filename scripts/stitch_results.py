@@ -100,7 +100,7 @@ def make_plot_pixel_only(ss_list, with_min_value):
                 alpha=error_alpha, facecolor=colors[idx])
 
     # Bells and whistles
-    ax[0,0].set_ylim([0,90]) # TUNE !!
+    ax[0,0].set_ylim([0,80]) # TUNE !!
     ax[0,0].legend(loc="best", ncol=1, prop={'size':legend_size})
     ax[0,0].set_xlabel('Training Epochs Over Augmented Data', fontsize=xsize)
     ax[0,0].tick_params(axis='x', labelsize=tick_size)

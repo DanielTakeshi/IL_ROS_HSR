@@ -35,7 +35,7 @@ WHITE    = (255, 255, 255)
 tsize = 35
 xsize = 28
 ysize = 28
-tick_size = 22
+tick_size = 25
 legend_size = 28
 
 # For bar chart in particular

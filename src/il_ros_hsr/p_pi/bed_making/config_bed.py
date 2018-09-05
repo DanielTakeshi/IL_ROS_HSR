@@ -48,9 +48,17 @@ assert VIEW_MODE in ['standard', 'close']
 # ---------------------
 # When deploying, we need to load in a config (text) file and a network.
 g_data_name = 'cache_combo_v01'
-g_head_name = 'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_6000_cv_False'
-g_ckpt_name = '08_25_19_05_56_save.ckpt-6000'
-g_conf_name = 'config_2018_08_25_19_00.txt'
+
+# What I NORMALLY use
+#g_head_name = 'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_6000_cv_False'
+#g_ckpt_name = '08_25_19_05_56_save.ckpt-6000'
+#g_conf_name = 'config_2018_08_25_19_00.txt'
+
+# If I want RGB, use this trained network.
+g_head_name = 'grasp_1_img_rgb_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_8001_cv_False'
+g_ckpt_name = '09_05_08_31_04_save.ckpt-8000'
+g_conf_name = 'config_2018_09_05_08_24.txt'
+
 GRASP_NET_PATH  = join(ROOT_DIR, 'grasp', g_data_name, g_head_name, g_ckpt_name)
 GRASP_CONF_PATH = join(ROOT_DIR, 'grasp', g_data_name, g_head_name, g_conf_name)
 assert 'save.ckpt' in g_ckpt_name and 'config' in g_conf_name
@@ -125,9 +133,11 @@ INS_SAMPLE = False
 # If 0.055 result in the robot 'missing' the sheet then we better adjust it
 # dynamically? (UPDATE: forget these just dynamically do it ...)
 
-GRIPPER_HEIGHT = 0.049
+GRIPPER_HEIGHT = 0.050
 if BLANKET == 'cal':
-    GRIPPER_HEIGHT += 0.003 # I think the sheet is thinner
+    GRIPPER_HEIGHT += 0.002 # I think the sheet is thinner, we need to be safe.
+elif BLANKET == 'teal':
+    GRIPPER_HEIGHT -= 0.002 # I think Teal is thicker, we can afford to grasp lower.
 
 
 # TODO: we should probably have this so we know if depth is in mm or meters?

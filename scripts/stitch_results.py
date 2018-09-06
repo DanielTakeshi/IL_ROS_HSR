@@ -100,14 +100,17 @@ def make_plot_pixel_only(ss_list, with_min_value):
                 alpha=error_alpha, facecolor=colors[idx])
 
     # Bells and whistles
+    #ax[0,0].set_xlim([0,14]) # TUNE !!
     ax[0,0].set_ylim([0,80]) # TUNE !!
-    ax[0,0].legend(loc="best", ncol=1, prop={'size':legend_size})
     ax[0,0].set_xlabel('Training Epochs Over Augmented Data', fontsize=xsize)
     ax[0,0].tick_params(axis='x', labelsize=tick_size)
     ax[0,0].tick_params(axis='y', labelsize=tick_size)
     ax[0,0].set_ylabel('Average Test L2 Loss (Scaled)', fontsize=ysize)
     ax[0,0].set_ylabel('Average Test L2 Loss (in Pixels)', fontsize=ysize)
     ax[0,0].set_title("Grasp Point Cross-Validation Predictions", fontsize=tsize)
+    leg = ax[0,0].legend(loc="best", ncol=1, prop={'size':legend_size})
+    for legobj in leg.legendHandles:
+        legobj.set_linewidth(5.0)
 
     plt.tight_layout()
     suffix = "fig_stitch_results_pixels_{}_curves_v01.png".format(len(ss_list))

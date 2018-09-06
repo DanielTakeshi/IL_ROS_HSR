@@ -42,11 +42,11 @@ if not osp.exists(OUTPUT_PATH):
 INNER, OUTER = 3, 4
 
 # For the plot(s). There are a few plot-specific parameters, though.
-tsize = 34
-xsize = 30
-ysize = 30
-tick_size = 30
-legend_size = 30
+tsize = 36
+xsize = 32
+ysize = 32
+tick_size = 32
+legend_size = 32
 alpha = 0.5
 error_alpha = 0.3
 error_fc = 'blue'
@@ -57,7 +57,7 @@ colors = ['blue', 'red', 'green']
 
 def scatter_heat_final(ss):
     """Finalized scatter plot for paper."""
-    nrows, ncols = 1, 2
+    nrows, ncols = 1, 1
     fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(10*ncols,8*nrows), squeeze=False)
     xlim = [0, 640]
     ylim = [480, 0]
@@ -79,29 +79,14 @@ def scatter_heat_final(ss):
     elif VIEW_TYPE == 'standard':
         I = cv2.imread("scripts/imgs/daniel_data_example_file_15_idx_023_rgb.png")
 
-    # Create a scatter plot of where the targets are located.
-    ax[0,0].imshow(I, alpha=alpha)
-    ax[0,0].scatter(all_targs[:,0], all_targs[:,1], color='black')
-    ax[0,0].set_title("Ground Truth ({} Points)".format(num_pts), fontsize=tsize)
-
     # Heat map now. To make color bars more equal:
-    # https://stackoverflow.com/questions/18195758/set-matplotlib-colorbar-size-to-match-graph
-    # Better than before but still not perfect ... but I'll take it!
-    from mpl_toolkits.axes_grid1 import make_axes_locatable
-    axes = plt.gca()
-    divider = make_axes_locatable(axes)
-    print(axes)
-    print(divider)
-    cax = divider.append_axes("right", size="5%", pad=0.05)
-
-    ax[0,1].imshow(I, alpha=alpha)
-    cf = ax[0,1].tricontourf(all_x, all_y, all_L2s, cmap='YlOrRd', vmin=VMIN, vmax=VMAX)
-    fig.colorbar(cf, ax=ax[0,1], cax=cax)
-    mean = np.mean(all_L2s)
-    std = np.std(all_L2s)
-    ax[0,1].set_title("Pixel L2 Loss Heat Map: {:.1f} +/- {:.1f}".format(mean,std),fontsize=tsize)
+    cf = ax[0,0].tricontourf(all_x, all_y, all_L2s, cmap='YlOrRd', vmin=VMIN, vmax=VMAX)
+    cbar = fig.colorbar(cf, ax=ax[0,0])
+    cbar.ax.tick_params(labelsize=40) 
 
     # Bells and whistles
+    ax[0,0].imshow(I, alpha=alpha)
+    ax[0,0].set_title("Pixel L2 Loss Heat Map",fontsize=tsize)
     for i in range(nrows):
         for j in range(ncols):
             ax[i,j].legend(loc="best", prop={'size':legend_size})
@@ -187,6 +172,9 @@ def combine(ss):
     # Heat map now. To make color bars more equal:
     # https://stackoverflow.com/questions/18195758/set-matplotlib-colorbar-size-to-match-graph
     # Better than before but still not perfect ... but I'll take it!
+    # Also, for font sizes, use:
+    # https://stackoverflow.com/questions/6567724/matplotlib-so-log-axis-only-has-minor-tick-mark-labels-at-specified-points-also/6568248#6568248
+
     from mpl_toolkits.axes_grid1 import make_axes_locatable
     axes = plt.gca()
     divider = make_axes_locatable(axes)
@@ -196,7 +184,9 @@ def combine(ss):
 
     ax[0,2].imshow(I, alpha=alpha)
     cf = ax[0,2].tricontourf(all_x, all_y, all_L2s, cmap='YlOrRd', vmin=VMIN, vmax=VMAX)
-    fig.colorbar(cf, ax=ax[0,2], cax=cax)
+    cbar = fig.colorbar(cf, ax=ax[0,2], cax=cax)
+    cbar.ax.tick_params(labelsize=tick_size) 
+
     mean = np.mean(all_L2s)
     std = np.std(all_L2s)
     #ax[0,2].set_title("Pixel L2 Loss Heat Map: {:.1f} +/- {:.1f}".format(mean,std),fontsize=tsize)

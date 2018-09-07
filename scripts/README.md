@@ -54,6 +54,23 @@ Evaluate bed-making results from deployment:
 In order to convert H's data so that the coverage script (and thus the box
 plot script) works, please run `convert_h_rollouts_to_mine.py`.
 
+To further investigate, e.g., to get images of the policy and actual
+predictions, please run `check_rollout_results.py`. So, directory structure:
+
+```
+results/
+    # contains all of the deployment scripts
+    figures/
+        # contains all COVERAGE images, so we use this to show contours
+        # it is used for the box plot computations
+results_all_figs/
+    # use this for all OTHER images, e.g. to see the c_img and d_img in the
+    # actual rollouts.
+results_honda/
+    # what they give me. I then convert to my format and put in `results`
+```
+
+
 ## Other / Old
 
 Ron's scripts for data extraction (I have a few for visualizing his as well):

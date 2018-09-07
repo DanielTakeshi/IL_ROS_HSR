@@ -396,6 +396,8 @@ class BedMaker():
         """Adds a dictionary to the `rollout_stats` list.
 
         We can tell it's a 'net' thing due to 'net_pose' and 'net_succ' keys.
+        EDIT: argh wish I hadn't done that since this script also handles the
+        human and analytic cases. Oh well, too late for that now.
         """
         assert side in ['BOTTOM', 'TOP']
         grasp_point = {}

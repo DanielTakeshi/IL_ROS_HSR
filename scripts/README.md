@@ -51,6 +51,9 @@ Evaluate bed-making results from deployment:
 - Use `bedmake_results.py`: for anything _but_ coverage.
 - Use `bedmake_box_plots.py` for the actual bar or box plots. (I use bar for now.)
 
+In order to convert H's data so that the coverage script (and thus the box
+plot script) works, please run `convert_h_rollouts_to_mine.py`.
+
 ## Other / Old
 
 Ron's scripts for data extraction (I have a few for visualizing his as well):

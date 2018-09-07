@@ -207,7 +207,13 @@ if __name__ == "__main__":
 
     with open(args.path, 'r') as f:
         data = pickle.load(f)
-    assert len(data) == length
+
+    # I included one extra item ...
+    if 'honda' in args.path:
+        assert len(data) == length+1
+    else:
+        assert len(data) == length
+
     print("Loaded rollout data. Here's the dictionary we recorded:")
     for d_idx,d_item in enumerate(data):
         print('  {} {}'.format(d_idx, d_item.keys()))
@@ -222,8 +228,8 @@ if __name__ == "__main__":
     #sys.exit()
 
     print("\nFor now we focus on the first and last c_img\n")
-    image_start = data[-1]['image_start2']  # or do image_start2
-    image_final = data[-1]['image_final2']  # or do image_final2
+    image_start = data[-1]['image_start']  # or do image_start2
+    image_final = data[-1]['image_final']  # or do image_final2
     #c_img_start = data[0]['c_img']
     #c_img_end_t = data[-2]['c_img']
     #c_img_end_s = data[-1]['final_c_img']

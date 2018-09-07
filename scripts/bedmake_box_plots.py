@@ -26,11 +26,6 @@ GREEN    = (0, 255, 0)
 RED      = (0, 0, 255)
 WHITE    = (255, 255, 255)
 
-## # Convert from file name to readable legend label
-## RTYPE_TO_NAME = {
-##     'deploy_network': 'HSR Data Only',
-## }
-
 # Other matplotlib
 tsize = 35
 xsize = 28
@@ -55,7 +50,7 @@ def convert(s):
         return s
 
 
-def bar_plots(coverage_hsr):
+def bar_plots(coverage_info):
     """ See: https://matplotlib.org/gallery/statistics/barchart_demo.html
     Actually this is mostly for debugging since I later separate them.
     """
@@ -77,10 +72,10 @@ def bar_plots(coverage_hsr):
                     'fetch_combo_cal',]
 
     # Collect all data for the plots.
-    hsr_avg_start = [np.mean(coverage_hsr[x+'_start']) for x in groups_hsr]
-    hsr_std_start = [np.std(coverage_hsr[x+'_start']) for x in groups_hsr]
-    hsr_avg_final = [np.mean(coverage_hsr[x+'_final']) for x in groups_hsr]
-    hsr_std_final = [np.std(coverage_hsr[x+'_final']) for x in groups_hsr]
+    hsr_avg_start = [np.mean(coverage_info[x+'_start']) for x in groups_hsr]
+    hsr_std_start = [np.std(coverage_info[x+'_start']) for x in groups_hsr]
+    hsr_avg_final = [np.mean(coverage_info[x+'_final']) for x in groups_hsr]
+    hsr_std_final = [np.std(coverage_info[x+'_final']) for x in groups_hsr]
     index = np.arange(n_groups)
 
     # For plotting, we need to set ax.bar with `bar_width` offset for second group.
@@ -119,7 +114,7 @@ def bar_plots(coverage_hsr):
     print("\nJust saved: {}".format(figname))
 
 
-def bar_plots_v2(coverage_hsr):
+def bar_plots_v2(coverage_info):
     """I split into two so that the second one is for transfer.
     """
     # Two robots but have six experimental conditions for them.
@@ -142,9 +137,9 @@ def bar_plots_v2(coverage_hsr):
     ]
 
     # The Fetch also with the white blanket.
-    groups_fetch = ['fetch_human',
-                    'fetch_analytic',
-                    'fetch_network',
+    groups_fetch = ['honda_human',
+                    'honda_analytic',
+                    'honda_network_white',
     ]
 
     # The HSR also did some transfer learning. And trained with RGB.
@@ -155,23 +150,20 @@ def bar_plots_v2(coverage_hsr):
     ]
 
     # Collect all data for the plots.
-    hsr_avg_start_1 = [np.mean(coverage_hsr[x+'_start']) for x in groups_hsr_1]
-    hsr_std_start_1 = [np.std(coverage_hsr[x+'_start'])  for x in groups_hsr_1]
-    hsr_avg_final_1 = [np.mean(coverage_hsr[x+'_final']) for x in groups_hsr_1]
-    hsr_std_final_1 = [np.std(coverage_hsr[x+'_final'])  for x in groups_hsr_1]
+    hsr_avg_start_1 = [np.mean(coverage_info[x+'_start']) for x in groups_hsr_1]
+    hsr_std_start_1 = [np.std(coverage_info[x+'_start'])  for x in groups_hsr_1]
+    hsr_avg_final_1 = [np.mean(coverage_info[x+'_final']) for x in groups_hsr_1]
+    hsr_std_final_1 = [np.std(coverage_info[x+'_final'])  for x in groups_hsr_1]
 
-    # --- beginning of fake data ---
-    # TODO this is fake data. We need Honda's data. And my data for specific groups.
-    fetch_avg_start = [50, 50, 50]
-    fetch_std_start = [0, 0, 0]
-    fetch_avg_final = [50, 50, 50]
-    fetch_std_final = [0, 0, 0]
-    # --- end of fake data ---
+    fetch_avg_start = [np.mean(coverage_info[x+'_start']) for x in groups_fetch]
+    fetch_std_start = [np.std(coverage_info[x+'_start'])  for x in groups_fetch]
+    fetch_avg_final = [np.mean(coverage_info[x+'_final']) for x in groups_fetch]
+    fetch_std_final = [np.std(coverage_info[x+'_final'])  for x in groups_fetch]
 
-    hsr_avg_start_2 = [np.mean(coverage_hsr[x+'_start']) for x in groups_hsr_2]
-    hsr_std_start_2 = [np.std(coverage_hsr[x+'_start'])  for x in groups_hsr_2]
-    hsr_avg_final_2 = [np.mean(coverage_hsr[x+'_final']) for x in groups_hsr_2]
-    hsr_std_final_2 = [np.std(coverage_hsr[x+'_final'])  for x in groups_hsr_2]
+    hsr_avg_start_2 = [np.mean(coverage_info[x+'_start']) for x in groups_hsr_2]
+    hsr_std_start_2 = [np.std(coverage_info[x+'_start'])  for x in groups_hsr_2]
+    hsr_avg_final_2 = [np.mean(coverage_info[x+'_final']) for x in groups_hsr_2]
+    hsr_std_final_2 = [np.std(coverage_info[x+'_final'])  for x in groups_hsr_2]
 
     # --------------------------------------------------------------------------
     # For plotting, we need to set ax.bar with `bar_width` offset for second
@@ -191,7 +183,7 @@ def bar_plots_v2(coverage_hsr):
                          color='blue',
                          yerr=hsr_std_start_1,
                          error_kw=error_kw,
-                         label='HSR, Initial')
+                         label='H-Start')
     rects2 = ax[0,0].bar(np.array([0, 2, 4]) + bar_width + offset,
                          hsr_avg_final_1,
                          bar_width,
@@ -199,7 +191,7 @@ def bar_plots_v2(coverage_hsr):
                          color='blue',
                          yerr=hsr_std_final_1,
                          error_kw=error_kw,
-                         label='HSR, Final')
+                         label='H-Final')
     rects3 = ax[0,0].bar(np.array([1, 3, 5]) - offset,
                          fetch_avg_start,
                          bar_width,
@@ -207,7 +199,7 @@ def bar_plots_v2(coverage_hsr):
                          color='red',
                          yerr=fetch_std_start,
                          error_kw=error_kw,
-                         label='Fetch, Initial')
+                         label='F-Start')
     rects4 = ax[0,0].bar(np.array([1, 3, 5]) + bar_width - offset,
                          fetch_avg_final,
                          bar_width,
@@ -215,7 +207,7 @@ def bar_plots_v2(coverage_hsr):
                          color='red',
                          yerr=fetch_std_final,
                          error_kw=error_kw,
-                         label='Fetch, Final')
+                         label='F-Final')
 
     # For the transfer learning aspect
     rects8 = ax[0,1].bar(index_2,
@@ -225,7 +217,7 @@ def bar_plots_v2(coverage_hsr):
                          color='blue',
                          yerr=hsr_std_start_2,
                          error_kw=error_kw,
-                         label='Initial')
+                         label='Start')
     rects9 = ax[0,1].bar(index_2+bar_width,
                          hsr_avg_final_2,
                          bar_width,
@@ -234,22 +226,27 @@ def bar_plots_v2(coverage_hsr):
                          yerr=hsr_std_final_2,
                          error_kw=error_kw,
                          label='Final')
- 
+
+    ax[0,0].axhline(y=100, linestyle='--', color='black')
+    ax[0,1].axhline(y=100, linestyle='--', color='black')
 
     # -------------------------------
     # Get labeling of x-axis right!!!
     # -------------------------------
 
     # For second subplot. The start/end shouldn't matter.
-    len1 = len(coverage_hsr['deploy_human_start'])
-    len2 = 0
-    len3 = len(coverage_hsr['deploy_analytic_start'])
-    len4 = 0
-    len5 = len(coverage_hsr['deploy_network_white_start'])
-    len6 = 0
-    assert len1 == len(coverage_hsr['deploy_human_final'])
-    assert len3 == len(coverage_hsr['deploy_analytic_final'])
-    assert len5 == len(coverage_hsr['deploy_network_white_final'])
+    len1 = len(coverage_info['deploy_human_start'])
+    len2 = len(coverage_info['honda_human_start'])
+    len3 = len(coverage_info['deploy_analytic_start'])
+    len4 = len(coverage_info['honda_analytic_start'])
+    len5 = len(coverage_info['deploy_network_white_start'])
+    len6 = len(coverage_info['honda_network_white_start'])
+    assert len1 == len(coverage_info['deploy_human_final'])
+    assert len2 == len(coverage_info['honda_human_final'])
+    assert len3 == len(coverage_info['deploy_analytic_final'])
+    assert len4 == len(coverage_info['honda_analytic_final'])
+    assert len5 == len(coverage_info['deploy_network_white_final'])
+    assert len6 == len(coverage_info['honda_network_white_final'])
 
     ax[0,0].set_xticklabels(
         ('Human\n{:.1f} +/- {:.1f}\n{} Rollouts'.format(    hsr_avg_final_1[0], hsr_std_final_1[0], len1),
@@ -264,14 +261,14 @@ def bar_plots_v2(coverage_hsr):
     # For second subplot. The start/end shouldn't matter.
     # But these assertions can catch cases if I killed the coverage script
     # without deleting any unpaired starting images.
-    len1 = len(coverage_hsr['deploy_network_cal_start'])
-    len2 = len(coverage_hsr['deploy_network_cal_rgb_start'])
-    len3 = len(coverage_hsr['deploy_network_teal_start'])
-    len4 = len(coverage_hsr['deploy_network_teal_rgb_start'])
-    assert len1 == len(coverage_hsr['deploy_network_cal_final'])
-    assert len2 == len(coverage_hsr['deploy_network_cal_rgb_final'])
-    assert len3 == len(coverage_hsr['deploy_network_teal_final'])
-    assert len4 == len(coverage_hsr['deploy_network_teal_rgb_final'])
+    len1 = len(coverage_info['deploy_network_cal_start'])
+    len2 = len(coverage_info['deploy_network_cal_rgb_start'])
+    len3 = len(coverage_info['deploy_network_teal_start'])
+    len4 = len(coverage_info['deploy_network_teal_rgb_start'])
+    assert len1 == len(coverage_info['deploy_network_cal_final'])
+    assert len2 == len(coverage_info['deploy_network_cal_rgb_final'])
+    assert len3 == len(coverage_info['deploy_network_teal_final'])
+    assert len4 == len(coverage_info['deploy_network_teal_rgb_final'])
 
     ax[0,1].set_xticklabels(
         ('Net-Cal\n{:.1f} +/- {:.1f}\n{} Rollouts'.format(  hsr_avg_final_2[0], hsr_std_final_2[0], len1),
@@ -292,9 +289,13 @@ def bar_plots_v2(coverage_hsr):
         #ax[0,i].set_xlabel('Experimental Condition', fontsize=xsize)
         ax[0,i].tick_params(axis='x', labelsize=tick_size)
         ax[0,i].tick_params(axis='y', labelsize=tick_size)
-        ax[0,i].legend(loc="best", ncol=2, prop={'size':legend_size})
+        ax[0,i].legend(loc="best", ncol=4, prop={'size':legend_size})
+
         # It's coverage, but most values are high so might not make sense to start from zero.
-        ax[0,i].set_ylim([35,105]) # tune this?
+        ax[0,i].set_ylim([35,109]) # tune this?
+
+        # Doesn't work as I intended
+        #ax[0,i].set_yticklabels((40,50,60,70,80,90,100))
 
     ax[0,0].set_title('HSR and Fetch Coverage Results', fontsize=tsize)
     ax[0,1].set_title('HSR Transfer Coverage Results', fontsize=tsize)
@@ -310,10 +311,11 @@ if __name__ == "__main__":
     # Let's manually go through the files. If we want to compute averages, we can
     # do an `os.listdir()` and parse the file names (be CAREFUL with file names!).
     # All of this is with the HSR. I don't have the Fetch's data, unfortunately.
+    # UPDATE: we have Fetch now!
     # --------------------------------------------------------------------------
     print("Searching in path: {}".format(FIGURES))
     PATHS = sorted([x for x in os.listdir(FIGURES) if '.png' not in x])
-    coverage_hsr = defaultdict(list)
+    coverage_info = defaultdict(list)
 
     for result_type in PATHS:
         print("\nresult type: {}".format(result_type))
@@ -330,18 +332,18 @@ if __name__ == "__main__":
             coverage_s = convert( fsplit_s[-1] )
             coverage_f = convert( fsplit_f[-1] )
             print("  coverage, start -> final: {} -> {}".format(coverage_s, coverage_f))
-            coverage_hsr[result_type+'_start'].append( coverage_s )
-            coverage_hsr[result_type+'_final'].append( coverage_f )
+            coverage_info[result_type+'_start'].append( coverage_s )
+            coverage_info[result_type+'_final'].append( coverage_f )
 
     # Quick debugging/listing.
-    keys = sorted(list(coverage_hsr.keys()))
-    print("\nHere are the keys in `coverage_hsr`:\n{}".format(keys))
+    keys = sorted(list(coverage_info.keys()))
+    print("\nHere are the keys in `coverage_info`:\n{}".format(keys))
     print("(All of these are with the HSR)\n")
     for key in keys:
-        mean, std = np.mean(coverage_hsr[key]), np.std(coverage_hsr[key])
+        mean, std = np.mean(coverage_info[key]), np.std(coverage_info[key])
         print("  coverage[{}], len {}\n({:.2f} \pm {:.1f})  {}".format(key,
-                len(coverage_hsr[key]), mean, std, coverage_hsr[key]))
+                len(coverage_info[key]), mean, std, coverage_info[key]))
     print("")
 
-    bar_plots(coverage_hsr)
-    bar_plots_v2(coverage_hsr)
+    bar_plots(coverage_info)
+    bar_plots_v2(coverage_info)

@@ -99,10 +99,12 @@ class Test():
 
         These have ALREADY had the depth image pre-processed.
         """
+        font = cv2.FONT_HERSHEY_SIMPLEX
         correct = 0
         total = 0
         incorrect0 = 0  # CNN thought a ground-truth success img was actually a failure
         incorrect1 = 0  # CNN thought a ground-truth failure img was actually a success
+        thinks_success = True
 
         for test_list in all_cv_files:
             with open(test_list, 'r') as f:
@@ -113,16 +115,21 @@ class Test():
                 if BED_CFG.SUCC_CONFIG.USE_DEPTH:
                     d_img = np.copy(item['d_img'])
                     result = self.s_detector.predict(d_img)
+                    img = d_img
                 else:
                     c_img = np.copy(item['c_img'])
                     result = self.s_detector.predict(c_img)
+                    img = c_img
                 result = np.squeeze( np.array(result) ) # batch size is 1
                 print("  prediction: {}".format(result))
 
+                # [x1,x2] are logits, so if x1 is higher, it thinks more likely a success
                 if result[0] < result[1]:
                     prediction = 1
+                    thinks_success = False
                 else:
                     prediction = 0
+                    thinks_success = True
                 targ = item['class']
                 if prediction == targ:
                     correct += 1
@@ -132,6 +139,12 @@ class Test():
                     else:
                         incorrect1 += 1
                 total += 1
+
+                cv2.putText(img,'thinks success: {}'.format(thinks_success),
+                            (30,30), font, 0.5, (255,255,255), 1, cv2.LINE_AA)
+                cv2.imshow('success_net', img)
+                cv2.waitKey(30)
+                #time.sleep(0.5) # pause the 'video' of images :-)
 
         print("Correct: {} / {}  ({:.2f})".format(correct, total, float(correct)/total))
         print("Predicted failure but image was really success: {}".format(incorrect0))
@@ -153,8 +166,8 @@ if __name__ == "__main__":
     TestBed = Test()
 
     # Get paths setup.
-    PATH_GRASP   = '/nfs/diskstation/seita/bed-make/cache_combo_v01/'
-    PATH_SUCCESS = '/nfs/diskstation/seita/bed-make/cache_combo_v01_success/'
+    PATH_GRASP   = '/nfs/diskstation/seita/bed-make/cache_combo_v03/'
+    PATH_SUCCESS = '/nfs/diskstation/seita/bed-make/cache_combo_v03_success/'
     all_cv_files_grasp   = sorted(
             [join(PATH_GRASP,x) for x in os.listdir(PATH_GRASP) if 'cv_' in x]
     )

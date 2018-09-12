@@ -5,6 +5,13 @@ For the H data, that is.
 NOTE: they stored with opposite class labels, so just reverse it for mine.
 And also I'd use their grasping network as success data, always.
 BUT: sub-sample, since they have some temporally-correlated data, moreso than mine.
+UPDATE: no, don't do that!
+
+UPDATE UPDATE UPDATE: this is for
+
+        rollout_h_v04_dataset_5.
+
+Do NOT do dataset_4 here!!
 """
 import cv2, os, pickle, sys
 import numpy as np
@@ -15,8 +22,8 @@ from fast_grasp_detect.data_aug.data_augment import augment_data
 
 # ----------------------------------------------------------------------------------------
 HEAD = '/nfs/diskstation/seita/bed-make/'
-DATA_PATH = join(HEAD, 'rollouts_h_v04_dataset_4')
-OUT_PATH  = join(HEAD, 'cache_h_v04_dataset_4_success/')
+DATA_PATH = join(HEAD, 'rollouts_h_v04_dataset_5')
+OUT_PATH  = join(HEAD, 'cache_h_v04_dataset_5_success/')
 assert 'success' in OUT_PATH
 if not os.path.exists(OUT_PATH):
     os.makedirs(OUT_PATH)
@@ -35,21 +42,21 @@ num_failures = 0
 # ----------------------------------------------
 # SUCCESS DATA (should be class=0 means success)
 # ----------------------------------------------
-success_dirs = [x for x in os.listdir( S_DATA_PATH ) if 'rollout' in x]
+success_dirs = [x for x in os.listdir( DATA_PATH ) if 'Transition' in x]
 
 for fidx,ff in enumerate(success_dirs):
     print("\n=====================================================================")
-    subdirs = [x for x in os.listdir(join(S_DATA_PATH,ff)) if 'rollout' in x]
+    subdirs = [x for x in os.listdir(join(DATA_PATH,ff)) if 'rollout' in x]
 
     if len(subdirs) == 0:
         print("at index {}, len(subdirs)=0 so skipping".format(fidx))
         continue
 
-    assert 'rollout_TOP_Transition' in ff, ff
+    assert ('rollout_TOP_Transition' in ff or 'rollout_BOTTOM_Transition' in ff), ff
     assert 'rollout.pkl' in subdirs[0], subdirs[0]
     assert len(subdirs) == 1, subdirs
 
-    fname = join(S_DATA_PATH, ff, subdirs[0])
+    fname = join(DATA_PATH, ff, subdirs[0])
     datum = pickle.load(open(fname,'rb'))
     print("On {}, len {}".format(fname, len(datum)))
     print("keys: {}".format(datum.keys()))
@@ -70,14 +77,19 @@ for fidx,ff in enumerate(success_dirs):
 
     # NOTE Don't forget to change their labeling !!!!!!
     assert datum['d_img'].shape == (480, 640, 3)
-    if datum['class'] == 0:
-        datum['class'] = 1
-        num_failures += 1
-    elif datum['class'] == 1:
-        datum['class'] = 0
-        num_successes += 1
-    else:
-        raise ValueError(datum['class'])
+    #if datum['class'] == 0:
+    #    datum['class'] = 1
+    #    num_failures += 1
+    #elif datum['class'] == 1:
+    #    datum['class'] = 0
+    #    num_successes += 1
+    #else:
+    #    raise ValueError(datum['class'])
+
+    # UPDATE UPDATE: OK, their three failure cases here were actually successes...
+    datum['class'] = 0
+    num_successes += 1
+
     data_points.append(datum)
 
 # ----------------------------------------------
@@ -94,33 +106,24 @@ do_we_exit = False
 
 
 # A bit annoying this data was collected in one-item lists ...
-grasping_dirs = [x for x in os.listdir( G_DATA_PATH ) if 'rollout' in x]
+# Update: aaaaand not now lol.
+grasping_dirs = [x for x in os.listdir( DATA_PATH ) if 'grasp' in x.lower()]
 
 for fidx,ff in enumerate(grasping_dirs):
-    # Try to have them spaced out since they have heavy temporal correlations.
-    if fidx % 5 != 0:
-        continue
-    if do_we_exit:
-        break
     print("\n=====================================================================")
-    subdirs = [x for x in os.listdir(join(G_DATA_PATH,ff)) if 'rollout' in x]
+    subdirs = [x for x in os.listdir(join(DATA_PATH,ff)) if 'rollout' in x]
 
     if len(subdirs) == 0:
         print("at index {}, len(subdirs)=0 so skipping".format(fidx))
         continue
 
-    assert 'rollout_TOP_Grasp' in ff, ff
+    assert ('rollout_top_grasp' in ff.lower() or 'rollout_bottom_grasp' in ff.lower()), ff
     assert 'rollout.pkl' in subdirs[0], subdirs[0]
     assert len(subdirs) == 1, subdirs
 
-    fname = join(G_DATA_PATH, ff, subdirs[0])
-    data = pickle.load(open(fname,'rb'))
-    if len(data) == 0:
-        print("len(data) = 0, so skipping")
-        continue
-
-    datum = data[0] # yeah, it's a one-item list
-    print("On {}, len {}".format(fname, len(data)))
+    fname = join(DATA_PATH, ff, subdirs[0])
+    datum = pickle.load(open(fname,'rb'))
+    print("On {}, len {}".format(fname, len(datum)))
     print("keys: {}".format(datum.keys()))
     print("datum['class']: {} (_their_ format, 1=success)".format(datum['class']))
 

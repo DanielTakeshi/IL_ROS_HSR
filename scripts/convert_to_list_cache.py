@@ -39,8 +39,8 @@ from fast_grasp_detect.data_aug.data_augment import augment_data
 # ----------------------------------------------------------------------------------------
 # The usual rollouts path. Easiest if you make the cache with matching names.
 # Update: if using `rollouts_d_vXY` which is my data, have two sub-directories.
-ROLLOUTS = '/nfs/diskstation/seita/bed-make/rollouts_h_v03/'
-OUT_PATH = '/nfs/diskstation/seita/bed-make/cache_h_v03/'
+ROLLOUTS = '/nfs/diskstation/seita/bed-make/rollouts_h_v04_dataset_5/'
+OUT_PATH = '/nfs/diskstation/seita/bed-make/cache_h_v04_dataset_5/'
 assert 'success' not in OUT_PATH
 
 # ALSO ADJUST, since we have slightly different ways of loading and storing data.
@@ -63,10 +63,14 @@ num_skipped = 0
 
 
 if is_h_format:
+    # --------------------------------------------------------------------------
     # They saved in format: `rollout_TOP_Grasp_K/rollout.pkl` where `number=K`.
     # Currently, each data point has keys:
     # ['headState', 'c_img', 'pose', 'class', 'd_img', 'type', 'armState', 'side']
     # This was with the Fetch.
+    # --------------------------------------------------------------------------
+    # UPDATE Sept 11: ugh, need to consider dataset_4, dataset_5, gets a bit hand-tuned ...
+    # In particular, depth images are ALREADY processed in dataset_4, but not in dataset_5.
     # --------------------------------------------------------------------------
     for fidx,ff in enumerate(files):
         print("\n=====================================================================")
@@ -75,19 +79,15 @@ if is_h_format:
         number = str(ff.split('_')[-1])
         file_path = os.path.join(ROLLOUTS,pkl_f)
         datum = pickle.load(open(file_path,'rb'))
-
-        # Update: as of August 22, they have datums as lists.
-        if len(datum) == 0:
-            continue
-        assert len(datum) == 1
-        datum = datum[0]
+        assert type(datum) is dict
 
         # Debug and accumulate statistics for plotting later.
         print("\nOn data: {}, number {}".format(file_path, number))
         print("    data['pose']: {}".format(np.array(datum['pose'])))
+        print("    data['type']: {}".format(np.array(datum['type'])))
+        num = str(number).zfill(3)
         assert datum['c_img'].shape == (480, 640, 3)
         assert datum['d_img'].shape == (480, 640)
-        num = str(number).zfill(3)
         cv2.patchNaNs(datum['d_img'], 0) # NOTE the patching!
 
         # As usual, datum to net dim must be done before data augmentation.
@@ -100,6 +100,12 @@ if is_h_format:
             print("    NOTE: skipping this due to pose: {}".format(datum['pose']))
             num_skipped += 1
             continue
+        if datum['type'] != 'grasp':
+            print("    NOTE: skipping, type: {}".format(datum['type']))
+            num_skipped += 1
+            continue
+
+        assert datum['type'] == 'grasp'
         data_points.append(datum)
 
 elif is_old_format:
@@ -130,7 +136,7 @@ elif is_old_format:
             print('type: {}'.format(datum['type']))
             print('side: {}'.format(datum['side']))
             print('pose: {}'.format(datum['pose']))
-        
+
             # All this does is modify the datum['d_img'] key; it leaves datum['c_img'] alone.
             # This will fail if there are NaNs, but I already patched beforehand.
             assert not np.isnan(np.sum(datum['d_img']))

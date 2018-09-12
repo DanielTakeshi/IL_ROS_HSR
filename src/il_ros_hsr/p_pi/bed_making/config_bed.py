@@ -46,18 +46,24 @@ assert VIEW_MODE in ['standard', 'close']
 # ---------------------
 # --- GRASP NETWORK ---
 # ---------------------
-# When deploying, we need to load in a config (text) file and a network.
-g_data_name = 'cache_combo_v01'
+## # When deploying, we need to load in a config (text) file and a network.
+## g_data_name = 'cache_combo_v01'
+## 
+## # What I NORMALLY use, for depth images (though I also have a net trained for 8k steps).
+## g_head_name = 'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_6000_cv_False'
+## g_ckpt_name = '08_25_19_05_56_save.ckpt-6000'
+## g_conf_name = 'config_2018_08_25_19_00.txt'
+## 
+## # If I want RGB, use this trained network.
+## g_head_name = 'grasp_1_img_rgb_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_8001_cv_False'
+## g_ckpt_name = '09_05_08_31_04_save.ckpt-8000'
+## g_conf_name = 'config_2018_09_05_08_24.txt'
 
-# What I NORMALLY use, for depth images (though I also have a net trained for 8k steps).
-g_head_name = 'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_6000_cv_False'
-g_ckpt_name = '08_25_19_05_56_save.ckpt-6000'
-g_conf_name = 'config_2018_08_25_19_00.txt'
-
-# If I want RGB, use this trained network.
-#g_head_name = 'grasp_1_img_rgb_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_8001_cv_False'
-#g_ckpt_name = '09_05_08_31_04_save.ckpt-8000'
-#g_conf_name = 'config_2018_09_05_08_24.txt'
+# And for Honda's newer data. Note the data name ...
+g_data_name = 'cache_combo_v03'
+g_head_name = 'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_8000_cv_False'
+g_ckpt_name = '09_11_18_18_50_save.ckpt-8000'
+g_conf_name = 'config_2018_09_11_18_13.txt'
 
 GRASP_NET_PATH  = join(ROOT_DIR, 'grasp', g_data_name, g_head_name, g_ckpt_name)
 GRASP_CONF_PATH = join(ROOT_DIR, 'grasp', g_data_name, g_head_name, g_conf_name)
@@ -83,10 +89,18 @@ for line in g_content:
 # -----------------------
 # --- SUCCESS NETWORK ---
 # -----------------------
-s_data_name = 'cache_combo_v01_success'
-s_head_name = 'success_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_3000_cv_False'
-s_ckpt_name = '08_28_11_44_47_save.ckpt-3000'
-s_conf_name = 'config_2018_08_28_11_42.txt'
+## # What I normally use:
+## s_data_name = 'cache_combo_v01_success'
+## s_head_name = 'success_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_3000_cv_False'
+## s_ckpt_name = '08_28_11_44_47_save.ckpt-3000'
+## s_conf_name = 'config_2018_08_28_11_42.txt'
+
+# And for Honda's newer data. Note the data name ...
+s_data_name = 'cache_combo_v03_success'
+s_head_name = 'success_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_5000_cv_False'
+s_ckpt_name = '09_11_19_51_00_save.ckpt-5000'
+s_conf_name = 'config_2018_09_11_19_47.txt'
+
 SUCC_NET_PATH  = join(ROOT_DIR, 'success', s_data_name, s_head_name, s_ckpt_name)
 SUCC_CONF_PATH = join(ROOT_DIR, 'success', s_data_name, s_head_name, s_conf_name)
 assert 'save.ckpt' in s_ckpt_name and 'config' in s_conf_name

@@ -10,7 +10,8 @@ are dicts, w/keys c_img, d_img, pose (i.e., the label), and type (needed for aug
 BUT ... since it may be interesting to see performance based on the particular dataset, we
 will add that as another key, 'data_source'.
 
-UPDATE Sept 05: use to get a smaller dataset.
+UPDATE Sept 05: use to get a smaller dataset. cache_combo_v02
+UPDATE Sept 11: with new Honda data, use cache_combo_v03
 """
 import cv2, os, pickle, sys
 import numpy as np
@@ -21,9 +22,11 @@ from fast_grasp_detect.data_aug.data_augment import augment_data
 
 # ----------------------------------------------------------------------------------------
 HEAD = '/nfs/diskstation/seita/bed-make/'
-DATA_TO_COMBINE_NOHEAD = ['cache_d_v01', 'cache_h_v03']
+DATA_TO_COMBINE_NOHEAD = ['cache_d_v01', 'cache_h_v03',
+                          'cache_h_v04_dataset_4',
+                          'cache_h_v04_dataset_5']
 DATA_TO_COMBINE = [join(HEAD, x) for x in DATA_TO_COMBINE_NOHEAD]
-OUT_PATH = join(HEAD, 'cache_combo_v02')
+OUT_PATH = join(HEAD, 'cache_combo_v03')
 
 for item in DATA_TO_COMBINE:
     assert 'cache_' in item
@@ -37,7 +40,7 @@ FILES = []
 for pth in DATA_TO_COMBINE:
     FILES.append( sorted([x for x in os.listdir(pth)]) )
 
-IGNORE_FRAC = 0.75 # for smaller data
+IGNORE_FRAC = 0.10 # e.g., for `cache_combo_v02`, I used 0.75 to get a dataset 25% the size.
 # ----------------------------------------------------------------------------------------
 
 # List of dictionaries we'll split later for CV.

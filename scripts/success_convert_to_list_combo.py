@@ -16,9 +16,12 @@ from fast_grasp_detect.data_aug.data_augment import augment_data
 
 # ----------------------------------------------------------------------------------------
 HEAD = '/nfs/diskstation/seita/bed-make/'
-DATA_TO_COMBINE_NOHEAD = ['cache_d_v01_success', 'cache_h_v03_success']
+DATA_TO_COMBINE_NOHEAD = ['cache_d_v01_success',
+                          'cache_h_v03_success',
+                          'cache_h_v04_dataset_4_success',
+                          'cache_h_v04_dataset_5_success']
 DATA_TO_COMBINE = [join(HEAD, x) for x in DATA_TO_COMBINE_NOHEAD]
-OUT_PATH = join(HEAD, 'cache_combo_v01_success_tmp')
+OUT_PATH = join(HEAD, 'cache_combo_v03_success')
 
 for item in DATA_TO_COMBINE:
     assert 'cache_' in item

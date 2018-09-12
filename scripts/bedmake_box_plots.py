@@ -109,11 +109,11 @@ def stats(ci):
         if row == maxlen-1:
             s += ' \\hline'
         print(s)
-    s_mean = "Mean & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f} \\\\ ".format(
+    s_mean = "Mean    & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f} \\\\ ".format(
             means[0], means[1], means[2], means[3], means[4], means[5], means[6], means[7], means[8], means[9], means[10], means[11], means[12], means[13])
-    s_std  = "StDev  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f} \\\\ ".format(
+    s_std  = "StdDev  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f} \\\\ ".format(
             stds[0], stds[1], stds[2], stds[3], stds[4], stds[5], stds[6], stds[7], stds[8], stds[9], stds[10], stds[11], stds[12], stds[13])
-    s_serr = "StdErr & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f} \\\\ \\hline".format(
+    s_serr = "StdErr  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f} \\\\ \\hline".format(
             serrs[0], serrs[1], serrs[2], serrs[3], serrs[4], serrs[5], serrs[6], serrs[7], serrs[8], serrs[9], serrs[10], serrs[11], serrs[12], serrs[13])
     print(s_mean)
     print(s_std)

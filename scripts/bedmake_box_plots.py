@@ -50,6 +50,76 @@ def convert(s):
         return s
 
 
+def stats(ci):
+    keys = [
+        'deploy_human_start',
+        'deploy_human_final',
+        'deploy_analytic_start',
+        'deploy_analytic_final',
+        'deploy_network_white_start',
+        'deploy_network_white_final',
+        'deploy_network_cal_start',
+        'deploy_network_cal_final',
+        'deploy_network_cal_rgb_start',
+        'deploy_network_cal_rgb_final',
+        'deploy_network_teal_start',
+        'deploy_network_teal_final',
+        'deploy_network_teal_rgb_start',
+        'deploy_network_teal_rgb_final',
+        #'honda_analytic_final',
+        #'honda_analytic_start',
+        #'honda_human_final',
+        #'honda_human_start',
+        #'honda_network_white_final',
+        #'honda_network_white_start'
+    ]
+
+    # for now we print like this, later get a table ...
+    print("\nHere are the keys in `coverage_info`:\n{}".format(keys))
+    print("(All of these are with the HSR)\n")
+    means = []
+    stds = []
+    serrs = []
+
+    for key in keys:
+        mean, std = np.mean(ci[key]), np.std(ci[key])
+        N = len(ci[key])
+        serr = std / np.sqrt(N)
+        print("  coverage[{}], len {}\n{}\n({:.2f} \pm {:.1f}), w/SE {:.1f}".format(
+                key, N, ci[key], mean, std, serr))
+        means.append(mean)
+        stds.append(std)
+        serrs.append(serr)
+    print("\nThough, I don't think it makes sense to use standard error here ...")
+
+    # try a table
+    print("\nHere's a table:\n")
+    keystr = "Trial & Hum-S  & Hum-F  & Ana-S  & Ana-F  & W-S  & W-F  & C-S  & C-F  & C-R-S  & C-R-F  & T-S & T-F  & T-R-S & T-R-F \\\\ \\hline"
+    print(keystr)
+    print("but actually I recommend multicolumn, it will be better\n")
+    maxlen = 24
+
+    for row in range(maxlen):
+        data = ['    ' for _ in range(len(keys))]
+        for key_idx,key_val in enumerate(keys):
+            if row < len(ci[key_val]):
+                data[key_idx] = "{:.1f}".format(ci[key_val][row])
+        s = "{}   & {}  &  {}  &  {}  &  {}  &  {}  &  {}  &  {}  &  {}  &  {}  &  {}  &  {}  &  {} & {}  &  {} \\\\".format(
+            row+1, data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],data[13])
+        if row == maxlen-1:
+            s += ' \\hline'
+        print(s)
+    s_mean = "Mean & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f} \\\\ ".format(
+            means[0], means[1], means[2], means[3], means[4], means[5], means[6], means[7], means[8], means[9], means[10], means[11], means[12], means[13])
+    s_std  = "StDev  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f} \\\\ ".format(
+            stds[0], stds[1], stds[2], stds[3], stds[4], stds[5], stds[6], stds[7], stds[8], stds[9], stds[10], stds[11], stds[12], stds[13])
+    s_serr = "StdErr & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f} \\\\ \\hline".format(
+            serrs[0], serrs[1], serrs[2], serrs[3], serrs[4], serrs[5], serrs[6], serrs[7], serrs[8], serrs[9], serrs[10], serrs[11], serrs[12], serrs[13])
+    print(s_mean)
+    print(s_std)
+    print(s_serr)
+
+
 def bar_plots(coverage_info):
     """ See: https://matplotlib.org/gallery/statistics/barchart_demo.html
     Actually this is mostly for debugging since I later separate them.
@@ -335,15 +405,6 @@ if __name__ == "__main__":
             coverage_info[result_type+'_start'].append( coverage_s )
             coverage_info[result_type+'_final'].append( coverage_f )
 
-    # Quick debugging/listing.
-    keys = sorted(list(coverage_info.keys()))
-    print("\nHere are the keys in `coverage_info`:\n{}".format(keys))
-    print("(All of these are with the HSR)\n")
-    for key in keys:
-        mean, std = np.mean(coverage_info[key]), np.std(coverage_info[key])
-        print("  coverage[{}], len {}\n({:.2f} \pm {:.1f})  {}".format(key,
-                len(coverage_info[key]), mean, std, coverage_info[key]))
-    print("")
-
     bar_plots(coverage_info)
     bar_plots_v2(coverage_info)
+    stats(coverage_info)

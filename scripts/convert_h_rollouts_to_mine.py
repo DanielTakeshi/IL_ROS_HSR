@@ -17,7 +17,7 @@ import numpy as np
 from os.path import join
 
 # Just paste where their results are in HEAD_THEIRS.
-HEAD_THEIRS = '/nfs/diskstation/seita/bed-make/results_honda'
+HEAD_THEIRS = '/nfs/diskstation/seita/bed-make/results_honda_v02'
 HEAD_MINE   = '/nfs/diskstation/seita/bed-make/results'
 
 

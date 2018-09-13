@@ -213,10 +213,11 @@ def bar_plots_v2(coverage_info):
     ]
 
     # The HSR also did some transfer learning. And trained with RGB.
-    groups_hsr_2 = ['deploy_network_cal',
-                    'deploy_network_cal_rgb',
-                    'deploy_network_teal',
-                    'deploy_network_teal_rgb',
+    groups_hsr_2 = [
+        'deploy_network_cal_rgb',
+        'deploy_network_cal',
+        'deploy_network_teal_rgb',
+        'deploy_network_teal',
     ]
 
     # Collect all data for the plots.
@@ -253,7 +254,7 @@ def bar_plots_v2(coverage_info):
                          color='blue',
                          yerr=hsr_std_start_1,
                          error_kw=error_kw,
-                         label='H-Start')
+                         label='HSR-Start')
     rects2 = ax[0,0].bar(np.array([0, 2, 4]) + bar_width + offset,
                          hsr_avg_final_1,
                          bar_width,
@@ -261,7 +262,7 @@ def bar_plots_v2(coverage_info):
                          color='blue',
                          yerr=hsr_std_final_1,
                          error_kw=error_kw,
-                         label='H-Final')
+                         label='HSR-Final')
     rects3 = ax[0,0].bar(np.array([1, 3, 5]) - offset,
                          fetch_avg_start,
                          bar_width,
@@ -287,7 +288,7 @@ def bar_plots_v2(coverage_info):
                          color='blue',
                          yerr=hsr_std_start_2,
                          error_kw=error_kw,
-                         label='Start')
+                         label='HSR-Start')
     rects9 = ax[0,1].bar(index_2+bar_width,
                          hsr_avg_final_2,
                          bar_width,
@@ -295,7 +296,7 @@ def bar_plots_v2(coverage_info):
                          color='blue',
                          yerr=hsr_std_final_2,
                          error_kw=error_kw,
-                         label='Final')
+                         label='HSR-Final')
 
     ax[0,0].axhline(y=100, linestyle='--', color='black')
     ax[0,1].axhline(y=100, linestyle='--', color='black')
@@ -304,7 +305,6 @@ def bar_plots_v2(coverage_info):
     # Get labeling of x-axis right!!!
     # -------------------------------
 
-    # For second subplot. The start/end shouldn't matter.
     len1 = len(coverage_info['deploy_human_start'])
     len2 = len(coverage_info['honda_human_start'])
     len3 = len(coverage_info['deploy_analytic_start'])
@@ -323,34 +323,34 @@ def bar_plots_v2(coverage_info):
          'Human\n{:.1f} +/- {:.1f}\n{} Rollouts'.format(    fetch_avg_final[0], fetch_std_final[0], len2),
          'Analytic\n{:.1f} +/- {:.1f}\n{} Rollouts'.format( hsr_avg_final_1[1], hsr_std_final_1[1], len3),
          'Analytic\n{:.1f} +/- {:.1f}\n{} Rollouts'.format( fetch_avg_final[1], fetch_std_final[1], len4),
-         'Net-White\n{:.1f} +/- {:.1f}\n{} Rollouts'.format(hsr_avg_final_1[2], hsr_std_final_1[2], len5),
-         'Net-White\n{:.1f} +/- {:.1f}\n{} Rollouts'.format(fetch_avg_final[2], fetch_std_final[2], len6),
+         'Depth-Policy\n{:.1f} +/- {:.1f}\n{} Rollouts'.format(hsr_avg_final_1[2], hsr_std_final_1[2], len5),
+         'Depth-Policy\n{:.1f} +/- {:.1f}\n{} Rollouts'.format(fetch_avg_final[2], fetch_std_final[2], len6),
         )
     )
 
     # For second subplot. The start/end shouldn't matter.
     # But these assertions can catch cases if I killed the coverage script
     # without deleting any unpaired starting images.
-    len1 = len(coverage_info['deploy_network_cal_start'])
-    len2 = len(coverage_info['deploy_network_cal_rgb_start'])
-    len3 = len(coverage_info['deploy_network_teal_start'])
-    len4 = len(coverage_info['deploy_network_teal_rgb_start'])
-    assert len1 == len(coverage_info['deploy_network_cal_final'])
-    assert len2 == len(coverage_info['deploy_network_cal_rgb_final'])
-    assert len3 == len(coverage_info['deploy_network_teal_final'])
-    assert len4 == len(coverage_info['deploy_network_teal_rgb_final'])
+    len1 = len(coverage_info['deploy_network_cal_rgb_start'])
+    len2 = len(coverage_info['deploy_network_cal_start'])
+    len3 = len(coverage_info['deploy_network_teal_rgb_start'])
+    len4 = len(coverage_info['deploy_network_teal_start'])
+    assert len1 == len(coverage_info['deploy_network_cal_rgb_final'])
+    assert len2 == len(coverage_info['deploy_network_cal_final'])
+    assert len3 == len(coverage_info['deploy_network_teal_rgb_final'])
+    assert len4 == len(coverage_info['deploy_network_teal_final'])
 
     ax[0,1].set_xticklabels(
-        ('Net-Cal\n{:.1f} +/- {:.1f}\n{} Rollouts'.format(  hsr_avg_final_2[0], hsr_std_final_2[0], len1),
-         'RGB-Cal\n{:.1f} +/- {:.1f}\n{} Rollouts'.format(  hsr_avg_final_2[1], hsr_std_final_2[1], len2),
-         'Net-Teal\n{:.1f} +/- {:.1f}\n{} Rollouts'.format( hsr_avg_final_2[2], hsr_std_final_2[2], len3),
-         'RGB-Teal\n{:.1f} +/- {:.1f}\n{} Rollouts'.format( hsr_avg_final_2[3], hsr_std_final_2[3], len4),
+        ('RGB-to-Cal\n{:.1f} +/- {:.1f}\n{} Rollouts'.format(    hsr_avg_final_2[0], hsr_std_final_2[0], len1),
+         'Depth-to-Cal\n{:.1f} +/- {:.1f}\n{} Rollouts'.format(  hsr_avg_final_2[1], hsr_std_final_2[1], len2),
+         'RGB-to-Teal\n{:.1f} +/- {:.1f}\n{} Rollouts'.format(   hsr_avg_final_2[2], hsr_std_final_2[2], len3),
+         'Depth-to-Teal\n{:.1f} +/- {:.1f}\n{} Rollouts'.format( hsr_avg_final_2[3], hsr_std_final_2[3], len4),
         )
     )
 
     # Depends on the groups we have.
-    ax[0,0].set_xticks(index_1 + bar_width/2)
-    ax[0,1].set_xticks(index_2 + bar_width/2)
+    ax[0,0].set_xticks(index_1 + bar_width/2 + 2*offset)
+    ax[0,1].set_xticks(index_2 + bar_width/2 + 2*offset)
 
     # Bells and whistles
     for i in range(2):
@@ -362,13 +362,13 @@ def bar_plots_v2(coverage_info):
         ax[0,i].legend(loc="best", ncol=4, prop={'size':legend_size})
 
         # It's coverage, but most values are high so might not make sense to start from zero.
-        ax[0,i].set_ylim([35,109]) # tune this?
+        ax[0,i].set_ylim([30,109]) # tune this?
 
         # Doesn't work as I intended
         #ax[0,i].set_yticklabels((40,50,60,70,80,90,100))
 
-    ax[0,0].set_title('HSR and Fetch Coverage Results', fontsize=tsize)
-    ax[0,1].set_title('HSR Transfer Coverage Results', fontsize=tsize)
+    ax[0,0].set_title('HSR and Fetch, White Blanket Coverage', fontsize=tsize)
+    ax[0,1].set_title('HSR, Blanket Transfer Coverage', fontsize=tsize)
 
     plt.tight_layout()
     figname = join(FIGURES, 'plot_bars_coverage_v02.png')

@@ -2,6 +2,8 @@
 
 See the bed-making deployment code for how we saved things.
 There are lots of things we can do for inspection.
+
+ALL BUT THE COVERAGE RESULTS.
 """
 import argparse, cv2, os, pickle, sys, matplotlib, utils
 from os.path import join
@@ -17,26 +19,111 @@ from collections import defaultdict
 # ADJUST.
 # ------------------------------------------------------------------------------
 RESULTS = '/nfs/diskstation/seita/bed-make/results/'
-
-tsize = 30
-xsize = 25
-ysize = 25
-tick_size = 25
-legend_size = 25
-alpha = 0.5
-error_alpha = 0.3
-error_fc = 'blue'
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 
-
-if __name__ == "__main__":
-    print("Searching in path: {}".format(RESULTS))
+def analyze_honda():
+    """Now do something similar, except for Honda's data style.
+    """
     PATHS = sorted(
         [join(RESULTS,x) for x in os.listdir(RESULTS) 
-         if 'deploy_' in x and 'old' not in x]
+         if 'honda_' in x and 'v01' not in x]
     )
-    print("Looking at these paths:")
+    print("Looking at these paths, which do NOT include Honda's stuff:")
+    for item in PATHS:
+        print('  '+item)
+    print("")
+
+    # Move times, should be pretty slow. Measured for all.
+    move_t = []
+    grasp_t = []
+    net_t = []
+
+    # Record all this together
+    num_grasps_all = []
+ 
+    for pth in PATHS:
+        print("\n=========================================================================")
+        print("Now on: {}".format(pth))
+        rollouts = sorted([join(pth,x) for x in os.listdir(pth) if 'results_rollout' in x])
+        if len(rollouts) == 0:
+            print("len(rollouts) == 0, thus skipping this ...")
+            continue
+        stats = defaultdict(list)
+        num_grasps = []
+
+        for r_idx,rollout_pfile in enumerate(rollouts):
+            with open(rollout_pfile, 'r') as f:
+                data = pickle.load(f)
+
+            # All items except last one should reflect some grasp or success nets.
+            # We know the final dict has some useful stuff in it for timing.
+            # WAIT, that's for MY stuff. For their data I only used the two images.
+
+            final_dict = data[-1]
+            print("{}".format(rollout_pfile))
+            print("data[-2].keys(): {}".format(data[-2].keys()))
+            print("data[-1].keys(): {}".format(data[-1].keys()))
+            assert 'image_start' in final_dict and 'image_final' in final_dict
+
+            # Go up to the last one, which has the two images I collected.
+            # Here, I need to collect a bunch of stuff for them.
+            t_grasp = []
+            t_frwd = []
+            t_tran = []
+            print("count, t_grasp, t_fwrd, t_tran")
+            for i,datum in enumerate(data[:-1]):
+                print("  {}  {:.1f}  {:.4f}  {:.1f}".format(
+                        datum['grasp_counts'],
+                        datum['t_grasp'],
+                        datum['t_fwrd_pass'],
+                        datum['t_transition'])
+                )
+
+                # In one case the times are the same so don't record.
+                if i > 0 and data[i]['grasp_counts'] > data[i-1]['grasp_counts']:
+                    time = data[i]['t_grasp'] - data[i-1]['t_grasp']
+                    assert time > 0
+                    grasp_t.append(time)
+
+                    # Record forward passes.
+                    if '_network_' in pth:
+                        net_time = data[i]['t_fwrd_pass'] - data[i-1]['t_fwrd_pass']
+                        net_t.append(net_time)
+
+            # For the total grasp attempts, I think that's from data[-2].
+            num_grasps.append( data[-2]['grasp_counts'] )
+            move_t.append( data[-2]['t_transition'] )
+
+        print(np.mean(num_grasps), np.std(num_grasps))
+        num_grasps_all.append(num_grasps)
+
+    # Analyze the statistics globally.
+    # Can paste this in the appendix so I remember the output.
+    print("\n================== NOW RELEVANT STATISTICS ==================")
+
+    print("\nTimes for moving to other side, length: {}".format(len(move_t)))
+    print("{:.3f}\pm {:.1f}".format(np.mean(move_t), np.std(move_t)))
+
+    print("\nTimes for executing grasps, len {}".format(len(grasp_t)))
+    print("{:.3f}\pm {:.1f}".format(np.mean(grasp_t), np.std(grasp_t)))
+
+    print("\nTimes for neural net forward pass")
+    print("len(net_t): {}".format(len(net_t)))
+    print("{:.3f}\pm {:.1f}".format(np.mean(net_t), np.std(net_t)))
+
+    print("\nFor number of grasps:")
+    for ng,pth in zip(num_grasps_all,PATHS):
+        print("{:.1f} \pm {:.1f}  for  {}".format(np.mean(ng), np.std(ng), (pth.split('/'))[-1]))
+
+
+
+def analyze_mine():
+    PATHS = sorted(
+        [join(RESULTS,x) for x in os.listdir(RESULTS) 
+         if 'deploy_' in x and 'old' not in x and 'honda' not in x]
+    )
+    print("Looking at these paths, which do NOT include Honda's stuff:")
     for item in PATHS:
         print('  '+item)
     print("")
@@ -51,6 +138,9 @@ if __name__ == "__main__":
     # Actually for now, I just combine them.
     grasp_net_t = []
     success_net_t = []
+
+    # Record all this together
+    num_grasps_all = []
  
     for pth in PATHS:
         # The `pth` is `deploy_network_white`, `deploy_human`, etc.
@@ -60,7 +150,6 @@ if __name__ == "__main__":
         if len(rollouts) == 0:
             print("len(rollouts) == 0, thus skipping this ...")
             continue
-
         stats = defaultdict(list)
         num_grasps = []
 
@@ -87,8 +176,7 @@ if __name__ == "__main__":
 
             # Add statistics about grasping times.
             if '_network_' in pth:
-                g_net = []
-                s_net = []
+                g_net, s_net = [], []
 
                 # Go up to the last one, which has the timing data we just collected.
                 # Here we are only interested in the network forward pass times.
@@ -105,6 +193,7 @@ if __name__ == "__main__":
                 print("    s-net-times:  {}".format(np.array(s_net)))
 
         print("num grasps: {:.1f} \pm {:.1f}".format(np.mean(num_grasps),np.std(num_grasps)))
+        num_grasps_all.append(num_grasps)
 
         # Add these to the global lists.
         for stats_l in stats['move_times']:
@@ -115,6 +204,7 @@ if __name__ == "__main__":
                 grasp_t.append(tt)
 
     # Analyze the statistics globally.
+    # Can paste this in the appendix so I remember the output.
     print("\n================== NOW RELEVANT STATISTICS ==================")
 
     print("\nTimes for moving to other side, length: {}".format(len(move_t)))
@@ -132,3 +222,17 @@ if __name__ == "__main__":
     combo = np.concatenate((grasp_net_t,success_net_t))
     print("The combined version, with numpy shape {}".format(combo.shape))
     print("{:.3f}\pm {:.1f}".format(np.mean(combo), np.std(combo)))
+
+    print("\nFor number of grasps:")
+    for ng,pth in zip(num_grasps_all,PATHS):
+        print("{:.1f} \pm {:.1f}  for  {}".format(np.mean(ng), np.std(ng), (pth.split('/'))[-1]))
+
+
+if __name__ == "__main__":
+    print("Searching in path: {}\n".format(RESULTS))
+
+    print("\n\n === Now my style. ===\n")
+    analyze_mine()
+
+    print("\n\n === Now Honda's style. ===\n")
+    analyze_honda()

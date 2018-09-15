@@ -30,8 +30,8 @@ WHITE    = (255, 255, 255)
 tsize = 35
 xsize = 28
 ysize = 28
-tick_size = 25
-legend_size = 28
+tick_size = 27
+legend_size = 27
 
 # For bar chart in particular
 bar_width = 0.35
@@ -66,13 +66,60 @@ def stats(ci):
         'deploy_network_teal_final',
         'deploy_network_teal_rgb_start',
         'deploy_network_teal_rgb_final',
-        #'honda_analytic_final',
-        #'honda_analytic_start',
-        #'honda_human_final',
-        #'honda_human_start',
-        #'honda_network_white_final',
-        #'honda_network_white_start'
     ]
+    keys_h = [
+        'honda_human_start',
+        'honda_human_final',
+        'honda_analytic_start',
+        'honda_analytic_final',
+        'honda_network_white_start',
+        'honda_network_white_final',
+    ]
+
+
+    # HONDA RESULTS:
+    print("\nHere are the FETCH-based keys in `coverage_info`:\n{}".format(keys_h))
+    means_h = []
+    stds_h = []
+    serrs_h = []
+
+    for key in keys_h:
+        mean_h, std_h = np.mean(ci[key]), np.std(ci[key])
+        N = len(ci[key])
+        serr_h = std_h / np.sqrt(N)
+        print("  coverage[{}], len {}\n{}\n({:.2f} \pm {:.1f}), w/SE {:.1f}".format(
+                key, N, ci[key], mean_h, std_h, serr_h))
+        means_h.append(mean_h)
+        stds_h.append(std_h)
+        serrs_h.append(serr_h)
+    print("\nThough, I don't think it makes sense to use standard error here ...")
+
+    print("\nFETCH TABLE:\n")
+    keystr_h = "Trial & Hum-S  & Hum-F  & Ana-S  & Ana-F  & W-S  & W-F \\\\ \\hline"
+    print(keystr_h)
+    print("but actually I recommend multicolumn, it will be better\n")
+    maxlen_h = 19
+
+    for row in range(maxlen_h):
+        data = ['    ' for _ in range(len(keys_h))]
+        for key_idx,key_val in enumerate(keys_h):
+            if row < len(ci[key_val]):
+                data[key_idx] = "{:.1f}".format(ci[key_val][row])
+        s = "{}   & {}  &  {}  &  {}  &  {}  &  {}  &  {} \\\\".format(
+            row+1, data[0],data[1],data[2],data[3],data[4],data[5])
+        if row == maxlen_h-1:
+            s += ' \\hline'
+        print(s)
+    s_mean_h = "Mean    & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  \\\\ ".format(
+            means_h[0], means_h[1], means_h[2], means_h[3], means_h[4], means_h[5])
+    s_std_h  = "StdDev  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  \\\\ ".format(
+            stds_h[0], stds_h[1], stds_h[2], stds_h[3], stds_h[4], stds_h[5])
+    s_serr_h = "StdErr  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  & {:.1f}  \\\\ \\hline".format(
+            serrs_h[0], serrs_h[1], serrs_h[2], serrs_h[3], serrs_h[4], serrs_h[5])
+    print(s_mean_h)
+    print(s_std_h)
+    print(s_serr_h)
+
 
     # for now we print like this, later get a table ...
     print("\nHere are the keys in `coverage_info`:\n{}".format(keys))
@@ -120,68 +167,103 @@ def stats(ci):
     print(s_serr)
 
 
-def bar_plots(coverage_info):
-    """ See: https://matplotlib.org/gallery/statistics/barchart_demo.html
-    Actually this is mostly for debugging since I later separate them.
-    """
-    nrows, ncols = 1, 1
-    fig, ax = plt.subplots(nrows, ncols, figsize=(11*ncols,9*nrows), squeeze=False)
+    # If you reverse the two items, the statistic changes but the p-value doesn't.
+    # Tricky to do this for different-sized data, might just randomly select?
+    print("\n\nNow try Mann-Whitney U Test\n")
+    from scipy.stats import mannwhitneyu
+    print("\nSome statistical tests for HSR data:")
+    stat, p = mannwhitneyu(ci['deploy_analytic_final'], ci['deploy_network_white_final'])
+    print('mw-u, analytic vs netwhite  = %.3f, p=%.6f' % (stat, p))
+    stat, p = mannwhitneyu(ci['deploy_network_white_final'], ci['deploy_analytic_final'])
+    print('reverse, net-w vs analytic  = %.3f, p=%.6f' % (stat, p))
+    stat, p = mannwhitneyu(ci['deploy_human_final'], ci['deploy_network_white_final'])
+    print('mw-u, human vs netwhite     = %.3f, p=%.6f' % (stat, p))
+    stat, p = mannwhitneyu(ci['deploy_human_final'], ci['deploy_analytic_final'])
+    print('mw-u, human vs analytic     = %.3f, p=%.6f' % (stat, p))
+    stat, p = mannwhitneyu(ci['deploy_network_white_final'], ci['deploy_network_cal_final'])
+    print('mw-u, net-white vs net-cal  = %.3f, p=%.6f' % (stat, p))
+    stat, p = mannwhitneyu(ci['deploy_network_white_final'], ci['deploy_network_teal_final'])
+    print('mw-u, net-white vs net-teal = %.3f, p=%.6f' % (stat, p))
+    stat, p = mannwhitneyu(ci['deploy_network_cal_final'], ci['deploy_network_teal_final'])
+    print('mw-u, net-cal vs net-teal   = %.3f, p=%.6f' % (stat, p))
 
-    # Two robots but have six experimental conditions for them.
-    # Update: do five, ignoring the case when it's trained on the network by itself.
-    n_groups = 5
-    groups_hsr = ['deploy_human',
-                  'deploy_analytic',
-                  'deploy_network_white',
-                  'deploy_network_cal',
-                  'deploy_network_teal',]
-    groups_fetch = ['fetch_human_white',
-                    'fetch_anal_white',
-                    'fetch_combo_white',
-                    'fetch_combo_teal',
-                    'fetch_combo_cal',]
+    print("\nNow the Fetch (note, different rollout count can contribute to different p-values):")
+    stat, p = mannwhitneyu(ci['honda_human_final'], ci['honda_analytic_final'])
+    print('mw-u, human vs analytic     = %.3f, p=%.6f' % (stat, p))
 
-    # Collect all data for the plots.
-    hsr_avg_start = [np.mean(coverage_info[x+'_start']) for x in groups_hsr]
-    hsr_std_start = [np.std(coverage_info[x+'_start']) for x in groups_hsr]
-    hsr_avg_final = [np.mean(coverage_info[x+'_final']) for x in groups_hsr]
-    hsr_std_final = [np.std(coverage_info[x+'_final']) for x in groups_hsr]
-    index = np.arange(n_groups)
+    print("\nalso might report these for the abstract?")
+    print("human coverage:")
+    human = np.concatenate( (ci['deploy_human_final'],ci['honda_human_final']) )
+    print(human)
+    print(np.mean(human))
+    print("neural net coverage (white blanket only):")
+    net = np.concatenate( (ci['deploy_network_white_final'],ci['honda_network_white_final']) )
+    print(net)
+    print(np.mean(net))
 
-    # For plotting, we need to set ax.bar with `bar_width` offset for second group.
-    rects1 = ax[0,0].bar(index, hsr_avg_final, bar_width, alpha=opacity, color='b',
-            yerr=hsr_std_final, error_kw=error_kw, label='HSR')
-    rects1 = ax[0,0].bar(index, hsr_avg_start, bar_width, alpha=opacity, color='b',
-            yerr=hsr_std_start, error_kw=error_kw)
-    #rects2 = ax[0,0].bar(index+bar_width, means_fetch, bar_width, alpha=opacity, color='r',
-    #        yerr=std_fetch, error_kw=error_config, label='Fetch')
 
-    # Get labeling right.
-    ax[0,0].set_xticklabels(
-        ('Human\n{:.1f} +/- {:.1f}'.format(   hsr_avg_final[0], hsr_std_final[0]),
-         'Analytic\n{:.1f} +/- {:.1f}'.format(hsr_avg_final[1], hsr_std_final[1]),
-         'Net-W\n{:.1f} +/- {:.1f}'.format(   hsr_avg_final[2], hsr_std_final[2]),
-         'Net-C\n{:.1f} +/- {:.1f}'.format(   hsr_avg_final[3], hsr_std_final[3]),
-         'Net-T\n{:.1f} +/- {:.1f}'.format(   hsr_avg_final[4], hsr_std_final[4]),
-        )
-    )
-
-    # Bells and whistles
-    ax[0,0].set_xlabel('Initial and Final Coverage Per Group (Mean +/- Std)', fontsize=xsize)
-    ax[0,0].set_ylabel('Coverage', fontsize=ysize)
-    ax[0,0].set_title('HSR and Fetch Coverage Results', fontsize=tsize)
-    ax[0,0].set_xticks(index + bar_width / 2)
-    ax[0,0].tick_params(axis='x', labelsize=tick_size)
-    ax[0,0].tick_params(axis='y', labelsize=tick_size)
-    ax[0,0].legend(loc="best", ncol=1, prop={'size':legend_size})
-
-    # It's coverage, but most values are high so might not make sense to start from zero.
-    ax[0,0].set_ylim([40,100]) # tune this?
-
-    plt.tight_layout()
-    figname = join(FIGURES, 'plot_bars_coverage_v01.png')
-    plt.savefig(figname)
-    print("\nJust saved: {}".format(figname))
+##def bar_plots(coverage_info):
+##    """ See: https://matplotlib.org/gallery/statistics/barchart_demo.html
+##    Actually this is mostly for debugging since I later separate them.
+##    """
+##    nrows, ncols = 1, 1
+##    fig, ax = plt.subplots(nrows, ncols, figsize=(11*ncols,9*nrows), squeeze=False)
+##
+##    # Two robots but have six experimental conditions for them.
+##    # Update: do five, ignoring the case when it's trained on the network by itself.
+##    n_groups = 5
+##    groups_hsr = ['deploy_human',
+##                  'deploy_analytic',
+##                  'deploy_network_white',
+##                  'deploy_network_cal',
+##                  'deploy_network_teal',]
+##    groups_fetch = ['fetch_human_white',
+##                    'fetch_anal_white',
+##                    'fetch_combo_white',
+##                    'fetch_combo_teal',
+##                    'fetch_combo_cal',]
+##
+##    # Collect all data for the plots.
+##    hsr_avg_start = [np.mean(coverage_info[x+'_start']) for x in groups_hsr]
+##    hsr_std_start = [np.std(coverage_info[x+'_start']) for x in groups_hsr]
+##    hsr_avg_final = [np.mean(coverage_info[x+'_final']) for x in groups_hsr]
+##    hsr_std_final = [np.std(coverage_info[x+'_final']) for x in groups_hsr]
+##    index = np.arange(n_groups)
+##
+##    # For plotting, we need to set ax.bar with `bar_width` offset for second group.
+##    rects1 = ax[0,0].bar(index, hsr_avg_final, bar_width, alpha=opacity, color='b',
+##            yerr=hsr_std_final, error_kw=error_kw, label='HSR')
+##    rects1 = ax[0,0].bar(index, hsr_avg_start, bar_width, alpha=opacity, color='b',
+##            yerr=hsr_std_start, error_kw=error_kw)
+##    #rects2 = ax[0,0].bar(index+bar_width, means_fetch, bar_width, alpha=opacity, color='r',
+##    #        yerr=std_fetch, error_kw=error_config, label='Fetch')
+##
+##    # Get labeling right.
+##    ax[0,0].set_xticklabels(
+##        ('Human\n{:.1f} +/- {:.1f}'.format(   hsr_avg_final[0], hsr_std_final[0]),
+##         'Analytic\n{:.1f} +/- {:.1f}'.format(hsr_avg_final[1], hsr_std_final[1]),
+##         'Net-W\n{:.1f} +/- {:.1f}'.format(   hsr_avg_final[2], hsr_std_final[2]),
+##         'Net-C\n{:.1f} +/- {:.1f}'.format(   hsr_avg_final[3], hsr_std_final[3]),
+##         'Net-T\n{:.1f} +/- {:.1f}'.format(   hsr_avg_final[4], hsr_std_final[4]),
+##        )
+##    )
+##
+##    # Bells and whistles
+##    ax[0,0].set_xlabel('Initial and Final Coverage Per Group (Mean +/- Std)', fontsize=xsize)
+##    ax[0,0].set_ylabel('Coverage', fontsize=ysize)
+##    ax[0,0].set_title('HSR and Fetch Coverage Results', fontsize=tsize)
+##    ax[0,0].set_xticks(index + bar_width / 2)
+##    ax[0,0].tick_params(axis='x', labelsize=tick_size)
+##    ax[0,0].tick_params(axis='y', labelsize=tick_size)
+##    ax[0,0].legend(loc="best", ncol=1, prop={'size':legend_size})
+##
+##    # It's coverage, but most values are high so might not make sense to start from zero.
+##    ax[0,0].set_ylim([40,100]) # tune this?
+##
+##    plt.tight_layout()
+##    figname = join(FIGURES, 'plot_bars_coverage_v01.png')
+##    plt.savefig(figname)
+##    print("\nJust saved: {}".format(figname))
 
 
 def bar_plots_v2(coverage_info):
@@ -196,7 +278,7 @@ def bar_plots_v2(coverage_info):
 
     nrows, ncols = 1, 2
     fig, ax = plt.subplots(nrows, ncols, squeeze=False,
-            figsize=(13*ncols,9*nrows),
+            figsize=(14*ncols,9*nrows),
             gridspec_kw={'width_ratios': [n_groups_1,n_groups_2]},
     )
 
@@ -270,7 +352,7 @@ def bar_plots_v2(coverage_info):
                          color='red',
                          yerr=fetch_std_start,
                          error_kw=error_kw,
-                         label='F-Start')
+                         label='Fetch-Start')
     rects4 = ax[0,0].bar(np.array([1, 3, 5]) + bar_width - offset,
                          fetch_avg_final,
                          bar_width,
@@ -278,7 +360,7 @@ def bar_plots_v2(coverage_info):
                          color='red',
                          yerr=fetch_std_final,
                          error_kw=error_kw,
-                         label='F-Final')
+                         label='Fetch-Final')
 
     # For the transfer learning aspect
     rects8 = ax[0,1].bar(index_2,
@@ -323,8 +405,8 @@ def bar_plots_v2(coverage_info):
          'Human\n{:.1f} +/- {:.1f}\n{} Rollouts'.format(    fetch_avg_final[0], fetch_std_final[0], len2),
          'Analytic\n{:.1f} +/- {:.1f}\n{} Rollouts'.format( hsr_avg_final_1[1], hsr_std_final_1[1], len3),
          'Analytic\n{:.1f} +/- {:.1f}\n{} Rollouts'.format( fetch_avg_final[1], fetch_std_final[1], len4),
-         'Depth-Policy\n{:.1f} +/- {:.1f}\n{} Rollouts'.format(hsr_avg_final_1[2], hsr_std_final_1[2], len5),
-         'Depth-Policy\n{:.1f} +/- {:.1f}\n{} Rollouts'.format(fetch_avg_final[2], fetch_std_final[2], len6),
+         'Learned\n{:.1f} +/- {:.1f}\n{} Rollouts'.format(hsr_avg_final_1[2], hsr_std_final_1[2], len5),
+         'Learned\n{:.1f} +/- {:.1f}\n{} Rollouts'.format(fetch_avg_final[2], fetch_std_final[2], len6),
         )
     )
 
@@ -349,8 +431,8 @@ def bar_plots_v2(coverage_info):
     )
 
     # Depends on the groups we have.
-    ax[0,0].set_xticks(index_1 + bar_width/2 + 2*offset)
-    ax[0,1].set_xticks(index_2 + bar_width/2 + 2*offset)
+    ax[0,0].set_xticks(index_1 + bar_width/2 + 0*offset)
+    ax[0,1].set_xticks(index_2 + bar_width/2 + 0*offset)
 
     # Bells and whistles
     for i in range(2):
@@ -362,7 +444,7 @@ def bar_plots_v2(coverage_info):
         ax[0,i].legend(loc="best", ncol=4, prop={'size':legend_size})
 
         # It's coverage, but most values are high so might not make sense to start from zero.
-        ax[0,i].set_ylim([30,109]) # tune this?
+        ax[0,i].set_ylim([33,109]) # TUNE THIS!
 
         # Doesn't work as I intended
         #ax[0,i].set_yticklabels((40,50,60,70,80,90,100))
@@ -405,6 +487,6 @@ if __name__ == "__main__":
             coverage_info[result_type+'_start'].append( coverage_s )
             coverage_info[result_type+'_final'].append( coverage_f )
 
-    bar_plots(coverage_info)
+    #bar_plots(coverage_info)
     bar_plots_v2(coverage_info)
     stats(coverage_info)

@@ -58,14 +58,14 @@ def stats(ci):
         'deploy_analytic_final',
         'deploy_network_white_start',
         'deploy_network_white_final',
-        'deploy_network_cal_start',
-        'deploy_network_cal_final',
         'deploy_network_cal_rgb_start',
         'deploy_network_cal_rgb_final',
-        'deploy_network_teal_start',
-        'deploy_network_teal_final',
+        'deploy_network_cal_start',
+        'deploy_network_cal_final',
         'deploy_network_teal_rgb_start',
         'deploy_network_teal_rgb_final',
+        'deploy_network_teal_start',
+        'deploy_network_teal_final',
     ]
     keys_h = [
         'honda_human_start',

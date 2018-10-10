@@ -7,9 +7,9 @@ This is a snapshot of the code used for:
 Soshi Iba, John Canny, Ken Goldberg
 - https://arxiv.org/abs/1809.09810
 
-This repository will not be updated further, to ensure that code can be re-run as needed to
-reproduce results. To see any follow-up work, [check out the BerkeleyAutomation version][2] of this
-repository (use a separate virtualenv).
+**This repository will not be updated further, to ensure that code can be re-run as needed to
+reproduce results**. To see any follow-up work, [check out the BerkeleyAutomation version][2] of
+this repository (use a separate virtualenv).
 
 If you want to see the old README I had before I removed images to save memory, [look at this from
 my homepage][1]. It contains some outdated stuff so please take this with a grain of salt.

@@ -423,8 +423,8 @@ def bar_plots_v2(coverage_info):
     assert len4 == len(coverage_info['deploy_network_teal_final'])
 
     ax[0,1].set_xticklabels(
-        ('RGB-to-Cal\n{:.1f} +/- {:.1f}\n{} Rollouts'.format(    hsr_avg_final_2[0], hsr_std_final_2[0], len1),
-         'Depth-to-Cal\n{:.1f} +/- {:.1f}\n{} Rollouts'.format(  hsr_avg_final_2[1], hsr_std_final_2[1], len2),
+        ('RGB-to-Y&B\n{:.1f} +/- {:.1f}\n{} Rollouts'.format(    hsr_avg_final_2[0], hsr_std_final_2[0], len1),
+         'Depth-to-Y&B\n{:.1f} +/- {:.1f}\n{} Rollouts'.format(  hsr_avg_final_2[1], hsr_std_final_2[1], len2),
          'RGB-to-Teal\n{:.1f} +/- {:.1f}\n{} Rollouts'.format(   hsr_avg_final_2[2], hsr_std_final_2[2], len3),
          'Depth-to-Teal\n{:.1f} +/- {:.1f}\n{} Rollouts'.format( hsr_avg_final_2[3], hsr_std_final_2[3], len4),
         )
@@ -466,7 +466,8 @@ if __name__ == "__main__":
     # UPDATE: we have Fetch now!
     # --------------------------------------------------------------------------
     print("Searching in path: {}".format(FIGURES))
-    PATHS = sorted([x for x in os.listdir(FIGURES) if '.png' not in x])
+    PATHS = sorted([x for x in os.listdir(FIGURES) if '.png' not in x and \
+            'tar.gz' not in x])
     coverage_info = defaultdict(list)
 
     for result_type in PATHS:

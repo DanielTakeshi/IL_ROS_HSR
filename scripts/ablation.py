@@ -13,16 +13,33 @@ from fast_grasp_detect.data_aug.depth_preprocess import datum_to_net_dim
 from collections import defaultdict
 
 # ------------------------------------------------------------------------------
-# ADJUST. HH is the directory named like: 'grasp_1_img_depth_opt_adam_lr_0.0001_{etc...}'
+# ADJUST. HH is directory named like: 'grasp_1_img_depth_opt_adam_lr_0.0001_{etc...}'
 # We'll just put the figure in the same directory this code is called.
 # ------------------------------------------------------------------------------
 HEAD = '/nfs/diskstation/seita/bed-make/'
-DATA_NAME = 'cache_combo_v01'
+DATA_NAME = 'cache_combo_v03'
 HH_LIST = [
-    'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_8000_cv_True',
-    'grasp_4_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_8000_cv_True',
+    'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_4001_cv_True_9_to_9',
+    'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_4001_cv_True_8_to_9',
+    #'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_4001_cv_True_7_to_9',
+    'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_4001_cv_True_6_to_9',
+    #'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_4001_cv_True_5_to_9',
+    'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_4001_cv_True_4_to_9',
+    #'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_4001_cv_True_3_to_9',
+    #'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_4001_cv_True_2_to_9',
+    'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_4001_cv_True_1_to_9',
 ]
-
+NAMES = [
+    '205 Training Images (1/9)',
+    '410 Training Images (2/9)',
+    #'615 Training Images',
+    '820 Training Images (4/9)',
+    #'1025 Training Images',
+    '1230 Training Images (6/9)',
+    #'1435 Training Images',
+    #'1640 Training Images',
+    '1845 Training Images (Full)',
+]
 RESULTS_PATHS = []
 RESULTS_LABELS = []
 for HH  in HH_LIST:
@@ -30,11 +47,12 @@ for HH  in HH_LIST:
     RESULTS_PATHS.append( osp.join(HEAD,net_type,DATA_NAME,HH) )
     RESULTS_LABELS.append( HH )
 
-NAMES = [
-    'YOLO Pre-Trained',
-    'Augmented AlexNet', # xavier + ReLU
-]
+
 assert len(NAMES) == len(HH_LIST)
+
+# Oops I only record epoch, oh well, do NUM_STEPS instead ...
+NUM_STEPS = 4000
+BATCH_SIZE = 32
 
 # For the plot(s). There are a few plot-specific parameters, though.
 # Also, sizes make more sense for each subplot being about (10 x 8).
@@ -45,7 +63,7 @@ tick_size = 25
 legend_size = 25
 alpha = 0.5
 error_alpha = 0.3
-colors = ['blue', 'red', 'green']
+colors = ['red', 'blue', 'gold', 'black', 'green', 'purple', 'gray']
 
 # Might as well make y-axis a bit more informative, if we know it.
 LOSS_YLIMS = [
@@ -55,8 +73,14 @@ LOSS_YLIMS = [
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 
+def smooth(x, w=5):
+    result = np.copy(x)
+    for i in range(len(x)):
+        result[i] = np.mean(x[i-w:i])
+    return result
 
-def make_plot_pixel_only(ss_list, with_min_value):
+
+def make_plot(ss_list, with_min_value):
     """Make plot (w/subplots) of pixel losses only, hopefully for the final paper.
 
     Adjust the 'names' for legends. Look at `HH_LIST` to see the labels.
@@ -76,7 +100,8 @@ def make_plot_pixel_only(ss_list, with_min_value):
 
         # {train, test, raw_test} = shape (K,N) where N is how often we recorded it.
         # For plots, ideally N = E, where E is number of epochs, but usually N > E.
-        # For all cross validation folds, we must have N be the same.
+        # For all cross validation folds, we must have N be the same. Actually for
+        # the ablation I just set K=1.
         assert all_test.shape == all_test_raw.shape
         K, N = all_train.shape
         print("on, name:         {}".format(name))
@@ -84,8 +109,9 @@ def make_plot_pixel_only(ss_list, with_min_value):
         print("all_test.shape:   {}".format(all_test.shape))
         print("epoch: {}\n".format(epochs))
 
-        # Since N != E in general, try to get epochs to line up.
-        xs = np.arange(N) * (epochs[0] / float(N))
+        # For ablation, we know the number of steps. Take it and form the number
+        # of total elements processed during training.
+        xs = np.arange(N) * (NUM_STEPS / float(N)) * (BATCH_SIZE / 1000.0)
         mean_raw    = np.mean(all_test_raw, axis=0)
         std_raw     = np.std(all_test_raw, axis=0)
         mean_scaled = np.mean(all_test, axis=0)
@@ -94,95 +120,25 @@ def make_plot_pixel_only(ss_list, with_min_value):
         label_raw  = '{}'.format(name)
         if with_min_value:
             label_raw  = '{}; min {:.1f}'.format(name, np.min(mean_raw))
-        ax[0,0].plot(xs, mean_raw, lw=2, color=colors[idx], label=label_raw)
-        ax[0,0].fill_between(xs, mean_raw-std_raw, mean_raw+std_raw,
-                alpha=error_alpha, facecolor=colors[idx])
+        ax[0,0].plot(xs, smooth(mean_raw), lw=2, color=colors[idx], label=label_raw)
+        #ax[0,0].fill_between(xs, mean_raw-std_raw, mean_raw+std_raw,
+        #        alpha=error_alpha, facecolor=colors[idx])
 
     # Bells and whistles
     #ax[0,0].set_xlim([0,14]) # TUNE !!
-    ax[0,0].set_ylim([0,80]) # TUNE !!
-    ax[0,0].set_xlabel('Training Epochs Over Augmented Data', fontsize=xsize)
+    ax[0,0].set_ylim([0,70]) # TUNE !!
+    ax[0,0].set_xlabel('Training Points Consumed (Thousands)', fontsize=xsize)
     ax[0,0].tick_params(axis='x', labelsize=tick_size)
     ax[0,0].tick_params(axis='y', labelsize=tick_size)
-    ax[0,0].set_ylabel('Average Test L2 Loss (Scaled)', fontsize=ysize)
     ax[0,0].set_ylabel('Average Test L2 Loss (in Pixels)', fontsize=ysize)
-    ax[0,0].set_title("Grasp Point Cross-Validation Predictions", fontsize=tsize)
+    ax[0,0].set_title("Predictions Based on Training Size", fontsize=tsize)
     leg = ax[0,0].legend(loc="best", ncol=1, prop={'size':legend_size})
     for legobj in leg.legendHandles:
         legobj.set_linewidth(5.0)
 
     plt.tight_layout()
-    suffix = "fig_stitch_results_pixels_{}_curves_v01.png".format(len(ss_list))
+    suffix = "fig_ablation.png".format(len(ss_list))
     figname = osp.join(suffix)
-    plt.savefig(figname)
-    print("Look at this figure:\n{}".format(figname))
-
-
-def make_plot(ss_list):
-    """Make plot (w/subplots) of losses, etc.
-
-    First column: scaled. Second column: pixels.
-    """
-    nrows = 1
-    ncols = 2
-    fig, ax = plt.subplots(nrows, ncols, figsize=(8*ncols,6*nrows), squeeze=False)
-
-    for idx,(ss,name) in enumerate(zip(ss_list,RESULTS_LABELS)):
-        all_train = np.array(ss['train'])
-        all_test = np.array(ss['test'])
-        all_test_raw = np.array(ss['raw_test'])
-        all_lrates = np.array(ss['lrates'])
-        epochs = ss['epoch']
-
-        # {train, test, raw_test} = shape (K,N) where N is how often we recorded it.
-        # For plots, ideally N = E, where E is number of epochs, but usually N > E.
-        # For all cross validation folds, we must have N be the same.
-        assert all_test.shape == all_test_raw.shape
-        K, N = all_train.shape
-        print("on, name:         {}".format(name))
-        print("all_train.shape:  {}".format(all_train.shape))
-        print("all_test.shape:   {}".format(all_test.shape))
-        print("epoch: {}\n".format(epochs))
-
-        # Since N != E in general, try to get epochs to line up.
-        xs = np.arange(N) * (epochs[0] / float(N))
-
-        mean_raw    = np.mean(all_test_raw, axis=0)
-        std_raw     = np.std(all_test_raw, axis=0)
-        mean_scaled = np.mean(all_test, axis=0)
-        std_scaled  = np.std(all_test, axis=0)
-
-        label_scaled = '{}; minv_{:.4f}'.format(name[:7], np.min(mean_scaled))
-        label_raw    = '{}; minv_{:.4f}'.format(name[:7], np.min(mean_raw))
-        ax[0,0].plot(xs, mean_scaled, lw=2, color=colors[idx], label=label_scaled)
-        ax[0,1].plot(xs, mean_raw,    lw=2, color=colors[idx], label=label_raw)
-        ax[0,0].fill_between(xs,
-                mean_scaled-std_scaled,
-                mean_scaled+std_scaled,
-                alpha=error_alpha,
-                facecolor=colors[idx])
-        ax[0,1].fill_between(xs,
-                mean_raw-std_raw,
-                mean_raw+std_raw,
-                alpha=error_alpha,
-                facecolor=colors[idx])
-
-    # Bells and whistles
-    for i in range(nrows):
-        for j in range(ncols):
-            if LOSS_YLIMS[idx] is not None:
-                ax[i,j].set_ylim(LOSS_YLIMS[idx])
-            ax[i,j].legend(loc="best", ncol=1, prop={'size':legend_size})
-            ax[i,j].set_xlabel('Training Epochs (Over Augmented Data)', fontsize=xsize)
-            ax[i,j].tick_params(axis='x', labelsize=tick_size)
-            ax[i,j].tick_params(axis='y', labelsize=tick_size)
-    ax[0,0].set_ylabel('Average Test L2 Loss (Scaled)', fontsize=ysize)
-    ax[0,1].set_ylabel('Average Test L2 Loss (in Pixels)', fontsize=ysize)
-    ax[0,0].set_title("Grasp Point Cross-Validation Predictions, Scaled", fontsize=tsize)
-    ax[0,1].set_title("Grasp Point Cross-Validation Predictions", fontsize=tsize)
-
-    plt.tight_layout()
-    figname = osp.join("fig_stitch_results.png")
     plt.savefig(figname)
     print("Look at this figure:\n{}".format(figname))
 
@@ -231,11 +187,12 @@ if __name__ == "__main__":
         ss_list.append(ss)
 
     print("\nDone with data loading. Now making the plots ...")
-    #make_plot(ss_list)
+    print("Note that len(ss_list): {}".format(len(ss_list)))
+    make_plot(ss_list, with_min_value=False)
 
-    # We can do this with the full ss_list.
-    # OR with only the first item, which is what we actually use!!
-    print("\nMaking a plot with all curves overlaid.")
-    make_plot_pixel_only(ss_list, with_min_value=True)
-    print("\nMaking a plot with only one curve (should be YOLO PreTrained).")
-    make_plot_pixel_only( [ss_list[0]], with_min_value=True)
+    ## # We can do this with the full ss_list.
+    ## # OR with only the first item, which is what we actually use!!
+    ## print("\nMaking a plot with all curves overlaid.")
+    ## make_plot_pixel_only(ss_list, with_min_value=True)
+    ## print("\nMaking a plot with only one curve (should be YOLO PreTrained).")
+    ## make_plot_pixel_only( [ss_list[0]], with_min_value=True)

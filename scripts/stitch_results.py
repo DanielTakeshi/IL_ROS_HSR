@@ -1,7 +1,8 @@
 """Use this script for combining various results form various files.
 
-Ideally these are figures that can go in the final paper, which means there's always going to be
-some manual fine-tuning anyway with legend labels and so forth.
+Ideally these are figures that can go in the final paper,
+which means there's always going to be some manual fine-tuning
+anyway with legend labels and so forth.
 """
 import argparse, cv2, os, pickle, sys, matplotlib, utils
 import os.path as osp
@@ -14,7 +15,7 @@ from fast_grasp_detect.data_aug.depth_preprocess import datum_to_net_dim
 from collections import defaultdict
 
 # ------------------------------------------------------------------------------
-# ADJUST. HH is the directory named like: 'grasp_1_img_depth_opt_adam_lr_0.0001_{etc...}'
+# ADJUST. HH is directory named like: 'grasp_1_img_depth_opt_adam_lr_0.0001_{etc...}'
 # We'll just put the figure in the same directory this code is called.
 # ------------------------------------------------------------------------------
 HEAD = '/nfs/diskstation/seita/bed-make/'

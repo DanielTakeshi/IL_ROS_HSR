@@ -121,11 +121,14 @@ if __name__ == "__main__":
     ss = defaultdict(list) # for plotting later
     num_incorrect = 0
 
+    ignore_images = False
+
     for cv_index,pf in enumerate(pfiles):
         # Now on one of the cross-validation splits (or a 'normal' training run).
         other_pf = pf.replace('_raw_imgs.p','.p')
         print("\n\n ----- Now on: {}\n ----- with:   {}".format(pf, other_pf))
-        data_imgs  = pickle.load( open(osp.join(RESULTS_PATH,pf),'rb') )
+        if not ignore_images:
+            data_imgs  = pickle.load( open(osp.join(RESULTS_PATH,pf),'rb') )
         data_other = pickle.load( open(osp.join(RESULTS_PATH,other_pf),'rb') )
 
         # Load various stuff we stored from training.
@@ -134,44 +137,47 @@ if __name__ == "__main__":
         preds = data_other['best_snet_preds'] # best preds (each 2D) for best_acc
         correctness = data_other['best_snet_correctness'] # individual image performance
 
-        c_imgs = data_imgs['c_imgs_list']
-        d_imgs = data_imgs['d_imgs_list']
-        K = len(c_imgs)
-        assert len(correctness) == K
+        if not ignore_images:
+            c_imgs = data_imgs['c_imgs_list']
+            d_imgs = data_imgs['d_imgs_list']
+            K = len(c_imgs)
+            assert len(correctness) == K
 
-        # Later, figure out what to do if not using cross validation ...
-        if 'cv_indices' in data_other:
-            cv_fname = data_other['cv_indices']
-            print("Now processing CV file name: {}, idx {}, with {} images".format(
-                    cv_fname, cv_index, K))
+            # Later, figure out what to do if not using cross validation ...
+            if 'cv_indices' in data_other:
+                cv_fname = data_other['cv_indices']
+                print("Now processing CV file name: {}, idx {}, with {} images".format(
+                        cv_fname, cv_index, K))
 
         # `idx` = index into stuff _within_ this CV test set. Save images w/label.
-        for idx in range(K):
-            if idx % 10 == 0:
-                print("  ... processing image {} in this test set".format(idx))
-            is_it_correct = correctness[idx]
-            prediction = preds[idx]
-            cimg = c_imgs[idx].copy()
-            dimg = d_imgs[idx].copy()
-            result = 'good'
-            if not is_it_correct:
-                result = 'INCORRECT'
-                num_incorrect += 1
-            c_suffix = 'r_cv_{}_s-net_{}_rgb_{}.png'.format(cv_index, idx, result)
-            d_suffix = 'r_cv_{}_s-net_{}_depth_{}.png'.format(cv_index, idx, result)
-            c_path = osp.join(OUTPUT_PATH, c_suffix)
-            d_path = osp.join(OUTPUT_PATH, d_suffix)
-            cv2.imwrite(c_path, cimg)
-            cv2.imwrite(d_path, dimg)
+        if not ignore_images:
+            for idx in range(K):
+                if idx % 10 == 0:
+                    print("  ... processing image {} in this test set".format(idx))
+                is_it_correct = correctness[idx]
+                prediction = preds[idx]
+                cimg = c_imgs[idx].copy()
+                dimg = d_imgs[idx].copy()
+                result = 'good'
+                if not is_it_correct:
+                    result = 'INCORRECT'
+                    num_incorrect += 1
+                c_suffix = 'r_cv_{}_s-net_{}_rgb_{}.png'.format(cv_index, idx, result)
+                d_suffix = 'r_cv_{}_s-net_{}_depth_{}.png'.format(cv_index, idx, result)
+                c_path = osp.join(OUTPUT_PATH, c_suffix)
+                d_path = osp.join(OUTPUT_PATH, d_suffix)
+                cv2.imwrite(c_path, cimg)
+                cv2.imwrite(d_path, dimg)
 
         # For plotting, we might want some of this stuff.
-        ss['all_correctness'].append(correct)
-        ss['all_predictions'].append(preds)
+        if not ignore_images:
+            ss['all_correctness'].append(correct)
+            ss['all_predictions'].append(preds)
+            ss['total_imgs'].append(K)
         ss['train'].append(data_other['train'])
         ss['test'].append(data_other['test'])
         ss['epoch'].append(data_other['epoch'])
         ss['lrates'].append(data_other['lrates'])
-        ss['total_imgs'].append(K)
         print("=====================================================================")
 
     print("\nDone with iterating through images. See:\n{}".format(OUTPUT_PATH))

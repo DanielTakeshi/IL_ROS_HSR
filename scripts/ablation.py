@@ -19,15 +19,15 @@ from collections import defaultdict
 HEAD = '/nfs/diskstation/seita/bed-make/'
 DATA_NAME = 'cache_combo_v03'
 HH_LIST = [
-    'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_4001_cv_True_9_to_9',
-    'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_4001_cv_True_8_to_9',
-    #'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_4001_cv_True_7_to_9',
-    'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_4001_cv_True_6_to_9',
-    #'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_4001_cv_True_5_to_9',
-    'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_4001_cv_True_4_to_9',
-    #'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_4001_cv_True_3_to_9',
-    #'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_4001_cv_True_2_to_9',
-    'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_4001_cv_True_1_to_9',
+    'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_6001_cv_True_9_to_9',
+    'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_6001_cv_True_8_to_9',
+    #'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_6001_cv_True_7_to_9',
+    'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_6001_cv_True_6_to_9',
+    #'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_6001_cv_True_5_to_9',
+    'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_6001_cv_True_4_to_9',
+    #'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_6001_cv_True_3_to_9',
+    #'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_6001_cv_True_2_to_9',
+    'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_6001_cv_True_1_to_9',
 ]
 NAMES = [
     '201 Training Images (~1/9)',
@@ -51,7 +51,7 @@ for HH  in HH_LIST:
 assert len(NAMES) == len(HH_LIST)
 
 # Oops I only record epoch, oh well, do NUM_STEPS instead ...
-NUM_STEPS = 4000
+NUM_STEPS = 6000
 BATCH_SIZE = 32
 
 # For the plot(s). There are a few plot-specific parameters, though.

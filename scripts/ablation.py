@@ -30,15 +30,15 @@ HH_LIST = [
     'grasp_1_img_depth_opt_adam_lr_0.0001_L2_0.0001_kp_1.0_steps_4001_cv_True_1_to_9',
 ]
 NAMES = [
-    '205 Training Images (1/9)',
-    '410 Training Images (2/9)',
-    #'615 Training Images',
-    '820 Training Images (4/9)',
-    #'1025 Training Images',
-    '1230 Training Images (6/9)',
-    #'1435 Training Images',
-    #'1640 Training Images',
-    '1845 Training Images (Full)',
+    '201 Training Images (~1/9)',
+    '402 Training Images (~2/9)',
+    #'604 Training Images (~3/9)',
+    '805 Training Images (~4/9)',
+    #'1007 Training Images (~5/9)',
+    '1208 Training Images (~6/9)',
+    #'1410 Training Images (~7/9)',
+    #'1611 Training Images (~8/9)',
+    '1813 Training Images (Full)',
 ]
 RESULTS_PATHS = []
 RESULTS_LABELS = []

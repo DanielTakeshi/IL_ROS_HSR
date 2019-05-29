@@ -56,6 +56,10 @@ class Test():
 
         Note that as of August 22, the API has the robot exposed, but keeps
         the cutoff hidden, to reduce risks of different cutoffs.
+
+        ALSO IMPORTANT: be careful if you are loading a network that was
+        trained on all the data. If you want to test validation, you need to
+        change the network in the bed-making configuration file.
         """
         L2_results = []
 

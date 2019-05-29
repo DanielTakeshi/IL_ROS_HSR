@@ -1,4 +1,4 @@
-"""Use this script for inspecting results after we run.
+"""Use this script for inspecting results after we run. (And corner detection)
 
 ASSUMES WE SAVED DATA VIA CACHE, so we don't use `rollouts_X/rollouts_k/rollout.p`.
 
@@ -6,6 +6,8 @@ Update Aug 20, 2018: adding a third method here, `scatter_heat_final` which hope
 can create a finalized version of a scatter plot figure that we might want to include.
 The other figures created in this script here are mostly for quick debugging after a
 training run.
+
+Update: actually we're going to use this for corner detection as well.
 """
 import argparse, cv2, os, pickle, sys, matplotlib, utils
 import os.path as osp
@@ -34,7 +36,7 @@ assert VIEW_TYPE in ['standard', 'close']
 
 # Make directory. In separate `figures/`, we put the same directory name for results.
 RESULTS_PATH = osp.join(HEAD, net_type, DATA_NAME, HH)
-OUTPUT_PATH  = osp.join(HEAD, 'figures', DATA_NAME, HH, 'inspect_1')
+OUTPUT_PATH  = osp.join(HEAD, 'figures', DATA_NAME, HH, 'inspect_2')
 if not osp.exists(OUTPUT_PATH):
     os.makedirs(OUTPUT_PATH)
 

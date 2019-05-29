@@ -108,7 +108,10 @@ def combine(ss):
     bleh.
     """
     nrows, ncols = 1, 3
-    fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(10*ncols,8*nrows), squeeze=False)
+    fig, ax = plt.subplots(nrows=nrows, ncols=ncols,
+                           figsize=(10*ncols,8*nrows),
+                           squeeze=False,
+                           gridspec_kw={'width_ratios': [0.95, 1.0, 1.05]})
 
     # Put all stuff locally from dictionary input (turning into np.arrays as needed).
     all_targs = np.array(ss['all_targs'])
@@ -118,7 +121,6 @@ def combine(ss):
     all_y = ss['all_y']
     all_names = ss['all_names']
     num_pts = len(ss['all_L2s'])
-
 
     # --------------------------------------------
     # DO THE FIRST PLOT, the loss curve, mostly following `stitch_results.py`.
@@ -134,7 +136,7 @@ def combine(ss):
     mean_scaled  = np.mean(all_test, axis=0)
     std_scaled   = np.std(all_test, axis=0)
 
-    name = 'YOLO Pre-Trained'
+    name = 'YOLO Pre-T'
     idx = 0
     #label_raw  = '{}'.format(name)
     label_raw  = '{}; min {:.1f}'.format(name, np.min(mean_raw))
@@ -142,9 +144,15 @@ def combine(ss):
     ax[0,0].fill_between(xs, mean_raw-std_raw, mean_raw+std_raw,
             alpha=error_alpha, facecolor=colors[idx])
     ax[0,0].set_ylim([0,80])
-    ax[0,0].set_xlabel('Training Epochs Over Augmented Data', fontsize=xsize)
-    ax[0,0].set_ylabel('Average Test L2 Loss (in Pixels)', fontsize=ysize)
-    ax[0,0].set_title("Grasp Cross-Validation Predictions", fontsize=tsize)
+    ax[0,0].set_xlabel('Epochs (Augmented Data)', fontsize=xsize)
+    ax[0,0].set_ylabel('Test $L_2$ Loss (Pixels)', fontsize=ysize)
+
+    ax[0,1].set_xlabel('Pixel Coordinate', fontsize=xsize)
+    ax[0,1].set_ylabel('Pixel Coordinate', fontsize=ysize)
+    ax[0,2].set_xlabel('Pixel Coordinate', fontsize=xsize)
+    ax[0,2].set_ylabel('Pixel Coordinate', fontsize=ysize)
+
+    ax[0,0].set_title("Pick Point Predictions", fontsize=tsize)
     leg = ax[0,0].legend(loc="best", ncol=1, prop={'size':legend_size})
     for legobj in leg.legendHandles:
         legobj.set_linewidth(5.0)
@@ -190,7 +198,7 @@ def combine(ss):
     mean = np.mean(all_L2s)
     std = np.std(all_L2s)
     #ax[0,2].set_title("Pixel L2 Loss Heat Map: {:.1f} +/- {:.1f}".format(mean,std),fontsize=tsize)
-    ax[0,2].set_title("Pixel L2 Loss Heat Map".format(mean,std),fontsize=tsize)
+    ax[0,2].set_title("Pixel $L_2$ Loss Heat Map".format(mean,std),fontsize=tsize)
 
     # Bells and whistles
     for j in range(1,3):
@@ -201,7 +209,7 @@ def combine(ss):
         ax[0,j].tick_params(axis='y', labelsize=tick_size)
 
     plt.tight_layout()
-    figname = "check_predictions_scatter_map_final_v02.png"
+    figname = "check_predictions_scatter_map_final_v03.png"
     plt.savefig(figname)
     print("Hopefully this figure can be in the paper:\n{}".format(figname))
 

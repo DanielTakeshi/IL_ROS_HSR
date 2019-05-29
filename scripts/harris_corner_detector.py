@@ -327,6 +327,101 @@ def plot_data_source(ss):
     print("   avg: {:.1f}\pm {:.1f}".format( np.mean(ds1), np.std(ds1) ))
 
 
+def harris(cimg, dimg, blockSize=2, ksize=3, k=0.04, filter_type='grid'):
+    """Harris corner detection.
+    https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_feature2d/py_features_harris/py_features_harris.html
+    Default args: blockSize=2, ksize=3, k=0.04
+    """
+    assert filter_type in ['grid', 'parallelogram']
+    gray = cv2.cvtColor(dimg, cv2.COLOR_BGR2GRAY)
+
+    #cv2.imshow('dimg', gray)
+    #cv2.waitKey(0)
+
+    gray = np.float32(gray)
+    dst = cv2.cornerHarris(gray, blockSize=blockSize, ksize=ksize, k=k)
+    #print(dst, dst.shape)
+
+    dst = cv2.dilate(dst, None)
+    #dimg[dst > 0.01 * dst.max()] = [0,0,255] # only do this if I want to color corners
+
+    corners = np.where(dst > 0.01 * dst.max())
+    cx, cy = corners
+    assert cx.shape == cy.shape, "{} vs {}".format(cx.shape, cy.shape)
+    #print('number of corners:', cx.shape, cy.shape)
+    corners = np.concatenate((cx[None],cy[None]))
+    assert len(corners.shape) == 2 and corners.shape[0] == 2  # shape = (2, num_corners)
+
+    if filter_type == 'grid':
+        # --------------------------------------------------------------------------
+        # Now filter it. E.g., for y, I often find we want 85 < corner_y < 260.  or
+        # something like that! This is the naive grid method, would be best if
+        # we can get a parallelogram detector. Detect if it's in the grid and
+        # return the lowest right, assuming that we are using that perspective
+        # (not guaranteed .... yeah!!).
+        # --------------------------------------------------------------------------
+        xlarge = np.where( 100 < corners[1,:] )[0]
+        ylarge = np.where( 80 < corners[0,:] )[0]
+        xsmall = np.where( corners[1,:] < 480 )[0]
+        ysmall = np.where( corners[0,:] < 220 )[0]
+        xfilter = np.intersect1d(xsmall, xlarge)
+        yfilter = np.intersect1d(ysmall, ylarge)
+        filt_corners = np.intersect1d(xfilter, yfilter)
+
+        # --------------------------------------------------------------------------
+        # Draw the filtered corners.
+        # dimg.shape == (480, 640, 3)
+        # corners.shape == (2, num_corners)
+        #
+        #   corners[0,:] ranges from (0 to 480)
+        #   corners[1,:] ranges from (0 to 640)
+        #
+        # Thus, corners[k] is the k-th indexed corner (length 2 tuple), with
+        # the respective corner indices within (0,480) and (0,640),
+        # repsectively. But confusingly, when you view the image like a human
+        # views it, the first corner coordinate is the y axis, but going
+        # DOWNWARDS. The second corner coordinate is the usual x axis, going
+        # rightwards. Keep these in mind.
+        #
+        # Also, we want to pick the corner closest to the bottom right, as our
+        # current heuristic.
+        # --------------------------------------------------------------------------
+        closest = None
+        closest_dist = np.inf
+
+        for idx in filt_corners:
+            corner = corners[:,idx]
+            #dimg[ corner[0], corner[1] ] = [255, 0, 0]
+            dist = (480 - corner[0])**2 + (640 - corner[1])**2
+            if dist < closest_dist:
+                closest_dist = dist
+                # because it's y then x for `cv2.circle` ...
+                closest = (corner[1], corner[0])  
+
+        if closest is not None:
+            #cv2.circle(dimg, center=closest, radius=6, color=(0,0,255), thickness=2)
+            return closest
+
+        #p1 = (85, 100)
+        #p2 = (85, 500)
+        #p3 = (200, 10)
+        #p4 = (200, 580)
+        #cv2.line(dimg, (p1[0], p2[0]), (p1[1], p2[1]), (0,255,0), thickness=2)
+        #cv2.line(dimg, p1, p3, (0,255,0), thickness=2)
+        #cv2.line(dimg, p2, p4, (0,255,0), thickness=2)
+        #cv2.line(dimg, p3, p4, (0,255,0), thickness=2)
+        #cv2.circle(dimg, center=(110, 80), radius=4, color=(0,255,0), thickness=-1)
+        #cv2.circle(dimg, center=(480, 80), radius=4, color=(0,255,0), thickness=-1)
+        #cv2.circle(dimg, center=(50,  220), radius=4, color=(0,255,0), thickness=-1)
+        #cv2.circle(dimg, center=(500, 220), radius=4, color=(0,255,0), thickness=-1)
+
+        #cv2.imshow('dimg', dimg)
+        #cv2.waitKey(0)
+
+    elif filter_type == 'parallelogram':
+        raise NotImplementedError()
+
+
 
 if __name__ == "__main__":
     print("RESULTS_PATH: {}".format(RESULTS_PATH))
@@ -373,14 +468,36 @@ if __name__ == "__main__":
             cimg = c_imgs[idx].copy()
             dimg = d_imgs[idx].copy()
             L2 = np.sqrt( (pred[0]-targ[0])**2 + (pred[1]-targ[1])**2)
-            c_suffix = 'r_cv_{}_grasp_{}_rgb_L2_{:.0f}.png'.format(cv_index, idx, L2)
-            d_suffix = 'r_cv_{}_grasp_{}_depth_L2_{:.0f}.png'.format(cv_index, idx, L2)
+
+            # Get file paths set up. The `_h` is for Harris corner detection.
+            c_suffix = 'r_cv_{}_grasp_{}_rgb_L2_{:.0f}_NETWORK.png'.format(
+                        cv_index, idx, L2)
+            d_suffix = 'r_cv_{}_grasp_{}_depth_L2_{:.0f}_NETWORK.png'.format(
+                        cv_index, idx, L2)
+            c_suffix_h = 'r_cv_{}_grasp_{}_rgb_L2_{:.0f}_HARRIS.png'.format(
+                        cv_index, idx, L2)
+            d_suffix_h = 'r_cv_{}_grasp_{}_depth_L2_{:.0f}_HARRIS.png'.format(
+                        cv_index, idx, L2)
             if 'combo' in DATA_NAME:
                 data_s = data_sources[idx]
-                c_suffix = 'r_cv_{}_grasp_{}_rgb_L2_{:.0f}_{}.png'.format(cv_index, idx, L2, data_s)
-                d_suffix = 'r_cv_{}_grasp_{}_depth_L2_{:.0f}_{}.png'.format(cv_index, idx, L2, data_s)
+                c_suffix = 'r_cv_{}_grasp_{}_rgb_L2_{:.0f}_{}_NETWORK.png'.format(
+                            cv_index, idx, L2, data_s)
+                d_suffix = 'r_cv_{}_grasp_{}_depth_L2_{:.0f}_{}_NETWORK.png'.format(
+                            cv_index, idx, L2, data_s)
+                c_suffix_h = 'r_cv_{}_grasp_{}_rgb_L2_{:.0f}_{}_HARRIS.png'.format(
+                            cv_index, idx, L2, data_s)
+                d_suffix_h = 'r_cv_{}_grasp_{}_depth_L2_{:.0f}_{}_HARRIS.png'.format(
+                            cv_index, idx, L2, data_s)
             c_path = osp.join(OUTPUT_PATH, c_suffix)
             d_path = osp.join(OUTPUT_PATH, d_suffix)
+            c_path_h = osp.join(OUTPUT_PATH, c_suffix_h)
+            d_path_h = osp.join(OUTPUT_PATH, d_suffix_h)
+
+            cv2.imwrite(d_path.replace('_NETWORK',''), dimg)
+
+            # Make a copy of the images for Harris detection.
+            cimg_h = cimg.copy()
+            dimg_h = dimg.copy()
 
             # For plotting later. Note, `targ` is the ground truth.
             ss['all_targs'].append(targ)
@@ -392,20 +509,54 @@ if __name__ == "__main__":
             targ  = (int(targ[0]), int(targ[1]))
             preds = (int(pred[0]), int(pred[1]))
 
-            # Overlay the pose to the image (red circle, black border).
+            # Overlay the target to the image (red circle, black border).
             cv2.circle(cimg, center=targ, radius=INNER, color=(0,0,255), thickness=-1)
-            cv2.circle(dimg, center=targ, radius=INNER, color=(0,0,255), thickness=-1)
             cv2.circle(cimg, center=targ, radius=OUTER, color=(0,0,0), thickness=1)
-            cv2.circle(dimg, center=targ, radius=OUTER, color=(0,0,0), thickness=1)
+            cv2.circle(dimg, center=targ, radius=22, color=(0,255,0), thickness=4)
+            #cv2.circle(dimg, center=targ, radius=OUTER, color=(0,0,0), thickness=1)
 
             # The PREDICTION, though, will be a large blue circle (yellow border?).
             cv2.circle(cimg, center=preds, radius=INNER, color=(255,0,0), thickness=-1)
-            cv2.circle(dimg, center=preds, radius=INNER, color=(255,0,0), thickness=-1)
             cv2.circle(cimg, center=preds, radius=OUTER, color=(0,255,0), thickness=1)
-            cv2.circle(dimg, center=preds, radius=OUTER, color=(0,255,0), thickness=1)
+            #cv2.circle(dimg, center=preds, radius=INNER, color=(255,0,0), thickness=-1)
+            #cv2.circle(dimg, center=preds, radius=OUTER, color=(0,255,0), thickness=1)
+            cv2.circle(dimg, center=preds, radius=22, color=(0,0,255), thickness=4)
 
-            cv2.imwrite(c_path, cimg)
+            #cv2.imwrite(c_path, cimg)
             cv2.imwrite(d_path, dimg)
+
+            # --------------------------------------------------------------------------
+            # Now do corner detection. Will have to filter a lot of things, though ...
+            # --------------------------------------------------------------------------
+            #pred_h = harris(cimg_h, dimg_h)
+            #L2 = np.sqrt( (pred_h[0] - targ[0])**2 + (pred_h[1] - targ[1])**2)
+            #ss['harris_L2s'].append(L2)
+            #preds_h = (int(pred_h[0]), int(pred_h[1]))
+
+            pred_h = harris(cimg_h, dimg_h)
+            #cv2.circle(cimg_h, center=targ, radius=INNER, color=(0,0,255), thickness=-1)
+            #cv2.circle(cimg_h, center=targ, radius=OUTER, color=(0,0,0), thickness=1)
+            #cv2.circle(dimg_h, center=targ, radius=INNER, color=(0,0,255), thickness=-1)
+            #cv2.circle(dimg_h, center=targ, radius=OUTER, color=(0,0,0), thickness=1)
+            #cv2.circle(dimg_h, center=targ, radius=22, color=(0,255,0), thickness=4)
+
+            # Ah, an 'x' looks better ...
+            cv2.line(dimg_h, (targ[0]-10, targ[1]-10), (targ[0]+10, targ[1]+10),
+                     color=(0,255,0), thickness=4)
+            cv2.line(dimg_h, (targ[0]+10, targ[1]-10), (targ[0]-10, targ[1]+10),
+                     color=(0,255,0), thickness=4)
+
+            #cv2.circle(cimg_h, center=preds_h, radius=INNER, color=(255,0,0), thickness=-1)
+            #cv2.circle(cimg_h, center=preds_h, radius=OUTER, color=(0,255,0), thickness=1)
+            if pred_h is not None:
+                cv2.circle(dimg_h, center=pred_h, radius=22, color=(255,0,0), thickness=4)
+                #cv2.circle(dimg_h, center=pred_h, radius=INNER, color=(255,0,0), thickness=-1)
+                #cv2.circle(dimg_h, center=pred_h, radius=OUTER, color=(0,255,0), thickness=1)
+            # put nn preds here as well
+            cv2.circle(dimg_h, center=preds, radius=22, color=(0,0,255), thickness=4)
+
+            #cv2.imwrite(c_path_h, cimg_h)
+            cv2.imwrite(d_path_h, dimg_h)
 
         # Add some more stuff about this cv set, e.g., loss curves.
         ss['train'].append(data_other['train'])
@@ -421,5 +572,5 @@ if __name__ == "__main__":
     if 'combo' in DATA_NAME:
         plot_data_source(ss)
     make_scatter(ss)
-    make_plot(ss)
-    scatter_heat_final(ss)
+    #make_plot(ss)
+    #scatter_heat_final(ss)

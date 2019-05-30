@@ -332,6 +332,9 @@ def harris(cimg, dimg, blockSize=2, ksize=3, k=0.04, filter_type='grid'):
     https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_feature2d/py_features_harris/py_features_harris.html
     Default args: blockSize=2, ksize=3, k=0.04
     """
+    # Add a bunch of red and blue dots.
+    debug_corners = True
+
     assert filter_type in ['grid', 'parallelogram']
     gray = cv2.cvtColor(dimg, cv2.COLOR_BGR2GRAY)
 
@@ -343,7 +346,8 @@ def harris(cimg, dimg, blockSize=2, ksize=3, k=0.04, filter_type='grid'):
     #print(dst, dst.shape)
 
     dst = cv2.dilate(dst, None)
-    #dimg[dst > 0.01 * dst.max()] = [0,0,255] # only do this if I want to color corners
+    if debug_corners:
+        dimg[dst > 0.01 * dst.max()] = [0,0,255]
 
     corners = np.where(dst > 0.01 * dst.max())
     cx, cy = corners
@@ -391,16 +395,31 @@ def harris(cimg, dimg, blockSize=2, ksize=3, k=0.04, filter_type='grid'):
 
         for idx in filt_corners:
             corner = corners[:,idx]
-            #dimg[ corner[0], corner[1] ] = [255, 0, 0]
-            dist = (480 - corner[0])**2 + (640 - corner[1])**2
+            # Only fill this in if I want to see all corners.
+            if debug_corners:
+                dimg[ corner[0], corner[1] ] = [255, 0, 0]
+
+            # Distance to bottom right corner.
+            #dist = (480 - corner[0])**2 + (640 - corner[1])**2
+            # Distance to bottom.
+            dist = (480 - corner[0])**2
+
             if dist < closest_dist:
                 closest_dist = dist
                 # because it's y then x for `cv2.circle` ...
                 closest = (corner[1], corner[0])  
 
+        # Help debug the parameter range for restricting the corner points.
+        if debug_corners:
+            cv2.imshow('dimg', dimg)
+            cv2.waitKey(0)
+
         if closest is not None:
             #cv2.circle(dimg, center=closest, radius=6, color=(0,0,255), thickness=2)
             return closest
+        else:
+            assert len(filt_corners) == 0
+        return None
 
         #p1 = (85, 100)
         #p2 = (85, 500)
@@ -414,9 +433,6 @@ def harris(cimg, dimg, blockSize=2, ksize=3, k=0.04, filter_type='grid'):
         #cv2.circle(dimg, center=(480, 80), radius=4, color=(0,255,0), thickness=-1)
         #cv2.circle(dimg, center=(50,  220), radius=4, color=(0,255,0), thickness=-1)
         #cv2.circle(dimg, center=(500, 220), radius=4, color=(0,255,0), thickness=-1)
-
-        #cv2.imshow('dimg', dimg)
-        #cv2.waitKey(0)
 
     elif filter_type == 'parallelogram':
         raise NotImplementedError()
@@ -449,20 +465,29 @@ if __name__ == "__main__":
             data_sources = data_other['test_data_sources']
             assert len(data_sources) == K
             ss['data_sources'].append(data_sources)
-
         # Later, figure out what to do if not using cross validation ...
         if 'cv_indices' in data_other:
             cv_fname = data_other['cv_indices']
             print("Now processing CV file name: {}, idx {}, with {} images".format(
                     cv_fname, cv_index, K))
 
+        # --------------------------------------------------------------------------
         # `idx` = index into y_pred, y_targ, c_imgs, d_imgs, _within_ this CV test set.
         # Get these from training run, stored from best iteration on validation set.
         # Unlike with the non-cache case, we can't really load in rollouts easily due
         # to shuffling when forming the cache. We could get indices but not with it IMO.
+        # --------------------------------------------------------------------------
+        num_with_corners = 0
+        num_with_no_corners = 0
+
         for idx in range(K):
             if idx % 10 == 0:
                 print("  ... processing image {} in this test set".format(idx))
+            if idx % 10 == 0 and idx > 0:
+                print("  num_(with,without)_corners: {}, {}, {:.2f}".format(
+                    num_with_corners, num_with_no_corners,
+                    float(num_with_no_corners) / (num_with_corners + num_with_no_corners))
+                )
             pred = y_pred[idx]
             targ = y_targ[idx]
             cimg = c_imgs[idx].copy()
@@ -492,8 +517,7 @@ if __name__ == "__main__":
             d_path = osp.join(OUTPUT_PATH, d_suffix)
             c_path_h = osp.join(OUTPUT_PATH, c_suffix_h)
             d_path_h = osp.join(OUTPUT_PATH, d_suffix_h)
-
-            cv2.imwrite(d_path.replace('_NETWORK',''), dimg)
+            cv2.imwrite(d_path.replace('_NETWORK',''), dimg)  # original depth image
 
             # Make a copy of the images for Harris detection.
             cimg_h = cimg.copy()
@@ -509,53 +533,41 @@ if __name__ == "__main__":
             targ  = (int(targ[0]), int(targ[1]))
             preds = (int(pred[0]), int(pred[1]))
 
-            # Overlay the target to the image (red circle, black border).
-            cv2.circle(cimg, center=targ, radius=INNER, color=(0,0,255), thickness=-1)
-            cv2.circle(cimg, center=targ, radius=OUTER, color=(0,0,0), thickness=1)
-            cv2.circle(dimg, center=targ, radius=22, color=(0,255,0), thickness=4)
-            #cv2.circle(dimg, center=targ, radius=OUTER, color=(0,0,0), thickness=1)
+            # Ah, an 'x' looks better for ground truth.
+            cv2.line(dimg, (targ[0]-10, targ[1]-10), (targ[0]+10, targ[1]+10),
+                     color=(0,255,0), thickness=4)
+            cv2.line(dimg, (targ[0]+10, targ[1]-10), (targ[0]-10, targ[1]+10),
+                     color=(0,255,0), thickness=4)
 
             # The PREDICTION, though, will be a large blue circle (yellow border?).
-            cv2.circle(cimg, center=preds, radius=INNER, color=(255,0,0), thickness=-1)
-            cv2.circle(cimg, center=preds, radius=OUTER, color=(0,255,0), thickness=1)
-            #cv2.circle(dimg, center=preds, radius=INNER, color=(255,0,0), thickness=-1)
-            #cv2.circle(dimg, center=preds, radius=OUTER, color=(0,255,0), thickness=1)
             cv2.circle(dimg, center=preds, radius=22, color=(0,0,255), thickness=4)
-
-            #cv2.imwrite(c_path, cimg)
             cv2.imwrite(d_path, dimg)
 
             # --------------------------------------------------------------------------
             # Now do corner detection. Will have to filter a lot of things, though ...
             # --------------------------------------------------------------------------
-            #pred_h = harris(cimg_h, dimg_h)
-            #L2 = np.sqrt( (pred_h[0] - targ[0])**2 + (pred_h[1] - targ[1])**2)
-            #ss['harris_L2s'].append(L2)
-            #preds_h = (int(pred_h[0]), int(pred_h[1]))
-
             pred_h = harris(cimg_h, dimg_h)
-            #cv2.circle(cimg_h, center=targ, radius=INNER, color=(0,0,255), thickness=-1)
-            #cv2.circle(cimg_h, center=targ, radius=OUTER, color=(0,0,0), thickness=1)
-            #cv2.circle(dimg_h, center=targ, radius=INNER, color=(0,0,255), thickness=-1)
-            #cv2.circle(dimg_h, center=targ, radius=OUTER, color=(0,0,0), thickness=1)
-            #cv2.circle(dimg_h, center=targ, radius=22, color=(0,255,0), thickness=4)
+            if pred_h is not None:
+                num_with_corners += 1
+            else:
+                num_with_no_corners += 1
 
-            # Ah, an 'x' looks better ...
+            # Ah, an 'x' looks better for ground truth.
             cv2.line(dimg_h, (targ[0]-10, targ[1]-10), (targ[0]+10, targ[1]+10),
                      color=(0,255,0), thickness=4)
             cv2.line(dimg_h, (targ[0]+10, targ[1]-10), (targ[0]-10, targ[1]+10),
                      color=(0,255,0), thickness=4)
 
-            #cv2.circle(cimg_h, center=preds_h, radius=INNER, color=(255,0,0), thickness=-1)
-            #cv2.circle(cimg_h, center=preds_h, radius=OUTER, color=(0,255,0), thickness=1)
             if pred_h is not None:
+                L2 = np.sqrt( (pred_h[0] - targ[0])**2 + (pred_h[1] - targ[1])**2)
+                ss['Harris_L2s'].append(L2)
                 cv2.circle(dimg_h, center=pred_h, radius=22, color=(255,0,0), thickness=4)
-                #cv2.circle(dimg_h, center=pred_h, radius=INNER, color=(255,0,0), thickness=-1)
-                #cv2.circle(dimg_h, center=pred_h, radius=OUTER, color=(0,255,0), thickness=1)
-            # put nn preds here as well
-            cv2.circle(dimg_h, center=preds, radius=22, color=(0,0,255), thickness=4)
 
-            #cv2.imwrite(c_path_h, cimg_h)
+            # --------------------------------------------------------------------------
+            # Put nn preds here as well, if desired. Makes it easy for the final figures
+            # in the paper. That's what I used for overlaying predictions of both methods.
+            # --------------------------------------------------------------------------
+            #cv2.circle(dimg_h, center=preds, radius=22, color=(0,0,255), thickness=4)
             cv2.imwrite(d_path_h, dimg_h)
 
         # Add some more stuff about this cv set, e.g., loss curves.
@@ -564,7 +576,16 @@ if __name__ == "__main__":
         ss['raw_test'].append(data_other['raw_test'])
         ss['epoch'].append(data_other['epoch'])
         ss['lrates'].append(data_other['lrates'])
-
+        print("Whew, now done saving images for this fold. Some stats:")
+        print("  num_(with,without)_corners: {}, {}, {:.2f}".format(
+                num_with_corners, num_with_no_corners,
+                float(num_with_no_corners) / (num_with_corners + num_with_no_corners))
+        )
+        print("Harris L2s: len = {}, {:.2f} +/- {:.1f}".format(
+                len(ss['Harris_L2s']),
+                np.mean(ss['Harris_L2s']),
+                np.std(ss['Harris_L2s']))
+        )
         print("=====================================================================")
 
     print("\nDone with creating overlays, look at:\n{}\nfor all the predictions".format(

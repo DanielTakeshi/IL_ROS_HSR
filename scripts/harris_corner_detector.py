@@ -55,6 +55,10 @@ error_fc = 'blue'
 
 # Might as well make y-axis a bit more informative, if we know it.
 #LOSS_YLIM = [0.0, 0.035]
+
+BLUE = (255,0,0)
+GREEN = (0,255,0)
+RED = (0,0,255)
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 
@@ -327,13 +331,14 @@ def plot_data_source(ss):
     print("   avg: {:.1f}\pm {:.1f}".format( np.mean(ds1), np.std(ds1) ))
 
 
-def harris(cimg, dimg, blockSize=2, ksize=3, k=0.04, filter_type='grid'):
+def harris(cimg, dimg, blockSize=2, ksize=1, k=0.04, filter_type='grid'):
     """Harris corner detection.
     https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_feature2d/py_features_harris/py_features_harris.html
     Default args: blockSize=2, ksize=3, k=0.04
     """
     # Add a bunch of red and blue dots.
-    debug_corners = True
+    debug_corners = False
+    all_blue_corners = True
 
     assert filter_type in ['grid', 'parallelogram']
     gray = cv2.cvtColor(dimg, cv2.COLOR_BGR2GRAY)
@@ -364,7 +369,7 @@ def harris(cimg, dimg, blockSize=2, ksize=3, k=0.04, filter_type='grid'):
         # return the lowest right, assuming that we are using that perspective
         # (not guaranteed .... yeah!!).
         # --------------------------------------------------------------------------
-        xlarge = np.where( 100 < corners[1,:] )[0]
+        xlarge = np.where( 110 < corners[1,:] )[0]
         ylarge = np.where( 80 < corners[0,:] )[0]
         xsmall = np.where( corners[1,:] < 480 )[0]
         ysmall = np.where( corners[0,:] < 220 )[0]
@@ -398,11 +403,18 @@ def harris(cimg, dimg, blockSize=2, ksize=3, k=0.04, filter_type='grid'):
             # Only fill this in if I want to see all corners.
             if debug_corners:
                 dimg[ corner[0], corner[1] ] = [255, 0, 0]
+            if all_blue_corners:
+                # we have to flip the coords
+                c0 = corner[1]
+                c1 = corner[0]
+                w = 5
+                cv2.line(dimg_h, (c0-w, c1-w), (c0+w, c1+w), color=BLUE, thickness=1)
+                cv2.line(dimg_h, (c0+w, c1-w), (c0-w, c1+w), color=BLUE, thickness=1)
 
             # Distance to bottom right corner.
-            #dist = (480 - corner[0])**2 + (640 - corner[1])**2
+            dist = (480 - corner[0])**2 + (640 - corner[1])**2
             # Distance to bottom.
-            dist = (480 - corner[0])**2
+            #dist = (480 - corner[0])**2
 
             if dist < closest_dist:
                 closest_dist = dist
@@ -415,28 +427,13 @@ def harris(cimg, dimg, blockSize=2, ksize=3, k=0.04, filter_type='grid'):
             cv2.waitKey(0)
 
         if closest is not None:
-            #cv2.circle(dimg, center=closest, radius=6, color=(0,0,255), thickness=2)
             return closest
         else:
             assert len(filt_corners) == 0
         return None
 
-        #p1 = (85, 100)
-        #p2 = (85, 500)
-        #p3 = (200, 10)
-        #p4 = (200, 580)
-        #cv2.line(dimg, (p1[0], p2[0]), (p1[1], p2[1]), (0,255,0), thickness=2)
-        #cv2.line(dimg, p1, p3, (0,255,0), thickness=2)
-        #cv2.line(dimg, p2, p4, (0,255,0), thickness=2)
-        #cv2.line(dimg, p3, p4, (0,255,0), thickness=2)
-        #cv2.circle(dimg, center=(110, 80), radius=4, color=(0,255,0), thickness=-1)
-        #cv2.circle(dimg, center=(480, 80), radius=4, color=(0,255,0), thickness=-1)
-        #cv2.circle(dimg, center=(50,  220), radius=4, color=(0,255,0), thickness=-1)
-        #cv2.circle(dimg, center=(500, 220), radius=4, color=(0,255,0), thickness=-1)
-
     elif filter_type == 'parallelogram':
         raise NotImplementedError()
-
 
 
 if __name__ == "__main__":
@@ -535,12 +532,11 @@ if __name__ == "__main__":
 
             # Ah, an 'x' looks better for ground truth.
             cv2.line(dimg, (targ[0]-10, targ[1]-10), (targ[0]+10, targ[1]+10),
-                     color=(0,255,0), thickness=4)
+                     color=GREEN, thickness=4)
             cv2.line(dimg, (targ[0]+10, targ[1]-10), (targ[0]-10, targ[1]+10),
-                     color=(0,255,0), thickness=4)
+                     color=GREEN, thickness=4)
 
-            # The PREDICTION, though, will be a large blue circle (yellow border?).
-            cv2.circle(dimg, center=preds, radius=22, color=(0,0,255), thickness=4)
+            cv2.circle(dimg, center=preds, radius=22, color=RED, thickness=4)
             cv2.imwrite(d_path, dimg)
 
             # --------------------------------------------------------------------------
@@ -554,20 +550,20 @@ if __name__ == "__main__":
 
             # Ah, an 'x' looks better for ground truth.
             cv2.line(dimg_h, (targ[0]-10, targ[1]-10), (targ[0]+10, targ[1]+10),
-                     color=(0,255,0), thickness=4)
+                     color=GREEN, thickness=4)
             cv2.line(dimg_h, (targ[0]+10, targ[1]-10), (targ[0]-10, targ[1]+10),
-                     color=(0,255,0), thickness=4)
+                     color=GREEN, thickness=4)
 
             if pred_h is not None:
                 L2 = np.sqrt( (pred_h[0] - targ[0])**2 + (pred_h[1] - targ[1])**2)
                 ss['Harris_L2s'].append(L2)
-                cv2.circle(dimg_h, center=pred_h, radius=22, color=(255,0,0), thickness=4)
+                cv2.circle(dimg_h, center=pred_h, radius=22, color=BLUE, thickness=4)
 
             # --------------------------------------------------------------------------
             # Put nn preds here as well, if desired. Makes it easy for the final figures
             # in the paper. That's what I used for overlaying predictions of both methods.
             # --------------------------------------------------------------------------
-            #cv2.circle(dimg_h, center=preds, radius=22, color=(0,0,255), thickness=4)
+            cv2.circle(dimg_h, center=preds, radius=22, color=(0,0,255), thickness=4)
             cv2.imwrite(d_path_h, dimg_h)
 
         # Add some more stuff about this cv set, e.g., loss curves.
